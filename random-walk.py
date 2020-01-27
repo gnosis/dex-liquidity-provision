@@ -46,21 +46,21 @@ def printBalanceComparison(strategy, price):
     newBalanceA = strategy.getTokenABalance()
     newBalanceB = strategy.getTokenBBalance()
     print("(balanceA, balanceB) = ({:.1f}, {:.1f})".format(newBalanceA, newBalanceB))
-    equivalentBalAAtStartingPrice = newBalanceA + price * newBalanceB
-    print("  as TokenA with TokenB at current price:      {:.1f}".format(equivalentBalAAtStartingPrice))
+    equivalentBalAAtCurrentPrice = newBalanceA + price * newBalanceB
+    print("  as TokenA with TokenB at current price:      {:.1f}".format(equivalentBalAAtCurrentPrice))
     balAIfHolding  = BALANCE_A + price * BALANCE_B
     print("  as TokenA if holding from the start instead: {:.1f}".format(balAIfHolding))
     equivalentBalAAtStartingPrice = newBalanceA + STARTING_PRICE * newBalanceB
     print(" (as TokenA with TokenB at starting price:     {:.1f})".format(equivalentBalAAtStartingPrice))
-    percentGainComparedToHolding = (equivalentBalAAtStartingPrice - balAIfHolding) / balAIfHolding * 100
+    percentGainComparedToHolding = (equivalentBalAAtCurrentPrice - balAIfHolding) / balAIfHolding * 100
     print("  change compared to just holding: {:.1f}%".format(percentGainComparedToHolding))
 
 def percentGain(strategy, price):
     newBalanceA = strategy.getTokenABalance()
     newBalanceB = strategy.getTokenBBalance()
-    equivalentBalAAtStartingPrice = newBalanceA + price * newBalanceB
+    equivalentBalAAtCurrentPrice = newBalanceA + price * newBalanceB
     balAIfHolding  = BALANCE_A + price * BALANCE_B
-    percentGainComparedToHolding = (equivalentBalAAtStartingPrice - balAIfHolding) / balAIfHolding * 100
+    percentGainComparedToHolding = (equivalentBalAAtCurrentPrice - balAIfHolding) / balAIfHolding * 100
     return percentGainComparedToHolding
 
 def printBalanceAtEveryTrade(strategy, price):
