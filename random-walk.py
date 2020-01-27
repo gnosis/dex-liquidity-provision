@@ -40,7 +40,7 @@ concentricStrategy = ConcentricBraketsStrategy(
     balancesBracketTokenB
 )
 
-def printBalanceComparison(strategy):
+def printBalanceComparison(strategy, price):
     newBalanceA = strategy.getTokenABalance()
     newBalanceB = strategy.getTokenBBalance()
     print("(balanceA, balanceB) = ({:.1f}, {:.1f})".format(newBalanceA, newBalanceB))
@@ -63,7 +63,7 @@ def percentGain(strategy, price):
 
 def printBalanceAtEveryTrade(strategy, price):
     if strategy.thereWasATrade():
-        printBalanceComparison(strategy)
+        printBalanceComparison(strategy, price)
         input()
 
 # this function prints on screen the evolution of the price and stops at each trade
@@ -76,7 +76,7 @@ def runAndPrintStrategy(strategy, seed=None):
         print("{:.2f}".format(price))
         strategy.execute(price)
         printBalanceAtEveryTrade(strategy, price)
-    printBalanceComparison(strategy)
+    printBalanceComparison(strategy, price)
 #runAndPrintStrategy(serialStrategy)
 
 # this function of code calculates the average change in balance compared to just holding
@@ -85,14 +85,17 @@ def getAverageChange(strategy):
     sumPercentGain = 0
     NUM_TRIALS = 10**3
     for i in range(NUM_TRIALS):
-        print(i)
+        print("{}/{}".format(i, NUM_TRIALS))
         strategy.reset()
         seed = random.randrange(2**63-1)
         for price in randomWalk(seed, STARTING_PRICE):
             strategy.execute(price)
-        sumPercentGain += percentGain(strategy, price)
+        finalPercentGain = percentGain(strategy, price)
+        sumPercentGain += finalPercentGain
+        print("Current gain: \t{:.3f}%, \trolling average:\t {:.3f}%.".format(finalPercentGain, sumPercentGain / (i+1)))
     averagePercentGain = sumPercentGain / NUM_TRIALS
-    print("Comparing to holding the initial balance, this strategy changes the final balance on average by {:.1f}%".format(averagePercentGain))
+    print("Comparing to holding the initial balance, this strategy changes the final balance on average by {:.3f}%".format(averagePercentGain))
     return averagePercentGain
 
 getAverageChange(concentricStrategy)
+#runAndPrintStrategy(concentricStrategy)
