@@ -14,19 +14,31 @@ class Strategy(ABC):
         self.balancesTokenA = self.startingBalancesTokenA[::]
         self.balancesTokenB = self.startingBalancesTokenB[::]
 
+    def setShouldBuyFunction(self, function):
+        self.shouldBuy = function
+
+    def setShouldSellFunction(self, function):
+        self.shouldSell = function
+
+    def setupForRW(self):
+        def shouldBuyInRW(bracketIndex, price):
+            return floatCloseInRW(self.bracketBuy[bracketIndex], price)
+        def shouldSellInRW(bracketIndex, price):
+            return floatCloseInRW(self.bracketSell[bracketIndex], price)
+        self.setShouldBuyFunction(shouldBuyInRW)
+        self.setShouldSellFunction(shouldSellInRW)
+
     # price input is expressed as amounts of token A you get for one token B
     # the lower the price, the more token B is cheap
     def execute(self, price):
         self.tradeExecuted = False
         for bracketIndex in range(0, self.amount):
-            if floatCloseInRW(self.bracketBuy[bracketIndex], price) and \
-                    self.balancesTokenA[bracketIndex] != 0:
+            if self.shouldBuy(bracketIndex, price) and self.balancesTokenA[bracketIndex] != 0:
                 # buy token B
                 self.balancesTokenB[bracketIndex] += self.balancesTokenA[bracketIndex] / price
                 self.balancesTokenA[bracketIndex] = 0
                 self.tradeExecuted = True
-            if floatCloseInRW(self.bracketSell[bracketIndex], price) and \
-                    self.balancesTokenB[bracketIndex] != 0:
+            if self.shouldSell(bracketIndex, price) and self.balancesTokenB[bracketIndex] != 0:
                 # sell token B
                 self.balancesTokenA[bracketIndex] += self.balancesTokenB[bracketIndex] * price
                 self.balancesTokenB[bracketIndex] = 0

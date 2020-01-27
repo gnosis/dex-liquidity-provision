@@ -27,6 +27,7 @@ serialStrategy = SerializedBraketsStrategy(
     balancesBracketTokenA,
     balancesBracketTokenB
 )
+serialStrategy.setupForRW()
 
 amount = 10
 radius = 5
@@ -39,6 +40,7 @@ concentricStrategy = ConcentricBraketsStrategy(
     balancesBracketTokenA,
     balancesBracketTokenB
 )
+concentricStrategy.setupForRW()
 
 def printBalanceComparison(strategy, price):
     newBalanceA = strategy.getTokenABalance()
