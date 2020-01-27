@@ -2,7 +2,7 @@
 
 import random
 from utils import floatEqual, randomWalk
-from strategies import SerializedBraketsStrategy
+from strategies import *
 
 STARTING_PRICE = 160 # number of tokenA to get one tokenB
 
@@ -24,6 +24,18 @@ serialStrategy = SerializedBraketsStrategy(
     step,
     interval,
     amount,
+    balancesBracketTokenA,
+    balancesBracketTokenB
+)
+
+amount = 10
+radius = 5
+balancesBracketTokenA = [BALANCE_A/amount]*amount
+balancesBracketTokenB = [BALANCE_B/amount]*amount
+concentricStrategy = ConcentricBraketsStrategy(
+    center,
+    amount,
+    radius,
     balancesBracketTokenA,
     balancesBracketTokenB
 )
@@ -83,4 +95,4 @@ def getAverageChange(strategy):
     print("Comparing to holding the initial balance, this strategy changes the final balance on average by {:.1f}%".format(averagePercentGain))
     return averagePercentGain
 
-getAverageChange(serialStrategy)
+getAverageChange(concentricStrategy)
