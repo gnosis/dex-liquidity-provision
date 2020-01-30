@@ -1,14 +1,15 @@
 # Gnosis Liquidity Provision - Process and Implementation
 
-## What is this task:
 
 Will provide liquidity using two trading "strategies". The overall goal is to provide `N = 100_000` total funds 
 (of each relevant token?) in `K` batches of size `N/K`. This could be once a week over `K` weeks (for example).
 
 The step by step increase of amounts would simply correspond to post-dated deposits into the appropriate contracts.
 
+## Provision Descriptions
+
 Both of the following strategies are taken from Gnosis Liquidity Provision 
-`Spreadsheet <https://docs.google.com/spreadsheets/d/10Et3GeH97ovyAyVaus04YLUFXI1uzimQCD16EkmyHLM/edit#gid=1131665963>`_ 
+[Spreadsheet](https://docs.google.com/spreadsheets/d/10Et3GeH97ovyAyVaus04YLUFXI1uzimQCD16EkmyHLM/edit#gid=1131665963)
 
 ### Strategy 1. 
 
@@ -17,28 +18,45 @@ The simple bracket strategy with spread orders (0.1% and 0.4%)
 
 All trades are indefinite and for an infinite amount:
 
-  Address1 - (DAI, USDC, PAX) Spread of 0.1 %
-  Address2 - (DAI, USDC, TUSD) Spread of 0.1 %
-  Address3 - (DAI, USDC, PAX) Spread of 0.4 %
-  Address4 - (DAI, USDC, TUSD) Spread of 0.4 %
+- Address1 - (DAI, USDC, PAX) Spread of 0.1 %
+- Address2 - (DAI, USDC, TUSD) Spread of 0.1 %
+- Address3 - (DAI, USDC, PAX) Spread of 0.4 %
+- Address4 - (DAI, USDC, TUSD) Spread of 0.4 %
 
 Will need
   - 4 distinct funded ethereum accounts.
   - deposit funds
 
-Use deposit and order placement scripts if possible (need safe people)
-  `link to scripts <https://github.com/gnosis/dex-contracts/tree/master/scripts/stablex>`_
+If possible with the safe and CPK, could use existing deposit and order placement [scripts](https://github.com/gnosis/dex-contracts/tree/master/scripts/stablex)
 
-Example:
-  Deposit Token:
+**Example:**
 
-  for token in relevant_token_ids:
+1. Deposit Token: 
   
-    npx truffle exec scripts/stablex/deposit.js --accountId=0 --tokenId=token --amount=MAX_U128 --network $NETWORK_NAME
+```
+for t_id in relevant_token_ids:
+	for a_id in relevant_unlocked_accounts:
+  		npx truffle exec scripts/stablex/deposit.js \
+  			--accountId a_id \
+	  		--tokenId t_id \
+  			--amount $K \ 
+  			--network $NETWORK_NAME
+```
 
-  Place Spread Orders:
+2. Place Spread Orders:
 
-    npx truffle exec scripts/stablex/place_spread_orders.js --tokens relevant_token_ids --accountId 0 --validFrom 4 --expiry 9999999 --sellAmount MAX_U128 --spread 0.1 --network $NETWORK_NAME
+```
+for s in spreads:
+	for a_id in relevant_unlocked_accounts:
+		npx truffle exec scripts/stablex/place_spread_orders.js \
+			--tokens relevant_token_ids \
+			--accountId a_id \
+			--validFrom 4 \
+			--expiry &MAX_U128 \
+			--sellAmount &INFINITY \
+			--spread s \
+			--network $NETWORK_NAME
+```
 
 ### Strategy 2; ETH-DAI bracket strategy
 
@@ -88,7 +106,7 @@ The core functionality that the administrator/orchestrator would need to make (m
 ## Implementation
 
 
-1. With Safe:
+1. Using the Gnosis Safe:
 
   To be determined. 
   Would like to speak with @denis about using the safe to interact with our contract scripts.
@@ -98,22 +116,33 @@ The core functionality that the administrator/orchestrator would need to make (m
 
 Can interact vis CLI with `dex-contracts/scripts`. This (deployment guide)[https://github.com/gnosis/dex-contracts/wiki/Deployment-Guide] might help
 
-Example:
+**Example:**
 
-- Deposit Token: The following script is convenient because both `approval` and `deposit are made at once.
+- Deposit Token: The following script is convenient because both `approval` and `deposit` are made at once.
 
 ```shell script
-npx truffle exec scripts/stablex/deposit.js --accountId=0 --tokenId=0 --amount=30 --network $NETWORK_NAME
+npx truffle exec scripts/stablex/deposit.js \
+	--accountId=0 \
+	--tokenId=0 \
+	--amount=30 \
+	--network $NETWORK_NAME
 ```
 For our a list of relevant token details, see our static (whitelisted) token list at:
 
-(Token List URL)[https://raw.githubusercontent.com/gnosis/dex-js/master/src/tokenList.json] 
+[Token List URL](https://raw.githubusercontent.com/gnosis/dex-js/master/src/tokenList.json)
 
 
 - Place Spread Orders:
 
 ```shell script
-npx truffle exec scripts/stablex/place_spread_orders.js --tokens 3,4,5,7 --accountId 0 --validFrom 4 --expiry 5266509 --sellAmount 50 --spread 2 --network rinkeby
+npx truffle exec scripts/stablex/place_spread_orders.js \
+	--tokens 3,4,5,7 \
+	--accountId 0 \
+	--validFrom 4 \
+	--expiry 5266509 \
+	--sellAmount 50 \
+	--spread 2 \
+	--network rinkeby
 ```
 
 
@@ -126,12 +155,12 @@ It was discussed and decided that we would *not* re-balance from external exchan
 
 
 
-### Reacting to orders
+### Reacting to orders (Giveaways)
 
 After short group discussion, it seems this will boil down to a **market-order giveaway** rather than direct reaction to orders.
 It might be a good idea
 
-### Giveaway Details:
+#### Giveaway Details:
 
 Let A, B, C, D, E be all stable coins (i.e. not `ETH`)
 
@@ -146,38 +175,54 @@ sell at most 1000 tokenE for at least 950 tokenA Fri. at noon (expiry ?)
 ```
 
 This can be executed via the truffle scripts in `dex-contracts/scripts` as follows
-```shell script
-placeValidFromOrders --sellTokens 2,3,4,5 --buyTokens 3,4,5,2
+
+```
+placeValidFromOrders --sellTokens 2,3,4,5 --buyTokens 3,4,5,2 --validFroms 10,20,30 ...
 ```
 
-### Public announcement of giveaway
+##### Public announcement
 
 It might not be a bad idea to put together a blog post (or public announcement) about the orders. 
 Include link to the (interface)[https://dex.gnosis.io] and (telegram channel)[https://t.me/dFusionPoC]
 
-### Uncertainties
+##### Uncertainties
 
-Do we have a procedure in place for assisting to fill reasonable orders that don't have any match? 
-For example, consider the following scenario:
+Proceedure for assisting in fulfillment of reasonable orders that don't have any match? 
 
-Some market-order (i.e. selling 1000 A for 100 B) is sitting unfilled for more than 2 days. 
+**Example**
+
+Some market-order (i.e. selling 1000 A for 100 B) is sitting unfilled for more than 2 days.
 - Would we fill these? 
 - Is this a bug in our system?
+- Should we expect that there are enough spread orders covering this?
 
 
-## Open Questions and TODO
+## Points of Contact
 
+- **Alan** for [Contract Proxy Kit](https://github.com/gnosis/contract-proxy-kit)
+- **Alex** for [Contract Integration](https://github.com/gnosis/dex-contracts-integration-example)
+- **Denis** for experience with asset management and bots for DutchX
+- **Lukas** for [Gnosis Multisig](https://safe.gnosis.io/multisig/) onboarding guidance
+- **Richard** for overall Safe expertise
+- **Steven** for fund allocation
+
+## Open Questions & Tasks
+
+
+### Depositing Process
+- What are the values for N and K?
+- Are we planning to fund 100K of each relevant token or total?
+- How often do we deposit new funds into each account with open orders?
+- Should the depositing be done on a schedule or manually?
+	- *Pro-Manual*: If only 10 times over 10 weeks manual would be easiest. Less infrastructure, less testing.
+	- *Con-Manual*: Could be prone to human error
+		- Transfering 10K to wrong address
+	- *Pro-Automatic:* Reusability for external providers.
+	- *Con-Automatic:* Would require more development and will take longer (at first)
 
 ### Realistic Metrics 
 Could evaluate amount deposited vs amount at later date. 
 May want to see if @chris to can make a dashboard for this.
-
-### Scrap Text from meeting notes:
-
-How is this implemented? 
-Do we have the script ready ourselves (in that case generic for others to use)?
-Do we need re-balancing? → tracking portfolios. → who is in charge of alerting? → are brackets “jumped”
-
 
 ### Landing page for simulated returns
 
@@ -186,18 +231,27 @@ Could show potential returns from
 - Historical data simulations (Covers strategy 1 and 2)
 - Random walk simulations (possibly relevant to the price of `ETH` - strategy 2)
 
+### Address/Asset Management (Gnosis Multisig)
+
+- There will be enough funds that we will want to have them stored in a multisig with 7 owners and a threshold of 2 or 3.
+
+- Will require that the multi-sig has control over 4 (strategy 1) + 19 (strategy 2) accounts.
+
+- Richard mentioned a clever way for bot with limited functionality (deposit and place orders) and multi-sig to handle the processes, all other operations would require threshold signature.
+
+
 
 ### TODO
 
-- Step-by step increase of amounts addressed briefly in strategy description. 
-  
-  Could be done manually, or triggered via cronjob. If automated, would need to setup a kubernetes instance and possibly test first.  
-
-- Address management (and set-up). Ideally this would be a small collection of safes with one (main) multi-sig.
-
-Will be useful to have control of 4 + 19 accounts. Ask @denis. 
-Richard mentioned a clever way for bot with limited functionality (deposit and place orders) and multi-sig to handle the processes, all other operations would require threshold signature.
-
-
+- Complete pseudo code for Stategy 2
+- Complete pseudo code for scheduled giveaway orders
+- Expiry dates on giveaway orders?
 - Tracking the addresses / portfolios thereof / trading history
   This boils down to having metrics and is analogous to "how do we test if this works in reality"
+
+
+### Scrap Text from meeting notes:
+
+How is this implemented? 
+Do we have the script ready ourselves (in that case generic for others to use)?
+Do we need re-balancing? → tracking portfolios. → who is in charge of alerting? → are brackets “jumped”
