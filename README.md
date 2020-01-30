@@ -11,7 +11,7 @@ The step by step increase of amounts would simply correspond to post-dated depos
 Both of the following strategies are taken from Gnosis Liquidity Provision 
 [Spreadsheet](https://docs.google.com/spreadsheets/d/10Et3GeH97ovyAyVaus04YLUFXI1uzimQCD16EkmyHLM/edit#gid=1131665963)
 
-### Strategy 1. 
+### Strategy 1: Standing Spread Orders
 
 
 The simple bracket strategy with spread orders (0.1% and 0.4%)
@@ -58,7 +58,7 @@ for s in spreads:
 			--network $NETWORK_NAME
 ```
 
-### Strategy 2; ETH-DAI bracket strategy
+### Strategy 2: ETH-DAI bracketing
 
 Based on the volatility of ETH prices, these brackets are spread orders with different centers. 
 Goal is to have 9 below and 10 above the "current going rate"
