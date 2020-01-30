@@ -12,7 +12,7 @@ Make developers and traders aware of Dfusion and make them become a bit familiar
 
 ### Disadvantages
 - Users might think we "cheat", since even if we were to offer 1 ETH for 1 DAI we could technically put up a buy order at a reasonable price and have no losses but the transaction fees.
-- Orders would probably match with our own braket trading strategies.
+- Orders would probably match with our own bracket trading strategies.
 - If giveaways stay up for too long, it looks like people are not interested in the protocol.
 
 ### Strategy
