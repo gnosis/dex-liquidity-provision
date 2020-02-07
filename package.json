@@ -1,16 +1,24 @@
 {
-  "name": "@gnosis.pm/dex-contracts-integration-example",
+  "name": "liquidity-provision-scripts",
   "version": "0.1.0",
-  "description": "Minimal project for integration of the gnosis BatchExchange",
-  "devDependencies": {},
+  "description": "",
+  "devDependencies": {
+    "@gnosis.pm/mock-contract": "^3.0.0",
+    "run-with-testrpc": "^0.3.0",
+    "eth-lightwallet": "^4.0.0",
+    "ethereumjs-abi": "^0.6.5",
+    "ganache-cli": "6.1.7",
+    "truffle-hdwallet-provider": "^1.0.0-web3one.1"
+  },
   "dependencies": {
     "@gnosis.pm/dex-contracts": "^0.2.1",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/solidity-data-structures": "^1.2.2",
     "@gnosis.pm/util-contracts": "^2.0.6",
-    "dotenv": "^8.0.0",
     "openzeppelin-solidity": "^2.4.0",
-    "truffle": "^5.0.24",
-    "@truffle/contract": "^4.1.6"
+    "@truffle/contract": "^4.1.6",
+    "@gnosis.pm/safe-contracts": "^1.1.1",
+    "dotenv": "^8.0.0",
+    "truffle": "^5.0.34"
   }
 }
