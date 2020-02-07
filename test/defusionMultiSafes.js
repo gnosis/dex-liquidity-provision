@@ -1,7 +1,7 @@
 const utils = require('@gnosis.pm/safe-contracts/test/utils/general')
 
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
-const ProxyFactory = artifacts.require("./ProxyFactory.sol")
+const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const TestToken = artifacts.require("./TestToken.sol")
 const TestExchange = artifacts.require("./TestExchange.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")

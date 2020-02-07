@@ -32,10 +32,9 @@
     "@gnosis.pm/util-contracts" "^2.0.0"
     verify-on-etherscan "^1.1.1"
 
-"@gnosis.pm/safe-contracts@^1.1.1":
+"@gnosis.pm/safe-contracts@gnosis/safe-contracts#7129fd3f2d19a518675592ad6239dd14a17ec315":
   version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-contracts/-/safe-contracts-1.1.1.tgz#d85bf2026a5405316bee623c0e6f193c3ace89cd"
-  integrity sha512-NT+7JtNym5I6wEKVuhEZ+Ush9ZTtJfLEeQ7SwQTKGgjG9Ww3uMVOPMlufifOyhZyDX/Aakxj0jEKwkuqONHAxA==
+  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/7129fd3f2d19a518675592ad6239dd14a17ec315"
   dependencies:
     dotenv "^8.0.0"
     openzeppelin-solidity "^2.0.0"

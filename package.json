@@ -17,7 +17,7 @@
     "@gnosis.pm/util-contracts": "^2.0.6",
     "openzeppelin-solidity": "^2.4.0",
     "@truffle/contract": "^4.1.6",
-    "@gnosis.pm/safe-contracts": "^1.1.1",
+    "@gnosis.pm/safe-contracts": "gnosis/safe-contracts#7129fd3f2d19a518675592ad6239dd14a17ec315",
     "dotenv": "^8.0.0",
     "truffle": "^5.0.34"
   }
