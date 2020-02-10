@@ -15,6 +15,7 @@ contract('GnosisSafe', function(accounts) {
     let multiSend
 
     const CALL = 0
+    const DELEGATECALL = 1
     const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
     beforeEach(async function() {
@@ -87,19 +88,19 @@ contract('GnosisSafe', function(accounts) {
             const tokenAmount = index + 2
             // Get data to move funds from master to slave
             const transferData = await testToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
-            transactions.push({operation: 0, to: testToken.address, value: 0, data: transferData})
+            transactions.push({operation: CALL, to: testToken.address, value: 0, data: transferData})
             // Get data to approve funds from slave to exchange
             const approveData = await testToken.contract.methods.approve(testExchange.address, tokenAmount).encodeABI()
             // Get data to deposit funds from slave to exchange
             const depositData = await testExchange.contract.methods.deposit(tokenAmount).encodeABI()
             // Get data for approve and deposit multisend on slave
             const multiSendData = await encodeMultiSend([
-                {operation: 0, to: testToken.address, value: 0, data: approveData},
-                {operation: 0, to: testExchange.address, value: 0, data: depositData}
+                {operation: CALL, to: testToken.address, value: 0, data: approveData},
+                {operation: CALL, to: testExchange.address, value: 0, data: depositData}
             ])
             // Get data to execute approve/deposit multisend via slave
             const execData = await execTransactionData(masterSafe.address, multiSend.address, 0, multiSendData, 1)
-            transactions.push({operation: 0, to: slaveSafe, value: 0, data: execData})
+            transactions.push({operation: CALL, to: slaveSafe, value: 0, data: execData})
         }
         // Get data to execute all fund/approve/deposit transactions at once
         const finalData = await encodeMultiSend(transactions)
