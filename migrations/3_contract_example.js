@@ -7,6 +7,4 @@ module.exports = async function(deployer, network, accounts) {
   BatchExchange.setProvider(deployer.provider);
   BatchExchange.setNetwork(deployer.network_id);
   batchExchange = await BatchExchange.deployed();
-  ContractExample = artifacts.require("ContractExample");
-  await deployer.deploy(ContractExample, batchExchange.address);
 };
