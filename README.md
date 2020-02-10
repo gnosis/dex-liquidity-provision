@@ -208,7 +208,6 @@ Some market-order (i.e. selling 1000 A for 100 B) is sitting unfilled for more t
 
 ## Open Questions & Tasks
 
-
 ### Depositing Process
 - What are the values for N and K?
 - Are we planning to fund 100K of each relevant token or total?
