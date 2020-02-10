@@ -1,17 +1,44 @@
 const utils = require('@gnosis.pm/safe-contracts/test/utils/general')
+const Contract = require("@truffle/contract");
+const BatchExchange = Contract(
+    require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange")
+)
 
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
-const TestExchange = artifacts.require("./TestExchange.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
+
+const jsonrpc = "2.0"
+const id = 0
+const send = function(method, params, web3Provider) {
+  return new Promise(function(resolve, reject) {
+    web3Provider.currentProvider.send({ id, jsonrpc, method, params }, (error, result) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(result)
+      }
+    })
+  })
+}
+
+/**
+ * Wait for n (evm) seconds to pass
+ * @param seconds: int
+ * @param web3Provider: potentially different in contract tests and system end-to-end testing.
+ */
+const waitForNSeconds = async function(seconds, web3Provider = web3) {
+    await send("evm_increaseTime", [seconds], web3Provider)
+    await send("evm_mine", [], web3Provider)
+  }
 
 contract('GnosisSafe', function(accounts) {
     let lw
     let gnosisSafeMasterCopy
     let proxyFactory
     let testToken
-    let testExchange
+    let exchange
     let multiSend
 
     const CALL = 0
@@ -28,7 +55,11 @@ contract('GnosisSafe', function(accounts) {
         proxyFactory = await ProxyFactory.new()
         multiSend = await MultiSend.new()
         testToken = await MintableERC20.new()
-        testExchange = await TestExchange.new(testToken.address)
+        
+        BatchExchange.setProvider(web3.currentProvider)
+        BatchExchange.setNetwork(web3.network_id)
+        exchange = await BatchExchange.deployed()
+        console.log("BatchExchange Address", exchange.address)
     })
 
     let execTransaction = async function(safe, to, value, data, operation, message) {
@@ -70,14 +101,14 @@ contract('GnosisSafe', function(accounts) {
           ).encodeABI()
     }
 
-    it('Use many safes with dfusion', async () => {
+    it('transfers tokens from fund account through trader accounts into exchange', async () => {
         const masterSafe = await deploySafe([lw.accounts[0], lw.accounts[1]], 2)
         console.log("Master Safe", masterSafe.address)
         var amount = 10000
         await testToken.mint(accounts[0], amount)
         await testToken.transfer(masterSafe.address, amount)
         const slaveSafes = []
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 2; i++) {
             const newSafe = await deploySafe([masterSafe.address], 1)
             slaveSafes.push(newSafe.address)
         }
@@ -90,13 +121,13 @@ contract('GnosisSafe', function(accounts) {
             const transferData = await testToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
             transactions.push({operation: CALL, to: testToken.address, value: 0, data: transferData})
             // Get data to approve funds from slave to exchange
-            const approveData = await testToken.contract.methods.approve(testExchange.address, tokenAmount).encodeABI()
+            const approveData = await testToken.contract.methods.approve(exchange.address, tokenAmount).encodeABI()
             // Get data to deposit funds from slave to exchange
-            const depositData = await testExchange.contract.methods.deposit(tokenAmount).encodeABI()
+            const depositData = await exchange.contract.methods.deposit(testToken.address, tokenAmount).encodeABI()
             // Get data for approve and deposit multisend on slave
             const multiSendData = await encodeMultiSend([
                 {operation: CALL, to: testToken.address, value: 0, data: approveData},
-                {operation: CALL, to: testExchange.address, value: 0, data: depositData}
+                {operation: CALL, to: exchange.address, value: 0, data: depositData}
             ])
             // Get data to execute approve/deposit multisend via slave
             const execData = await execTransactionData(masterSafe.address, multiSend.address, 0, multiSendData, 1)
@@ -105,11 +136,12 @@ contract('GnosisSafe', function(accounts) {
         // Get data to execute all fund/approve/deposit transactions at once
         const finalData = await encodeMultiSend(transactions)
         await execTransaction(masterSafe, multiSend.address, 0, finalData, 1, "deposit for all slaves")
+        await waitForNSeconds(301)
         for (let index = 0; index < slaveSafes.length; index++) {
-            const slaveSafe = slaveSafes[index]
-            console.log("Slave", index, "(", slaveSafe, ") deposit:", await testExchange.deposits(slaveSafe))
+            const slaveSafeAddress = slaveSafes[index]
+            console.log("Slave", index, "(", slaveSafeAddress, ") deposit:", await exchange.getBalance(slaveSafeAddress, testToken.address))
             // This should always output 0 as the slaves should never directly hold funds
-            console.log("Slave", index, "(", slaveSafe, ") balance:", await testToken.balanceOf(slaveSafe))
+            console.log("Slave", index, "(", slaveSafeAddress, ") balance:", await testToken.balanceOf(slaveSafeAddress))
         }
     })
 
