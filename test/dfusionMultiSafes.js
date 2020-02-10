@@ -2,9 +2,9 @@ const utils = require('@gnosis.pm/safe-contracts/test/utils/general')
 
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
-const TestToken = artifacts.require("./TestToken.sol")
 const TestExchange = artifacts.require("./TestExchange.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
+const MintableERC20 = artifacts.require("./ERC20Mintable")
 
 contract('GnosisSafe', function(accounts) {
     let lw
@@ -26,7 +26,7 @@ contract('GnosisSafe', function(accounts) {
         //console.log(gnosisSafeMasterCopy)
         proxyFactory = await ProxyFactory.new()
         multiSend = await MultiSend.new()
-        testToken = await TestToken.new()
+        testToken = await MintableERC20.new()
         testExchange = await TestExchange.new(testToken.address)
     })
 
@@ -72,7 +72,9 @@ contract('GnosisSafe', function(accounts) {
     it('Use many safes with dfusion', async () => {
         const masterSafe = await deploySafe([lw.accounts[0], lw.accounts[1]], 2)
         console.log("Master Safe", masterSafe.address)
-        await testToken.transfer(masterSafe.address, 10000)
+        var amount = 10000
+        await testToken.mint(accounts[0], amount)
+        await testToken.transfer(masterSafe.address, amount)
         const slaveSafes = []
         for (let i = 0; i < 40; i++) {
             const newSafe = await deploySafe([masterSafe.address], 1)
