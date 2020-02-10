@@ -1,4 +1,4 @@
-# Gnosis Liquidity Provision - Code
+# Gnosis Liquidity Provision
 
 We want to employ different liquidity strategies when the Dfusion exchange is launched.
 This repo is responsible for testing and execution.
