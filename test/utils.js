@@ -87,27 +87,27 @@ const encodeMultiSend = async function(multiSend, txs) {
     .encodeABI()
 }
 
-  // Need some small adjustments to default implementation for web3js 1.x
-  async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
-    assert.isObject(transaction)
-    if (subject != null) {
-      utils.logGasUsage(subject, transaction)
-    }
-    let logs = transaction.logs
-    if (eventName != null) {
-      logs = logs.filter(l => l.event === eventName && l.address === contract)
-    }
-    assert.equal(logs.length, 1, "too many logs found!")
-    const param = logs[0].args[paramName]
-    if (contractFactory != null) {
-      // Adjustment: add await
-      const contract = await contractFactory.at(param)
-      assert.isObject(contract, `getting ${paramName} failed for ${param}`)
-      return contract
-    } else {
-      return param
-    }
+// Need some small adjustments to default implementation for web3js 1.x
+async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
+  assert.isObject(transaction)
+  if (subject != null) {
+    utils.logGasUsage(subject, transaction)
   }
+  let logs = transaction.logs
+  if (eventName != null) {
+    logs = logs.filter(l => l.event === eventName && l.address === contract)
+  }
+  assert.equal(logs.length, 1, "too many logs found!")
+  const param = logs[0].args[paramName]
+  if (contractFactory != null) {
+    // Adjustment: add await
+    const contract = await contractFactory.at(param)
+    assert.isObject(contract, `getting ${paramName} failed for ${param}`)
+    return contract
+  } else {
+    return param
+  }
+}
 
 module.exports = {
   waitForNSeconds,
