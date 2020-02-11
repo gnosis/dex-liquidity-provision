@@ -19,7 +19,6 @@ contract("GnosisSafe", function(accounts) {
   let multiSend
 
   const CALL = 0
-  const DELEGATECALL = 1
 
   beforeEach(async function() {
     // Create lightwallet
@@ -77,9 +76,9 @@ contract("GnosisSafe", function(accounts) {
       // Get data for approve and deposit multisend on slave
       const multiSendData = await encodeMultiSend(
         multiSend, [
-        { operation: CALL, to: testToken.address, value: 0, data: approveData },
-        { operation: CALL, to: exchange.address, value: 0, data: depositData },
-      ])
+          { operation: CALL, to: testToken.address, value: 0, data: approveData },
+          { operation: CALL, to: exchange.address, value: 0, data: depositData },
+        ])
       // Get data to execute approve/deposit multisend via slave
       const execData = await execTransactionData(gnosisSafeMasterCopy, masterSafe.address, multiSend.address, 0, multiSendData, 1)
       transactions.push({
