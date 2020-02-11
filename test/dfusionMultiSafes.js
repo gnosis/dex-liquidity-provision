@@ -1,7 +1,6 @@
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const BN = require("bn.js")
 const TokenOWL = artifacts.require("TokenOWL")
 
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
@@ -9,29 +8,7 @@ const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
-const jsonrpc = "2.0"
-const id = 0
-const send = function(method, params, web3Provider) {
-  return new Promise(function(resolve, reject) {
-    web3Provider.currentProvider.send({ id, jsonrpc, method, params }, (error, result) => {
-      if (error) {
-        reject(error)
-      } else {
-        resolve(result)
-      }
-    })
-  })
-}
-
-/**
- * Wait for n (evm) seconds to pass
- * @param seconds: int
- * @param web3Provider: potentially different in contract tests and system end-to-end testing.
- */
-const waitForNSeconds = async function(seconds, web3Provider = web3) {
-  await send("evm_increaseTime", [seconds], web3Provider)
-  await send("evm_mine", [], web3Provider)
-}
+const { waitForNSeconds, toETH } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -82,10 +59,6 @@ contract("GnosisSafe", function(accounts) {
     return await gnosisSafeMasterCopy.contract.methods
       .execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
       .encodeABI()
-  }
-  function toETH(value) {
-    const GWEI = 1000000000
-    return new BN(value * GWEI).mul(new BN(GWEI))
   }
 
   const deploySafe = async function(owners, threshold) {
