@@ -5,7 +5,14 @@ const ERC20 = artifacts.require("ERC20Detailed")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
+const BN = require("bn.js")
 const { deploySafe } = require("../test/utils")
+
+const maxU32 = 2 ** 32 - 1
+
+const formatAmount = function(amount, token) {
+  return new BN(10).pow(new BN(token.decimals)).muln(amount)
+}
 
 const fetchTokenInfo = async function(contract, tokenIds) {
   console.log("Fetching token data from EVM")
@@ -46,12 +53,51 @@ const buildOrderTransactionData = async function(
   targetPrice,
   priceRangePercentage=20,
   validFrom=3,
-  expiry=2 ** 32 - 1
+  expiry=maxU32
 ) {
-  // number of bracket is determined by subsafeAddresses.length
+  // number of brackets is determined by subsafeAddresses.length
   const exchange = await BatchExchange.deployed()
-  const [targetTokenInfo, stableTokenInfo] = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId])
+  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId])
 
+  const targetToken = tokenInfo[targetTokenId]
+  const stableToken = tokenInfo[stableTokenId]
+  // TODO - handle other cases later.
+  assert(stableToken.decimals === 18, "Bracket tokens must have 18 decimals")
+  assert(targetToken.decimals === 18, "Bracket tokens must have 18 decimals")
+
+  const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
+  const highestLimit = targetPrice * (1 - priceRangePercentage / 100)
+  const stepSize = (highestLimit - lowestLimit) / subSafeAddresses.length
+
+  let safeIndex = 0
+  for (let lowerLimit=lowestLimit; lowerLimit < highestLimit; lowerLimit+=stepSize) {
+    const userAddress = subSafeAddresses[safeIndex]
+    
+    const upperLimit = lowerLimit + stepSize
+    
+    // Sell targetToken for stableToken at targetTokenPrice = upperLimit
+    // Sell 1 ETH at for 102 DAI (unlimited)
+    // Sell x ETH for maxU32 DAI 
+    // x = maxU32 / 102
+    const sellPrice = formatAmount(upperLimit, targetToken)
+    const upperSellAmount = maxU32.div(sellPrice)
+    const upperBuyAmount = maxU32
+    console.log(`Account ${userAddress}: Sell ${targetToken.symbol} for ${stableToken.symbol} at ${sellPrice}`)
+    
+
+
+    // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
+    // Buy ETH at 101 for DAI (unlimited)
+    // Sell 101 DAI for 1 ETH
+    // Sell maxU32 DAI for x ETH
+    // x = maxU32 / 101
+    const buyPrice = formatAmount(lowerLimit, targetToken)
+    const lowerSellAmount = maxU32
+    const lowerBuyAmount = maxU32.div(buyPrice)
+    console.log(`Account ${userAddress}: Buy ${targetToken.symbol} with ${stableToken.symbol} at ${buyPrice}`)
+    
+    safeIndex += 1
+  }
 
 }
 
