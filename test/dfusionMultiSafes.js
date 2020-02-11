@@ -6,6 +6,8 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
+
+const ERC20 = artifacts.require("ERC20Detailed")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
@@ -77,9 +79,9 @@ contract("GnosisSafe", function(accounts) {
       // Get data for approve and deposit multisend on slave
       const multiSendData = await encodeMultiSend(
         multiSend, [
-        { operation: CALL, to: testToken.address, value: 0, data: approveData },
-        { operation: CALL, to: exchange.address, value: 0, data: depositData },
-      ])
+          { operation: CALL, to: testToken.address, value: 0, data: approveData },
+          { operation: CALL, to: exchange.address, value: 0, data: depositData },
+        ])
       // Get data to execute approve/deposit multisend via slave
       const execData = await execTransactionData(gnosisSafeMasterCopy, masterSafe.address, multiSend.address, 0, multiSendData, 1)
       transactions.push({
