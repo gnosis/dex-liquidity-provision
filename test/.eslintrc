@@ -8,7 +8,6 @@
         "no-only-tests"
     ],
     "rules": {
-      "no-only-tests/no-only-tests": "error",
-      "indent": ["error", 2]
+      "no-only-tests/no-only-tests": "error"
     }
 }
