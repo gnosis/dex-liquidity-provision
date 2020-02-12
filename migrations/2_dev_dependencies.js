@@ -1,4 +1,4 @@
-const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion");
+const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
 
 module.exports = async function(deployer, network, accounts) {
   if (network === "development") {
@@ -7,13 +7,10 @@ module.exports = async function(deployer, network, accounts) {
       deployer,
       network,
       account: accounts[0],
-      web3
-    });
+      web3,
+    })
   } else {
     // eslint-disable-next-line no-console
-    console.log(
-      "Not in development, so nothing to do. Current network is %s",
-      network
-    );
+    console.log("Not in development, so nothing to do. Current network is %s", network)
   }
-};
+}
