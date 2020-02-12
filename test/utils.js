@@ -65,7 +65,7 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     "proxy",
     proxyFactory.address,
     GnosisSafe,
-    "create Gnosis Safe"
+    null
   )
 }
 

@@ -7,9 +7,9 @@ const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
 
-const ERC20 = artifacts.require("ERC20Detailed")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
+const { deployFleetOfSafes, buildOrderTransactionData } = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
@@ -24,10 +24,10 @@ contract("GnosisSafe", function(accounts) {
 
   beforeEach(async function() {
     // Create lightwallet
+    // TODO - can we just use accounts provided by ganache?
     lw = await utils.createLightwallet()
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    console.log(gnosisSafeMasterCopy.address)
     proxyFactory = await ProxyFactory.new()
     multiSend = await MultiSend.new()
     testToken = await MintableERC20.new()
@@ -35,7 +35,6 @@ contract("GnosisSafe", function(accounts) {
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
-    console.log("BatchExchange Address", exchange.address)
   })
 
   it("Adds tokens to the exchange", async () => {
@@ -47,6 +46,19 @@ contract("GnosisSafe", function(accounts) {
     await exchange.addToken(testToken.address, { from: accounts[0] })
     assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
   })
+
+  it("Deploys Fleet of Gnosis Safes", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    const fleet = await deployFleetOfSafes(masterSafe.address, 10)
+    assert.equal(fleet.length, 10)
+    for (const slaveAddress of fleet) {
+      const slaveSafe = await GnosisSafe.at(slaveAddress)
+      const slaveOwners = await slaveSafe.getOwners()
+      assert.equal(slaveOwners.length, 1, `Slave has unexpected number of owners ${slaveOwners.length}`)
+      assert.equal(slaveOwners[0], masterSafe.address, "Expected Slave to have master safe as owner")
+    }
+  })
+
   it("transfers tokens from fund account through trader accounts into exchange", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     console.log("Master Safe", masterSafe.address)
