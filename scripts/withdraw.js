@@ -17,7 +17,7 @@ const CALL = 0
   1. master Safe
   2. a description of the withdraw operations to perform with the format
     [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
-  3. the name of the function that is to be executed (can be "requestWithdraw", "withdraw", "deposit")
+  3. the name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
 
   output: data of the multisend transaction that has to be sent from the master address to either request
   the withdrawal of or to withdraw the desired funds
@@ -58,7 +58,7 @@ const genericFundMovementData = async function (
       data: execData,
     })
   }
-  // Get data to execute all fund/approve/deposit transactions at once
+  // Get data to execute all transactions at once
   return await encodeMultiSend(multiSend, masterTransactions)
 }
 
