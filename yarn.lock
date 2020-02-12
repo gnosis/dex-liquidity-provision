@@ -48,9 +48,9 @@
     "@gnosis.pm/util-contracts" "^2.0.0"
     verify-on-etherscan "^1.1.1"
 
-"@gnosis.pm/safe-contracts@gnosis/safe-contracts#7129fd3f2d19a518675592ad6239dd14a17ec315":
-  version "1.1.1"
-  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/7129fd3f2d19a518675592ad6239dd14a17ec315"
+"@gnosis.pm/safe-contracts@gnosis/safe-contracts#v1.1.1-dev.1":
+  version "1.1.1-dev.1"
+  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/6a6b642972d566136bf0b2506bb558db0a0528c3"
   dependencies:
     dotenv "^8.0.0"
     openzeppelin-solidity "^2.0.0"
@@ -4263,6 +4263,11 @@ prepend-http@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/prepend-http/-/prepend-http-2.0.0.tgz#e92434bfa5ea8c19f41cdfd401d741a3c819d897"
   integrity sha1-6SQ0v6XqjBn0HN/UAddBo8gZ2Jc=
+
+prettier@^1.19.1:
+  version "1.19.1"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.19.1.tgz#f7d7f5ff8a9cd872a7be4ca142095956a60797cb"
+  integrity sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==
 
 private@^0.1.6, private@^0.1.8:
   version "0.1.8"
