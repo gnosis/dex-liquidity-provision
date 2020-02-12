@@ -12,17 +12,27 @@ const { encodeMultiSend, execTransactionData } = require("../test/utils.js")
 const MAXUINT = (new BN(2)).pow(new BN(256)).sub(new BN(1))
 const CALL = 0
 
-/*
-  input:
-  1. master Safe
-  2. a description of the withdraw operations to perform with the format
-    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
-  3. the name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
 
-  output: data of the multisend transaction that has to be sent from the master address to either request
-  the withdrawal of or to withdraw the desired funds
+/**
+ * @typedef Withdrawal
+ *  * Example:
+ * {
+ *   traderAddress: "0x0000000000000000000000000000000000000000",
+ *   tokenAddresses: ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000"],
+ * }
+ * @type {object}
+ * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
+ * @property {EthereumAddress[]} tokenAddresses List of tokens that the traded wishes to withdraw
+ */
 
-  note: no transaction is executed
+/**
+ * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to either request
+withdrawal of or to withdraw the desired funds
 */
 const genericFundMovementData = async function (
   masterAddress,
@@ -62,16 +72,13 @@ const genericFundMovementData = async function (
   return await encodeMultiSend(multiSend, masterTransactions)
 }
 
-/*
-  input:
-  1. master Safe
-  2. a description of the withdraw operations to perform with the format
-    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
-
-  output: data of the multisend transaction that has to be sent from the master address to request
-  the withdrawal of, for each trader, the full token balance for all tokens included as input
-
-  note: no transaction is executed
+/**
+ * Batches together a collection of "requestWithdraw" calls on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to request
+withdrawal of the desired funds
 */
 const requestWithdrawData = async function (
   masterAddress,
@@ -84,20 +91,16 @@ const requestWithdrawData = async function (
   )
 }
 
-/*
-  input:
-  1. master Safe
-  2. a description of the withdraw operations to perform with the format
-    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
 
-  output: data of the multisend transaction that has to be sent from the master address to claim the pending
-  withdrawal of, for each trader, the full token balance for all tokens included as input
-
-  WARNING: if any bundled transaction fails, then no funds are withdrawn from the exchange.
-  Ensure 1. to have executed requestWithdraw for every input before executing
-         2. no trader orders have been executed on these tokens (a way to ensure this is to cancel the traders' standing orders)
-
-  note: no transaction is executed
+/**
+ * Batches together a collection of "withdraw" calls on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * Warning: if any bundled transaction fails, then no funds are withdrawn from the exchange.
+ *   Ensure 1. to have executed requestWithdraw for every input before executing
+ *          2. no trader orders have been executed on these tokens (a way to ensure this is to cancel the traders' standing orders)
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to withdraw the desired funds
 */
 const withdrawData = async function (
   masterAddress,
