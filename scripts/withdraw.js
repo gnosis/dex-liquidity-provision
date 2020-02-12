@@ -18,11 +18,11 @@ const CALL = 0
  *  * Example:
  * {
  *   traderAddress: "0x0000000000000000000000000000000000000000",
- *   tokenAddresses: ["0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000"],
+ *   tokenAddress: "0x0000000000000000000000000000000000000000",
  * }
  * @type {object}
  * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
- * @property {EthereumAddress[]} tokenAddresses List of tokens that the traded wishes to withdraw
+ * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
 
 /**
@@ -44,23 +44,19 @@ const genericFundMovementData = async function (
   const gnosisSafeMasterCopy = await GnosisSafe.new()
   const masterTransactions = []
 
+  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
   for (const withdraw of withdrawals) {
-    const traderTransactions = []
+    // create requestWithdraw transactions for the token
+    const requestWithdrawData = await exchange.contract.methods[functionName](withdraw.tokenAddress, MAXUINT).encodeABI()
 
-    // create requestWithdraw transactions for each token
-    for (const tokenAddress of withdraw.tokenAddresses) {
-      const requestWithdrawData = await exchange.contract.methods[functionName](tokenAddress, MAXUINT).encodeABI()
-      traderTransactions.push({
-        operation: CALL,
-        to: exchange.address,
-        value: 0,
-        data: requestWithdrawData,
-      })
-    }
-    // merge trader transactions into single multisend transaction
-    const traderMultisendData = await encodeMultiSend(multiSend,traderTransactions)
-    // Get data to execute multisend transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
+    // Get data to execute transaction from fund account via trader. Sent transaction is:
+    // transaction = {
+    //   operation: CALL,
+    //   to: exchange.address,
+    //   value: 0,
+    //   data: requestWithdrawData,
+    // }
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, requestWithdrawData, 1)
     masterTransactions.push({
       operation: CALL,
       to: withdraw.traderAddress,
