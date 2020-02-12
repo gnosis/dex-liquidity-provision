@@ -15,20 +15,20 @@ const CALL = 0
 /*
   input:
   1. master Safe
-  2. trader addresses you want to withdraw from
+  2. trader addresses you want to withdraw/deposit from
   3. for each trader address, the list of tokens to withdraw
-  4. the name of the withdraw function that is to be executed (can be "requestWithdraw" or "withdraw")
+  4. the name of the function that is to be executed (can be "requestWithdraw", "withdraw", "deposit")
 
   output: data of the multisend transaction that has to be sent from the master address to either request
   the withdrawal of or to withdraw the desired funds
 
   note: no transaction is executed
 */
-const genericWithdrawData = async function (
+const genericFundMovementData = async function (
   masterAddress,
   traderAddresses,
   tokenAddressesList,
-  withrawFunctionName
+  functionName
 ) {
   const exchange = await BatchExchange.deployed()
   const multiSend = await MultiSend.new()
@@ -42,7 +42,7 @@ const genericWithdrawData = async function (
 
     // create requestWithdraw transactions for each token
     for (let tokenIndex = 0; tokenIndex <= tokenAddresses.length; tokenIndex++) {
-      const requestWithdrawData = await exchange.contract.methods[withrawFunctionName](tokenAddresses[tokenIndex], MAXUINT).encodeABI()
+      const requestWithdrawData = await exchange.contract.methods[functionName](tokenAddresses[tokenIndex], MAXUINT).encodeABI()
       traderTransactions.push({
         operation: CALL,
         to: exchange.address,
@@ -65,7 +65,6 @@ const genericWithdrawData = async function (
   return await encodeMultiSend(multiSend, masterTransactions)
 }
 
-
 /*
   input:
   1. master Safe
@@ -82,7 +81,7 @@ const requestWithdrawData = async function (
   traderAddresses,
   tokenAddressesList
 ) {
-  return await genericWithdrawData(
+  return await genericFundMovementData(
     masterAddress,
     traderAddresses,
     tokenAddressesList,
@@ -110,7 +109,7 @@ const withdrawData = async function (
   traderAddresses,
   tokenAddressesList
 ) {
-  return await genericWithdrawData(
+  return await genericFundMovementData(
     masterAddress,
     traderAddresses,
     tokenAddressesList,
