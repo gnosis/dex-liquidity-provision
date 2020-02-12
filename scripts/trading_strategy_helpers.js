@@ -1,13 +1,16 @@
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
+const MultiSend = artifacts.require("./MultiSend.sol")
+
 const ERC20 = artifacts.require("ERC20Detailed")
 
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
 const BN = require("bn.js")
-const { deploySafe } = require("../test/utils")
+const { deploySafe, encodeMultiSend, execTransactionData } = require("../test/utils")
 
+const CALL = 0
 const maxU32 = 2 ** 32 - 1
 
 const formatAmount = function(amount, token) {
@@ -55,24 +58,28 @@ const buildOrderTransactionData = async function(
   validFrom=3,
   expiry=maxU32
 ) {
-  // number of brackets is determined by subsafeAddresses.length
   const exchange = await BatchExchange.deployed()
+  const multiSend = MultiSend.deployed()
+  const gnosisSafeMasterCopy = GnosisSafe.deployed()
+
+  const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
   const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId])
 
   const targetToken = tokenInfo[targetTokenId]
   const stableToken = tokenInfo[stableTokenId]
   // TODO - handle other cases later.
-  assert(stableToken.decimals === 18, "Bracket tokens must have 18 decimals")
-  assert(targetToken.decimals === 18, "Bracket tokens must have 18 decimals")
+  assert(stableToken.decimals === 18, "Target token must have 18 decimals")
+  assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
+  // Number of brackets is determined by subsafeAddresses.length
   const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
   const highestLimit = targetPrice * (1 - priceRangePercentage / 100)
   const stepSize = (highestLimit - lowestLimit) / subSafeAddresses.length
 
   let safeIndex = 0
+  const transactions = []
   for (let lowerLimit=lowestLimit; lowerLimit < highestLimit; lowerLimit+=stepSize) {
-    const userAddress = subSafeAddresses[safeIndex]
-    
+    const traderAddress = subSafeAddresses[safeIndex]
     const upperLimit = lowerLimit + stepSize
     
     // Sell targetToken for stableToken at targetTokenPrice = upperLimit
@@ -82,63 +89,100 @@ const buildOrderTransactionData = async function(
     const sellPrice = formatAmount(upperLimit, targetToken)
     const upperSellAmount = maxU32.div(sellPrice)
     const upperBuyAmount = maxU32
-    console.log(`Account ${userAddress}: Sell ${targetToken.symbol} for ${stableToken.symbol} at ${sellPrice}`)
+    console.log(`Account ${traderAddress}: Sell ${targetToken.symbol} for ${stableToken.symbol} at ${sellPrice}`)
     
-
-
-    // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
     // Buy ETH at 101 for DAI (unlimited)
+    // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
     // Sell 101 DAI for 1 ETH
     // Sell maxU32 DAI for x ETH
     // x = maxU32 / 101
     const buyPrice = formatAmount(lowerLimit, targetToken)
     const lowerSellAmount = maxU32
     const lowerBuyAmount = maxU32.div(buyPrice)
-    console.log(`Account ${userAddress}: Buy ${targetToken.symbol} with ${stableToken.symbol} at ${buyPrice}`)
+    console.log(`Account ${traderAddress}: Buy ${targetToken.symbol} with ${stableToken.symbol} at ${buyPrice}`)
     
+    const buyTokens = [targetTokenId, stableTokenId]
+    const sellTokens = [stableTokenId, targetTokenId]
+    const validFroms = [batch_index + validFrom, batch_index + validFrom]
+    const validTos = [expiry, expiry]
+    const buyAmounts = [lowerBuyAmount, upperBuyAmount]
+    const sellAmounts = [lowerSellAmount, upperSellAmount]
+
+    // TODO - should this have a from?
+    const orderData = await exchange.contract.methods.placeValidFromOrders(
+      buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts
+    ).encodeABI()
+    const multiSendData = await encodeMultiSend(multiSend, [
+      { operation: CALL, to: exchange.address, value: 0, data: orderData },
+    ])
+
+    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwnerAddress, multiSend.address, 0, multiSendData, 1)
+    transactions.push({
+      operation: CALL,
+      to: traderAddress,
+      value: 0,
+      data: execData,
+    })
     safeIndex += 1
   }
-
+  const finalData = await encodeMultiSend(multiSend, transactions)
+  console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
 }
 
-// const transferApproveDeposit = async function(fleetOwner, subSafes, depositData) {
-//   const exchange = await BatchExchange.deployed()
-//   const tokenData = await fetchTokenInfo(exchange, tokenIds)
+// const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
+// const depositExample = [
+//   { amount: 100, tokenAddress: ADDRESS_0, userAddress: 0 },
+//   { amount: 100, tokenAddress: ADDRESS_0, userAddress: 1 },
+// ]
 
-//   const transactions = []
-//   for (let index = 0; index < subSafes.length; index++) {
-//     const slaveSafe = subSafes[index]
-//     const tokenAmount = index + 2
-//     // Get data to move funds from master to slave
-//     const transferData = await testToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
-//     transactions.push({
-//       operation: CALL,
-//       to: testToken.address,
-//       value: 0,
-//       data: transferData,
-//     })
-//     // Get data to approve funds from slave to exchange
-//     const approveData = await testToken.contract.methods.approve(exchange.address, tokenAmount).encodeABI()
-//     // Get data to deposit funds from slave to exchange
-//     const depositData = await exchange.contract.methods.deposit(testToken.address, tokenAmount).encodeABI()
-//     // Get data for approve and deposit multisend on slave
-//     const multiSendData = await encodeMultiSend(multiSend, [
-//       { operation: CALL, to: testToken.address, value: 0, data: approveData },
-//       { operation: CALL, to: exchange.address, value: 0, data: depositData },
-//     ])
-//     // Get data to execute approve/deposit multisend via slave
-//     const execData = await execTransactionData(gnosisSafeMasterCopy, masterSafe.address, multiSend.address, 0, multiSendData, 1)
-//     transactions.push({
-//       operation: CALL,
-//       to: slaveSafe,
-//       value: 0,
-//       data: execData,
-//     })
-//   }
-//   // Get data to execute all fund/approve/deposit transactions at once
-//   const finalData = await encodeMultiSend(multiSend, transactions)
-// }
+const transferApproveDeposit = async function(fleetOwner, depositList) {
+  const exchange = await BatchExchange.deployed()
+  const multiSend = MultiSend.deployed()
+  const gnosisSafeMasterCopy = GnosisSafe.deployed()
+  // const tokenData = await fetchTokenInfo(exchange, tokenIds)
+
+  const transactions = []
+  // TODO - since depositTokens are likely all the same. Could fetch them once.
+  for (const deposit of depositList) {
+    const slaveSafe = await GnosisSafe.at(deposit.userAddress)
+    assert(slaveSafe.owner === fleetOwner, "All depositors must be owned by master safe")
+    assert(await exchange.hasToken(deposit.tokenAddress, "Requested deposit token not listed on the exchange"))
+    
+    const depositToken = await ERC20.at(deposit.tokenAddress)
+
+    // Get data to move funds from master to slave
+    const transferData = await depositToken.contract.methods.transfer(slaveSafe, deposit.amount).encodeABI()
+    transactions.push({
+      operation: CALL,
+      to: depositToken.address,
+      value: 0,
+      data: transferData,
+    })
+    // Get data to approve funds from slave to exchange
+    const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
+    // Get data to deposit funds from slave to exchange
+    const depositData = await exchange.contract.methods.deposit(depositToken.address, deposit.amount).encodeABI()
+    // Get data for approve and deposit multisend on slave
+    const multiSendData = await encodeMultiSend(multiSend, [
+      { operation: CALL, to: depositToken.address, value: 0, data: approveData },
+      { operation: CALL, to: exchange.address, value: 0, data: depositData },
+    ])
+    // Get data to execute approve/deposit multisend via slave
+    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwner, multiSend.address, 0, multiSendData, 1)
+    transactions.push({
+      operation: CALL,
+      to: deposit.userAddress,
+      value: 0,
+      data: execData,
+    })
+  }
+  // Get data to execute all fund/approve/deposit transactions at once
+  const finalData = await encodeMultiSend(multiSend, transactions)
+  console.log(`Transaction Data for Transfer-Approve-Deposit: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+}
 
 module.exports = {
   deployFleetOfSafes,
+  buildOrderTransactionData,
+  transferApproveDeposit,
 }
