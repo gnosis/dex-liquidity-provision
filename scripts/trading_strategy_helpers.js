@@ -91,7 +91,7 @@ const fetchTokenInfo = async function(exchange, tokenIds) {
  * Deploys specified number singler-owner Gnosis Safes having specified ownership
  * @param {EthereumAddress} fleetOwner {@link EthereumAddress} of Gnosis Safe (Multi-Sig)
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
- * @return {string[]} list of Ethereum Addresses for the subsafes that were deployed
+ * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
 const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
   const proxyFactory = await ProxyFactory.deployed()
