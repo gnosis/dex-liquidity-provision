@@ -116,3 +116,8 @@ const withdrawData = async function (
     "withdraw"
   )
 }
+
+module.exports = {
+  requestWithdrawData,
+  withdrawData
+}
