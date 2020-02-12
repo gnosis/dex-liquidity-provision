@@ -21,7 +21,6 @@ contract("GnosisSafe", function(accounts) {
   let multiSend
 
   const CALL = 0
-  const DELEGATECALL = 1
 
   beforeEach(async function() {
     // Create lightwallet
