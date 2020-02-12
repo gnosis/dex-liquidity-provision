@@ -29,7 +29,7 @@ contract("GnosisSafe", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    multiSend = await MultiSend.new()
+    multiSend = await MultiSend.deployed()
     testToken = await MintableERC20.new()
 
     BatchExchange.setProvider(web3.currentProvider)
@@ -59,10 +59,9 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it.only("transfers tokens from fund account through trader accounts and into exchange", async () => {
+  it("transfers tokens from fund account through trader accounts and into exchange", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
-
     const depositAmount = 1000
     await testToken.mint(accounts[0], depositAmount * slaveSafes.length)
     await testToken.transfer(masterSafe.address, depositAmount * slaveSafes.length)
@@ -79,21 +78,17 @@ contract("GnosisSafe", function(accounts) {
     const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
     assert.equal(batchedTransactions.to, multiSend.address)
 
-    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1, "deposit for all slaves")
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1)
+    // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
     for (let index = 0; index < slaveSafes.length; index++) {
-      const slaveSafeAddress = slaveSafes[index]
-      console.log(
-        "Slave",
-        index,
-        "(",
-        slaveSafeAddress,
-        ") deposit:",
-        (await exchange.getBalance(slaveSafeAddress, testToken.address)).toNumber()
-      )
+      const slaveAddress = slaveSafes[index]
+      const slaveExchangeBalance = (await exchange.getBalance(slaveAddress, testToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmount)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
       // This should always output 0 as the slaves should never directly hold funds
-      console.log("Slave", index, "(", slaveSafeAddress, ") balance:", (await testToken.balanceOf(slaveSafeAddress)).toNumber())
+      assert.equal(slavePersonalTokenBalance, 0)
     }
   })
 })

@@ -33,14 +33,11 @@ function toETH(value) {
   return new BN(value * GWEI).mul(new BN(GWEI))
 }
 
-const execTransaction = async function(safe, lightWallet, to, value, data, operation, message) {
+const execTransaction = async function(safe, lightWallet, to, value, data, operation) {
   const nonce = await safe.nonce()
   const transactionHash = await safe.getTransactionHash(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, nonce)
   const sigs = utils.signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
-  utils.logGasUsage(
-    "execTransaction " + message,
-    await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
-  )
+  await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
 }
 
 const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, value, data, operation = 0) {
