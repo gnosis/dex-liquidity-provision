@@ -44,7 +44,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
     const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1)
     slaveSafes.push(newSafe.address)
   }
-
+  console.log("Safes deployed:", slaveSafes)
   return slaveSafes
 }
 
@@ -108,14 +108,13 @@ const buildOrderTransactionData = async function(
     const buyAmounts = [lowerBuyAmount, upperBuyAmount]
     const sellAmounts = [lowerSellAmount, upperSellAmount]
 
-    // TODO - should this have a from?
     const orderData = await exchange.contract.methods.placeValidFromOrders(
       buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts
     ).encodeABI()
     const multiSendData = await encodeMultiSend(multiSend, [
       { operation: CALL, to: exchange.address, value: 0, data: orderData },
     ])
-
+    
     const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwnerAddress, multiSend.address, 0, multiSendData, 1)
     transactions.push({
       operation: CALL,
@@ -139,7 +138,6 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
   const exchange = await BatchExchange.deployed()
   const multiSend = MultiSend.deployed()
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
-  // const tokenData = await fetchTokenInfo(exchange, tokenIds)
 
   const transactions = []
   // TODO - since depositTokens are likely all the same. Could fetch them once.
