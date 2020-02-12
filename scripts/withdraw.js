@@ -15,9 +15,9 @@ const CALL = 0
 /*
   input:
   1. master Safe
-  2. trader addresses you want to withdraw/deposit from
-  3. for each trader address, the list of tokens to withdraw
-  4. the name of the function that is to be executed (can be "requestWithdraw", "withdraw", "deposit")
+  2. a description of the withdraw operations to perform with the format
+    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
+  3. the name of the function that is to be executed (can be "requestWithdraw", "withdraw", "deposit")
 
   output: data of the multisend transaction that has to be sent from the master address to either request
   the withdrawal of or to withdraw the desired funds
@@ -26,8 +26,7 @@ const CALL = 0
 */
 const genericFundMovementData = async function (
   masterAddress,
-  traderAddresses,
-  tokenAddressesList,
+  withdrawals,
   functionName
 ) {
   const exchange = await BatchExchange.deployed()
@@ -35,14 +34,12 @@ const genericFundMovementData = async function (
   const gnosisSafeMasterCopy = await GnosisSafe.new()
   const masterTransactions = []
 
-  for (let index = 0; index < traderAddresses.length; index++) {
-    const traderAddress = traderAddresses[index]
-    const tokenAddresses = tokenAddressesList[index]
+  for (const withdraw of withdrawals) {
     const traderTransactions = []
 
     // create requestWithdraw transactions for each token
-    for (let tokenIndex = 0; tokenIndex <= tokenAddresses.length; tokenIndex++) {
-      const requestWithdrawData = await exchange.contract.methods[functionName](tokenAddresses[tokenIndex], MAXUINT).encodeABI()
+    for (const tokenAddress of withdraw.tokenAddresses) {
+      const requestWithdrawData = await exchange.contract.methods[functionName](tokenAddress, MAXUINT).encodeABI()
       traderTransactions.push({
         operation: CALL,
         to: exchange.address,
@@ -56,7 +53,7 @@ const genericFundMovementData = async function (
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
     masterTransactions.push({
       operation: CALL,
-      to: traderAddress,
+      to: withdraw.traderAddress,
       value: 0,
       data: execData,
     })
@@ -68,8 +65,8 @@ const genericFundMovementData = async function (
 /*
   input:
   1. master Safe
-  2. trader addresses you want to withdraw from
-  3. for each trader address, the list of tokens to withdraw
+  2. a description of the withdraw operations to perform with the format
+    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
 
   output: data of the multisend transaction that has to be sent from the master address to request
   the withdrawal of, for each trader, the full token balance for all tokens included as input
@@ -78,13 +75,11 @@ const genericFundMovementData = async function (
 */
 const requestWithdrawData = async function (
   masterAddress,
-  traderAddresses,
-  tokenAddressesList
+  withdrawals
 ) {
   return await genericFundMovementData(
     masterAddress,
-    traderAddresses,
-    tokenAddressesList,
+    withdrawals,
     "requestWithdraw"
   )
 }
@@ -92,8 +87,8 @@ const requestWithdrawData = async function (
 /*
   input:
   1. master Safe
-  2. trader addresses you want to withdraw from
-  3. for each trader address, the list of tokens to withdraw
+  2. a description of the withdraw operations to perform with the format
+    [{traderAddress: "0x0...0", tokenAddresses: ["0x...", "0x...", ...]}, ...] 
 
   output: data of the multisend transaction that has to be sent from the master address to claim the pending
   withdrawal of, for each trader, the full token balance for all tokens included as input
@@ -106,13 +101,11 @@ const requestWithdrawData = async function (
 */
 const withdrawData = async function (
   masterAddress,
-  traderAddresses,
-  tokenAddressesList
+  withdrawals
 ) {
   return await genericFundMovementData(
     masterAddress,
-    traderAddresses,
-    tokenAddressesList,
+    withdrawals,
     "withdraw"
   )
 }
