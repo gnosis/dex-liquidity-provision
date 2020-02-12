@@ -13,18 +13,41 @@ const { deploySafe, encodeMultiSend, execTransactionData } = require("../test/ut
 const CALL = 0
 const maxU32 = 2 ** 32 - 1
 
+/**
+ * @typedef TokenObject
+ * @type {object}
+ * @property {integer} id integer denoting the id of the token on BatchExchange
+ * @property {string} address Hex string denoting the ethereum address of token
+ * @property {string} symbol short, usually abbreviated, token name
+ * @property {integer} decimals number of decmial places token uses for a Unit
+ */
+
+// TODO - make type def for EthereumAddress?
+// TODO - make type def for SmartContract?
+
+
 const formatAmount = function(amount, token) {
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
 
-const fetchTokenInfo = async function(contract, tokenIds) {
+
+
+/**
+ * Queries EVM for ERC20 token details by address
+ * and returns a list of detailed token information.
+ * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
+ * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
+ * @return {TokenObject[]} list of detailed/relevant token information
+ */
+const fetchTokenInfo = async function(exchange, tokenIds) {
   console.log("Fetching token data from EVM")
   const tokenObjects = {}
   for (const id of tokenIds) {
-    const tokenAddress = await contract.tokenIdToAddressMap(id)
+    const tokenAddress = await exchange.tokenIdToAddressMap(id)
     const tokenInstance = await ERC20.at(tokenAddress)
     const tokenInfo = {
       id: id,
+      address: tokenAddress,
       symbol: await tokenInstance.symbol.call(),
       decimals: (await tokenInstance.decimals.call()).toNumber(),
     }
@@ -34,6 +57,12 @@ const fetchTokenInfo = async function(contract, tokenIds) {
   return tokenObjects
 }
 
+/**
+ * Deploys specified number singler-owner Gnosis Safes having specified ownership
+ * @param {string} fleetOwner Ethereum address of Gnosis Safe (Multi-Sig)
+ * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
+ * @return {string[]} list of Ethereum Addresses for the subsafes that were deployed
+ */
 const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
   const proxyFactory = await ProxyFactory.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
