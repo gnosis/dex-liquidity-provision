@@ -115,7 +115,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
     const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1)
     slaveSafes.push(newSafe.address)
   }
-  console.log("Safes deployed:", slaveSafes)
+  // console.log("Safes deployed:", slaveSafes)
   return slaveSafes
 }
 
