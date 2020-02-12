@@ -14,23 +14,53 @@ const CALL = 0
 const maxU32 = 2 ** 32 - 1
 
 /**
+ * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
+ * concatenated with the rightmost 20 bytes of the Keccak-256 hash (big endian) of the ECDSA public key
+ * (cf. https://en.wikipedia.org/wiki/Ethereum#Addresses)
+ * @typedef EthereumAddress
+ */
+
+/**
+ * Smart contracts are high-level programming abstractions that are compiled down
+ * to EVM bytecode and deployed to the Ethereum blockchain for execution.
+ * This particular type is that of a JS object representing the Smart contract ABI.
+ * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
+ * @typedef SmartContract
+ */
+
+/**
  * @typedef TokenObject
+ *  * Example:
+ * {
+ *   id: 0,
+ *   address: 0x0000000000000000000000000000000000000000,
+ *   symbol: "OWL",
+ *   decimals: 18,
+ * }
  * @type {object}
  * @property {integer} id integer denoting the id of the token on BatchExchange
- * @property {string} address Hex string denoting the ethereum address of token
+ * @property {EthereumAddress} address Hex string denoting the ethereum address of token
  * @property {string} symbol short, usually abbreviated, token name
  * @property {integer} decimals number of decmial places token uses for a Unit
  */
 
-// TODO - make type def for EthereumAddress?
-// TODO - make type def for SmartContract?
-
+/**
+ * Example:
+ * {
+ *   amount: 100,
+ *   tokenAddress: 0x0000000000000000000000000000000000000000,
+ *   userAddress: 0x0000000000000000000000000000000000000001
+ * }
+ * @typedef Deposit
+ * @type {object}
+ * @property {integer} amount integer denoting amount to be deposited
+ * @property {EthereumAddress} tokenAddress {@link EthereumAddress} of token to be deposited
+ * @property {EthereumAddress} userAddress address of user depositing
+ */
 
 const formatAmount = function(amount, token) {
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
-
-
 
 /**
  * Queries EVM for ERC20 token details by address
@@ -59,7 +89,7 @@ const fetchTokenInfo = async function(exchange, tokenIds) {
 
 /**
  * Deploys specified number singler-owner Gnosis Safes having specified ownership
- * @param {string} fleetOwner Ethereum address of Gnosis Safe (Multi-Sig)
+ * @param {EthereumAddress} fleetOwner {@link EthereumAddress} of Gnosis Safe (Multi-Sig)
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {string[]} list of Ethereum Addresses for the subsafes that were deployed
  */
@@ -77,15 +107,28 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
   return slaveSafes
 }
 
+/**
+ * Batches together a collection of order placements on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {string} fleetOwnerAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {string[]} subSafeAddresses List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
+ * @param {integer} targetTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
+ * @param {integer} stableTokenId ID of "Stable Token" for which trade with target token (i.e. DAI)
+ * @param {number} targetPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
+ * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
+ * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
+ * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
+ * @return {string} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ */
 const buildOrderTransactionData = async function(
   fleetOwnerAddress,
   subSafeAddresses,
   targetTokenId,
   stableTokenId,
   targetPrice,
-  priceRangePercentage=20,
-  validFrom=3,
-  expiry=maxU32
+  priceRangePercentage = 20,
+  validFrom = 3,
+  expiry = maxU32
 ) {
   const exchange = await BatchExchange.deployed()
   const multiSend = MultiSend.deployed()
@@ -107,19 +150,19 @@ const buildOrderTransactionData = async function(
 
   let safeIndex = 0
   const transactions = []
-  for (let lowerLimit=lowestLimit; lowerLimit < highestLimit; lowerLimit+=stepSize) {
+  for (let lowerLimit = lowestLimit; lowerLimit < highestLimit; lowerLimit += stepSize) {
     const traderAddress = subSafeAddresses[safeIndex]
     const upperLimit = lowerLimit + stepSize
-    
+
     // Sell targetToken for stableToken at targetTokenPrice = upperLimit
     // Sell 1 ETH at for 102 DAI (unlimited)
-    // Sell x ETH for maxU32 DAI 
+    // Sell x ETH for maxU32 DAI
     // x = maxU32 / 102
     const sellPrice = formatAmount(upperLimit, targetToken)
     const upperSellAmount = maxU32.div(sellPrice)
     const upperBuyAmount = maxU32
     console.log(`Account ${traderAddress}: Sell ${targetToken.symbol} for ${stableToken.symbol} at ${sellPrice}`)
-    
+
     // Buy ETH at 101 for DAI (unlimited)
     // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
     // Sell 101 DAI for 1 ETH
@@ -129,7 +172,7 @@ const buildOrderTransactionData = async function(
     const lowerSellAmount = maxU32
     const lowerBuyAmount = maxU32.div(buyPrice)
     console.log(`Account ${traderAddress}: Buy ${targetToken.symbol} with ${stableToken.symbol} at ${buyPrice}`)
-    
+
     const buyTokens = [targetTokenId, stableTokenId]
     const sellTokens = [stableTokenId, targetTokenId]
     const validFroms = [batch_index + validFrom, batch_index + validFrom]
@@ -137,13 +180,13 @@ const buildOrderTransactionData = async function(
     const buyAmounts = [lowerBuyAmount, upperBuyAmount]
     const sellAmounts = [lowerSellAmount, upperSellAmount]
 
-    const orderData = await exchange.contract.methods.placeValidFromOrders(
-      buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts
-    ).encodeABI()
+    const orderData = await exchange.contract.methods
+      .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
+      .encodeABI()
     const multiSendData = await encodeMultiSend(multiSend, [
       { operation: CALL, to: exchange.address, value: 0, data: orderData },
     ])
-    
+
     const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwnerAddress, multiSend.address, 0, multiSendData, 1)
     transactions.push({
       operation: CALL,
@@ -157,12 +200,14 @@ const buildOrderTransactionData = async function(
   console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
 }
 
-// const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
-// const depositExample = [
-//   { amount: 100, tokenAddress: ADDRESS_0, userAddress: 0 },
-//   { amount: 100, tokenAddress: ADDRESS_0, userAddress: 1 },
-// ]
-
+/**
+ * Batches together a collection of transfer-related transaction data.
+ * Particularily, the resulting transaction data is that of transfering all sufficient funds from fleetOwner
+ * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe.
+ * @param {string} fleetOwner Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
+ * @return {string} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ */
 const transferApproveDeposit = async function(fleetOwner, depositList) {
   const exchange = await BatchExchange.deployed()
   const multiSend = MultiSend.deployed()
@@ -174,7 +219,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
     const slaveSafe = await GnosisSafe.at(deposit.userAddress)
     assert(slaveSafe.owner === fleetOwner, "All depositors must be owned by master safe")
     assert(await exchange.hasToken(deposit.tokenAddress, "Requested deposit token not listed on the exchange"))
-    
+
     const depositToken = await ERC20.at(deposit.tokenAddress)
 
     // Get data to move funds from master to slave
