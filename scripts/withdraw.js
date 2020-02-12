@@ -39,6 +39,8 @@ const genericFundMovementData = async function (
   withdrawals,
   functionName
 ) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
   const multiSend = await MultiSend.new()
   const gnosisSafeMasterCopy = await GnosisSafe.new()
