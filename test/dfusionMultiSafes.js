@@ -9,7 +9,7 @@ const MultiSend = artifacts.require("./MultiSend.sol")
 
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
-const { deployFleetOfSafes, buildOrderTransactionData } = require("../scripts/trading_strategy_helpers")
+const { deployFleetOfSafes, buildOrderTransactionData, transferApproveDeposit } = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
@@ -59,58 +59,27 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("transfers tokens from fund account through trader accounts into exchange", async () => {
+  it.only("transfers tokens from fund account through trader accounts and into exchange", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    console.log("Master Safe", masterSafe.address)
-    const amount = 10000
-    await testToken.mint(accounts[0], amount)
-    await testToken.transfer(masterSafe.address, amount)
-    const slaveSafes = []
-    for (let i = 0; i < 2; i++) {
-      const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterSafe.address], 1)
-      slaveSafes.push(newSafe.address)
-    }
-    console.log("Slave Safes", slaveSafes)
-    const transactions = []
-    for (let index = 0; index < slaveSafes.length; index++) {
-      const slaveSafe = slaveSafes[index]
-      const tokenAmount = index + 2
-      // Get data to move funds from master to slave
-      const transferData = await testToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
-      transactions.push({
-        operation: CALL,
-        to: testToken.address,
-        value: 0,
-        data: transferData,
-      })
-      // Get data to approve funds from slave to exchange
-      const approveData = await testToken.contract.methods.approve(exchange.address, tokenAmount).encodeABI()
-      // Get data to deposit funds from slave to exchange
-      const depositData = await exchange.contract.methods.deposit(testToken.address, tokenAmount).encodeABI()
-      // Get data for approve and deposit multisend on slave
-      const multiSendData = await encodeMultiSend(multiSend, [
-        { operation: CALL, to: testToken.address, value: 0, data: approveData },
-        { operation: CALL, to: exchange.address, value: 0, data: depositData },
-      ])
-      // Get data to execute approve/deposit multisend via slave
-      const execData = await execTransactionData(
-        gnosisSafeMasterCopy,
-        masterSafe.address,
-        multiSend.address,
-        0,
-        multiSendData,
-        1
-      )
-      transactions.push({
-        operation: CALL,
-        to: slaveSafe,
-        value: 0,
-        data: execData,
-      })
-    }
-    // Get data to execute all fund/approve/deposit transactions at once
-    const finalData = await encodeMultiSend(multiSend, transactions)
-    await execTransaction(masterSafe, lw, multiSend.address, 0, finalData, 1, "deposit for all slaves")
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
+
+    const depositAmount = 1000
+    await testToken.mint(accounts[0], depositAmount * slaveSafes.length)
+    await testToken.transfer(masterSafe.address, depositAmount * slaveSafes.length)
+    // Note that we are have NOT registered the tokens on the exchange but can deposit them nontheless.
+
+    const deposits = slaveSafes.map(slaveAddress => (
+      {
+        amount: depositAmount,
+        tokenAddress: testToken.address,
+        userAddress: slaveAddress,
+      }
+    ))
+    
+    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
+    assert.equal(batchedTransactions.to, multiSend.address)
+
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1, "deposit for all slaves")
     await waitForNSeconds(301)
 
     for (let index = 0; index < slaveSafes.length; index++) {
@@ -121,10 +90,10 @@ contract("GnosisSafe", function(accounts) {
         "(",
         slaveSafeAddress,
         ") deposit:",
-        await exchange.getBalance(slaveSafeAddress, testToken.address)
+        (await exchange.getBalance(slaveSafeAddress, testToken.address)).toNumber()
       )
       // This should always output 0 as the slaves should never directly hold funds
-      console.log("Slave", index, "(", slaveSafeAddress, ") balance:", await testToken.balanceOf(slaveSafeAddress))
+      console.log("Slave", index, "(", slaveSafeAddress, ") balance:", (await testToken.balanceOf(slaveSafeAddress)).toNumber())
     }
   })
 })

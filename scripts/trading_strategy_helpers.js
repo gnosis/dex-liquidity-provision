@@ -58,6 +58,18 @@ const maxU32 = 2 ** 32 - 1
  * @property {EthereumAddress} userAddress address of user depositing
  */
 
+/**
+ * Example:
+ * {
+ *   to: 0xAE9e5E0f8c28264ef9808D9F10f28D9DaE09f089,
+ *   data: 0x8d80ff0a...00808d9f10f
+ * }
+ * @typedef BatchedTransactionData
+ * @type {object}
+ * @property {EthereumAddress} to EthereumAddress of a MultiSend contract to be sent to
+ * @property {string} data Hex string representing encoded batched transaction data
+ */
+
 const formatAmount = function(amount, token) {
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
@@ -103,7 +115,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
     const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1)
     slaveSafes.push(newSafe.address)
   }
-  // console.log("Safes deployed:", slaveSafes)
+  console.log("Safes deployed:", slaveSafes)
   return slaveSafes
 }
 
@@ -118,7 +130,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
  * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
  * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
  * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
- * @return {string} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
 const buildOrderTransactionData = async function(
   fleetOwnerAddress,
@@ -197,7 +209,11 @@ const buildOrderTransactionData = async function(
     safeIndex += 1
   }
   const finalData = await encodeMultiSend(multiSend, transactions)
-  console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+  // console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+  return {
+    to: multiSend.address,
+    data: finalData,
+  }
 }
 
 /**
@@ -206,24 +222,26 @@ const buildOrderTransactionData = async function(
  * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe.
  * @param {string} fleetOwner Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
- * @return {string} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
 const transferApproveDeposit = async function(fleetOwner, depositList) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const multiSend = MultiSend.deployed()
-  const gnosisSafeMasterCopy = GnosisSafe.deployed()
+  const multiSend = await MultiSend.deployed()
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
   const transactions = []
-  // TODO - since depositTokens are likely all the same. Could fetch them once.
   for (const deposit of depositList) {
     const slaveSafe = await GnosisSafe.at(deposit.userAddress)
-    assert(slaveSafe.owner === fleetOwner, "All depositors must be owned by master safe")
-    assert(await exchange.hasToken(deposit.tokenAddress, "Requested deposit token not listed on the exchange"))
+    const slaveOwners = await slaveSafe.getOwners()
+    assert.equal(slaveOwners[0], fleetOwner.address, "All depositors must be owned by master safe")
+    // No need to assert exchange has token since deposits and withdraws are not limited to registered tokens.
+    // assert(await exchange.hasToken(deposit.tokenAddress), "Requested deposit token not listed on the exchange")
 
     const depositToken = await ERC20.at(deposit.tokenAddress)
-
     // Get data to move funds from master to slave
-    const transferData = await depositToken.contract.methods.transfer(slaveSafe, deposit.amount).encodeABI()
+    const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -233,14 +251,14 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
     // Get data to approve funds from slave to exchange
     const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
     // Get data to deposit funds from slave to exchange
-    const depositData = await exchange.contract.methods.deposit(depositToken.address, deposit.amount).encodeABI()
+    const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
     // Get data for approve and deposit multisend on slave
     const multiSendData = await encodeMultiSend(multiSend, [
-      { operation: CALL, to: depositToken.address, value: 0, data: approveData },
+      { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
     ])
     // Get data to execute approve/deposit multisend via slave
-    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwner, multiSend.address, 0, multiSendData, 1)
+    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwner.address, multiSend.address, 0, multiSendData, 1)
     transactions.push({
       operation: CALL,
       to: deposit.userAddress,
@@ -250,7 +268,11 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
   }
   // Get data to execute all fund/approve/deposit transactions at once
   const finalData = await encodeMultiSend(multiSend, transactions)
-  console.log(`Transaction Data for Transfer-Approve-Deposit: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+  // console.log(`Transaction Data for Transfer-Approve-Deposit: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+  return {
+    to: multiSend.address,
+    data: finalData,
+  }
 }
 
 module.exports = {
