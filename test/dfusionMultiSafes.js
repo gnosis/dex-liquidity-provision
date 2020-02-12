@@ -6,6 +6,8 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
+
+const ERC20 = artifacts.require("ERC20Detailed")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
