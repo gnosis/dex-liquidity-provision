@@ -6,7 +6,7 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const MultiSend = artifacts.require("./MultiSend.sol")
 
-const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("../test/utils.js")
+const { encodeMultiSend, execTransactionData } = require("../test/utils.js")
 
 // TODO: move constants to util file
 const MAXUINT = (new BN(2)).pow(new BN(256)).sub(new BN(1))
