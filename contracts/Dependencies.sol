@@ -7,6 +7,7 @@ pragma solidity ^0.5.0;
 //  For other environments, only use compiled contracts from the NPM package.
 // Token Dependencies
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "@gnosis.pm/owl-token/contracts/TokenOWLProxy.sol";
 import "@gnosis.pm/owl-token/contracts/TokenOWL.sol";
 // Batch Exchange dependencies
