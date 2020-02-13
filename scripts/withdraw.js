@@ -47,10 +47,10 @@ const genericFundMovementData = async function (
   const masterTransactions = []
 
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
-  for (const withdraw of withdrawals) {
+  for (const withdrawal of withdrawals) {
     const traderTransactions = []
     // create transactions for the token
-    const transactionData = await exchange.contract.methods[functionName](withdraw.tokenAddress, MAXUINT.toString()).encodeABI()
+    const transactionData = await exchange.contract.methods[functionName](withdrawal.tokenAddress, MAXUINT.toString()).encodeABI()
     traderTransactions.push({
       operation: CALL,
       to: exchange.address,
@@ -65,7 +65,7 @@ const genericFundMovementData = async function (
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
     masterTransactions.push({
       operation: CALL,
-      to: withdraw.traderAddress,
+      to: withdrawal.traderAddress,
       value: 0,
       data: execData,
     })
