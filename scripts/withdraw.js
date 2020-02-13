@@ -42,23 +42,27 @@ const genericFundMovementData = async function (
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const multiSend = await MultiSend.new()
-  const gnosisSafeMasterCopy = await GnosisSafe.new()
+  const multiSend = await MultiSend.deployed()
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const masterTransactions = []
 
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
   for (const withdraw of withdrawals) {
+    const traderTransactions = []
     // create transactions for the token
-    const transactionData = await exchange.contract.methods[functionName](withdraw.tokenAddress, MAXUINT).encodeABI()
+    const transactionData = await exchange.contract.methods[functionName](withdraw.tokenAddress, MAXUINT.toString()).encodeABI()
+    traderTransactions.push({
+      operation: CALL,
+      to: exchange.address,
+      value: 0,
+      data: transactionData,
+    })
 
-    // Get data to execute transaction from fund account via trader. Sent transaction is:
-    // transaction = {
-    //   operation: CALL,
-    //   to: exchange.address,
-    //   value: 0,
-    //   data: transactionData,
-    // }
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, transactionData, 1)
+    // merge trader transactions into single multisend transaction
+    // TODO: there is only one transaction, it's not needed to use multisend
+    const traderMultisendData = await encodeMultiSend(multiSend, traderTransactions)
+    // Get data to execute multisend transaction from fund account via trader
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
     masterTransactions.push({
       operation: CALL,
       to: withdraw.traderAddress,
