@@ -3,14 +3,14 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const TokenOWL = artifacts.require("TokenOWL")
 
-const GnosisSafe = artifacts.require("./GnosisSafe.sol")
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
-const MultiSend = artifacts.require("./MultiSend.sol")
+const GnosisSafe = artifacts.require("GnosisSafe.sol")
+const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
+const MultiSend = artifacts.require("MultiSend.sol")
 
-const MintableERC20 = artifacts.require("./ERC20Mintable")
+const TestToken = artifacts.require("DetailedMintableToken")
 
 const { deployFleetOfSafes, buildOrderTransactionData, transferApproveDeposit } = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
+const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -30,19 +30,22 @@ contract("GnosisSafe", function(accounts) {
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
     multiSend = await MultiSend.deployed()
-    testToken = await MintableERC20.new()
+    testToken = await TestToken.new(18)
 
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
   })
 
-  it("Adds tokens to the exchange", async () => {
+  async function prepareTokenRegistration(account) {
     const owlToken = await TokenOWL.at(await exchange.feeToken())
-    await owlToken.setMinter(accounts[0])
-    await owlToken.mintOWL(accounts[0], toETH(10))
+    await owlToken.setMinter(account)
+    await owlToken.mintOWL(account, toETH(10))
     await owlToken.approve(exchange.address, toETH(10))
+  }
 
+  it("Adds tokens to the exchange", async () => {
+    await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
     assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
   })
@@ -67,14 +70,12 @@ contract("GnosisSafe", function(accounts) {
     await testToken.transfer(masterSafe.address, depositAmount * slaveSafes.length)
     // Note that we are have NOT registered the tokens on the exchange but can deposit them nontheless.
 
-    const deposits = slaveSafes.map(slaveAddress => (
-      {
-        amount: depositAmount,
-        tokenAddress: testToken.address,
-        userAddress: slaveAddress,
-      }
-    ))
-    
+    const deposits = slaveSafes.map(slaveAddress => ({
+      amount: depositAmount,
+      tokenAddress: testToken.address,
+      userAddress: slaveAddress,
+    }))
+
     const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
     assert.equal(batchedTransactions.to, multiSend.address)
 
@@ -90,5 +91,21 @@ contract("GnosisSafe", function(accounts) {
       // This should always output 0 as the slaves should never directly hold funds
       assert.equal(slavePersonalTokenBalance, 0)
     }
+  })
+
+  it.only("Places bracket orders on behalf of a fleet of safes", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    // Number of brackets is determined by fleet size
+    const fleet = await deployFleetOfSafes(masterSafe.address, 20)
+    const targetToken = 0 // ETH
+    const stableToken = 1 // DAI
+    const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
+
+    // add "stableToken" to exchange
+    await prepareTokenRegistration(accounts[0])
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+
+    const transactionData = await buildOrderTransactionData(masterSafe.address, fleet, targetToken, stableToken, targetPrice)
+    console.log(transactionData.data)
   })
 })

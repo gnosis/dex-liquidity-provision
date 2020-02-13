@@ -53,7 +53,8 @@ const argv = require("yargs")
   })
   .option("numBrackets", {
     type: "int",
-    describe: "Number of, equally spaced, brackets (buy-sell orders) to be placed above and below the target price. If odd, extra bracket is placed above.",
+    describe:
+      "Number of, equally spaced, brackets (buy-sell orders) to be placed above and below the target price. If odd, extra bracket is placed above.",
     default: 19,
   })
   .option("validFrom", {
@@ -66,7 +67,7 @@ const argv = require("yargs")
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
   })
-  .demand(["targetToken", "stableToken", "targetPrice", "priceRange", ])
+  .demand(["targetToken", "stableToken", "targetPrice", "priceRange"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js Example usage \n   npx truffle exec scripts/stablex/place_spread_orders.js --tokens=2,3,4 --accountId 0 --spread 0.3 --validFrom 5"
   )
@@ -78,7 +79,7 @@ module.exports = async callback => {
     // const batch_index = (await instance.getCurrentBatchId.call()).toNumber()
     // const targetTokenData = await fetchTokenInfo(exchange, argv.targetToken)
     // const stableTokenData = await fetchTokenInfo(exchange, argv.stableToken)
-    
+
     console.log("Preparing Order Data")
 
     // const validFroms = Array(buyTokens.length).fill(batch_index + argv.validFrom)
@@ -88,7 +89,6 @@ module.exports = async callback => {
     if (answer == "y" || answer.toLowerCase() == "yes") {
       // Deploy the safes
       // Place the orders
-      
       // Log the resulting transaction hash
       // Display option to cancel.
     }

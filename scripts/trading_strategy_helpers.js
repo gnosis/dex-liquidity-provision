@@ -12,6 +12,7 @@ const { deploySafe, encodeMultiSend, execTransactionData } = require("../test/ut
 
 const CALL = 0
 const maxU32 = 2 ** 32 - 1
+const max128 = new BN(2).pow(new BN(128)).subn(1)
 
 /**
  * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
@@ -142,9 +143,12 @@ const buildOrderTransactionData = async function(
   validFrom = 3,
   expiry = maxU32
 ) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const multiSend = MultiSend.deployed()
-  const gnosisSafeMasterCopy = GnosisSafe.deployed()
+
+  const multiSend = await MultiSend.deployed()
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
   const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId])
@@ -157,34 +161,39 @@ const buildOrderTransactionData = async function(
 
   // Number of brackets is determined by subsafeAddresses.length
   const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
-  const highestLimit = targetPrice * (1 - priceRangePercentage / 100)
+  const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
   const stepSize = (highestLimit - lowestLimit) / subSafeAddresses.length
 
   let safeIndex = 0
   const transactions = []
-  for (let lowerLimit = lowestLimit; lowerLimit < highestLimit; lowerLimit += stepSize) {
+  console.log(
+    `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken} per ${targetToken.symbol}`
+  )
+  for (let lowerLimit = lowestLimit; lowerLimit < highestLimit - stepSize; lowerLimit += stepSize) {
     const traderAddress = subSafeAddresses[safeIndex]
     const upperLimit = lowerLimit + stepSize
 
     // Sell targetToken for stableToken at targetTokenPrice = upperLimit
     // Sell 1 ETH at for 102 DAI (unlimited)
-    // Sell x ETH for maxU32 DAI
-    // x = maxU32 / 102
+    // Sell x ETH for max256 DAI
+    // x = max256 / 102
     const sellPrice = formatAmount(upperLimit, targetToken)
-    const upperSellAmount = maxU32.div(sellPrice)
-    const upperBuyAmount = maxU32
-    console.log(`Account ${traderAddress}: Sell ${targetToken.symbol} for ${stableToken.symbol} at ${sellPrice}`)
+    const upperSellAmount = max128.div(sellPrice).toString()
+    const upperBuyAmount = max128.toString()
 
     // Buy ETH at 101 for DAI (unlimited)
     // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
     // Sell 101 DAI for 1 ETH
-    // Sell maxU32 DAI for x ETH
-    // x = maxU32 / 101
+    // Sell max256 DAI for x ETH
+    // x = max256 / 101
     const buyPrice = formatAmount(lowerLimit, targetToken)
-    const lowerSellAmount = maxU32
-    const lowerBuyAmount = maxU32.div(buyPrice)
-    console.log(`Account ${traderAddress}: Buy ${targetToken.symbol} with ${stableToken.symbol} at ${buyPrice}`)
+    const lowerSellAmount = max128.toString()
+    const lowerBuyAmount = max128.div(buyPrice).toString()
 
+    console.log(
+      `Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`
+    )
+    console.log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
     const buyTokens = [targetTokenId, stableTokenId]
     const sellTokens = [stableTokenId, targetTokenId]
     const validFroms = [batch_index + validFrom, batch_index + validFrom]
@@ -208,6 +217,8 @@ const buildOrderTransactionData = async function(
     })
     safeIndex += 1
   }
+  console.log("Multisend", multiSend.address)
+  console.log("Transactions", transactions.length)
   const finalData = await encodeMultiSend(multiSend, transactions)
   // console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
   return {
