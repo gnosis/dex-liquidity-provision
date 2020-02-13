@@ -50,7 +50,18 @@ const genericFundMovementData = async function (
   for (const withdrawal of withdrawals) {
     const traderTransactions = []
     // create transactions for the token
-    const transactionData = await exchange.contract.methods[functionName](withdrawal.tokenAddress, MAXUINT.toString()).encodeABI()
+    // create transactions for the token
+    let transactionData
+    switch (functionName) {
+    case "requestWithdraw":
+      transactionData = await exchange.contract.methods["requestWithdraw"](withdrawal.tokenAddress, MAXUINT.toString()).encodeABI()
+      break;
+    case "withdraw":
+      transactionData = await exchange.contract.methods["withdraw"](withdrawal.traderAddress, withdrawal.tokenAddress).encodeABI()
+      break;
+    default:
+      assert(false, "Function " + functionName + "is not implemented")
+    }
     traderTransactions.push({
       operation: CALL,
       to: exchange.address,
@@ -92,7 +103,6 @@ const requestWithdrawData = async function (
     "requestWithdraw"
   )
 }
-
 
 /**
  * Batches together a collection of "withdraw" calls on BatchExchange
