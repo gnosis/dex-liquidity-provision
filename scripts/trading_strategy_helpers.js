@@ -8,7 +8,7 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
 const BN = require("bn.js")
-const { deploySafe, encodeMultiSend, execTransactionData } = require("../test/utils")
+const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
 
 const CALL = 0
 const maxU32 = 2 ** 32 - 1
@@ -169,7 +169,7 @@ const buildOrderTransactionData = async function(
   console.log(
     `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken} per ${targetToken.symbol}`
   )
-  for (let lowerLimit = lowestLimit; lowerLimit < highestLimit - stepSize; lowerLimit += stepSize) {
+  for (let lowerLimit = lowestLimit; lowerLimit <= highestLimit - stepSize; lowerLimit += stepSize) {
     const traderAddress = subSafeAddresses[safeIndex]
     const upperLimit = lowerLimit + stepSize
 
@@ -178,7 +178,8 @@ const buildOrderTransactionData = async function(
     // Sell x ETH for max256 DAI
     // x = max256 / 102
     const sellPrice = formatAmount(upperLimit, targetToken)
-    const upperSellAmount = max128.div(sellPrice).toString()
+    // sellPrice = 102000000000000000000
+    const upperSellAmount = max128.div(sellPrice).mul(toETH(1)).toString()
     const upperBuyAmount = max128.toString()
 
     // Buy ETH at 101 for DAI (unlimited)
@@ -188,7 +189,7 @@ const buildOrderTransactionData = async function(
     // x = max256 / 101
     const buyPrice = formatAmount(lowerLimit, targetToken)
     const lowerSellAmount = max128.toString()
-    const lowerBuyAmount = max128.div(buyPrice).toString()
+    const lowerBuyAmount = max128.div(buyPrice).mul(toETH(1)).toString()
 
     console.log(
       `Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`
@@ -290,4 +291,6 @@ module.exports = {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
+  max128,
+  maxU32
 }

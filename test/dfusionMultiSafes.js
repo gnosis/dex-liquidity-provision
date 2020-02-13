@@ -9,8 +9,8 @@ const MultiSend = artifacts.require("MultiSend.sol")
 
 const TestToken = artifacts.require("DetailedMintableToken")
 
-const { deployFleetOfSafes, buildOrderTransactionData, transferApproveDeposit } = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
+const { deployFleetOfSafes, buildOrderTransactionData, transferApproveDeposit, max128, maxU32 } = require("../scripts/trading_strategy_helpers")
+const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -83,8 +83,7 @@ contract("GnosisSafe", function(accounts) {
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
-    for (let index = 0; index < slaveSafes.length; index++) {
-      const slaveAddress = slaveSafes[index]
+    for (const slaveAddress of slaveSafes) {
       const slaveExchangeBalance = (await exchange.getBalance(slaveAddress, testToken.address)).toNumber()
       assert.equal(slaveExchangeBalance, depositAmount)
       const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
@@ -92,20 +91,31 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(slavePersonalTokenBalance, 0)
     }
   })
-
   it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     // Number of brackets is determined by fleet size
-    const fleet = await deployFleetOfSafes(masterSafe.address, 20)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 20)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
-    const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
-
+    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
+    const targetPrice = 100
     // add "stableToken" to exchange
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transactionData = await buildOrderTransactionData(masterSafe.address, fleet, targetToken, stableToken, targetPrice)
-    console.log(transactionData.data)
+    const transactionData = await buildOrderTransactionData(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice)
+    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, 1)
+
+    // Correctness assertions
+    for (const slaveAddress of slaveSafes) {
+      const auctionElements = decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      assert.equal(auctionElements.length, 2)
+      const [buyOrder, sellOrder] = auctionElements
+      assert(buyOrder.priceDenominator.eq(max128))
+      assert(sellOrder.priceNumerator.eq(max128))
+      // TODO - assert on the ratio of buy-sell prices.
+      assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
+      assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
+    }
   })
 })
