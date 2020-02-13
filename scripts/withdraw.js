@@ -148,7 +148,6 @@ const transferBackFundsData = async function (
     const traderTransactions = []
     const token = await ERC20.at(withdrawal.tokenAddress)
     const amount = await token.balanceOf(withdrawal.traderAddress)
-    console.log(amount.toString())
     // create transactions for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
     traderTransactions.push({
@@ -174,8 +173,41 @@ const transferBackFundsData = async function (
   return await encodeMultiSend(multiSend, masterTransactions)
 }
 
+
+/**
+ * Batches together a collection of transfers from each trader safe to the master safer
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+*/
+const withdrawAndTransferBackFundsData = async function (
+  masterAddress,
+  withdrawals
+) {
+  const multiSend = await MultiSend.deployed()
+  const masterTransactions = []
+  const dataWithdrawal = await withdrawData(masterAddress, withdrawals)
+  masterTransactions.push({
+    operation: CALL,
+    to: multiSend.address,
+    value: 0,
+    data: dataWithdrawal,
+  })
+
+  const dataTranferBack = await transferBackFundsData(masterAddress, withdrawals)
+  masterTransactions.push({
+    operation: CALL,
+    to: multiSend.address,
+    value: 0,
+    data: dataTranferBack,
+  })
+
+  return await encodeMultiSend(multiSend, masterTransactions)
+}
+
 module.exports = {
   requestWithdrawData,
   withdrawData,
-  transferBackFundsData
+  transferBackFundsData,
+  withdrawAndTransferBackFundsData
 }

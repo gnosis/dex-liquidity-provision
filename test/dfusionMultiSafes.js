@@ -11,7 +11,7 @@ const MintableERC20 = artifacts.require("./ERC20Mintable")
 
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
 
-const { requestWithdrawData, withdrawData, transferBackFundsData } = require("../scripts/withdraw.js")
+const { requestWithdrawData, withdrawData, transferBackFundsData, withdrawAndTransferBackFundsData } = require("../scripts/withdraw.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -204,38 +204,48 @@ contract("GnosisSafe", function(accounts) {
       withdrawals.push({tokenAddress: testToken.address, traderAddress: trader})
     }
 
-    console.log((await owlToken.balanceOf(exchange.address)).toString())
-    console.log((await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Before request withdrawal")
+    console.log("Balance owlToken master: ", (await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Balance owlToken exchange: ", (await owlToken.balanceOf(exchange.address)).toString())
+    for (const trader of slaveSafes) {
+      console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
+    }
 
     const dataRequestWithdrawal = await requestWithdrawData(masterSafe.address, withdrawals)
     await execTransaction(masterSafe, lw, multiSend.address, 0, dataRequestWithdrawal, 1, "request withdrawal for all slaves")
     await waitForNSeconds(3001)
 
+    console.log("Before withdraw")
+    console.log("Balance owlToken master: ", (await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Balance owlToken exchange: ", (await owlToken.balanceOf(exchange.address)).toString())
     for (const trader of slaveSafes) {
-      console.log("Exchange balance owlToken: ", (await exchange.getBalance(trader, owlToken.address)).toString())
+      console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
     }
-
-    console.log((await owlToken.balanceOf(exchange.address)).toString())
-    console.log((await owlToken.balanceOf(masterSafe.address)).toString())
 
     const dataWithdrawal = await withdrawData(masterSafe.address, withdrawals)
     await execTransaction(masterSafe, lw, multiSend.address, 0, dataWithdrawal, 1, "withdraw for all slaves")
-    await waitForNSeconds(3001)
 
-    //const transferBackFundsData
-
-    console.log("Balance owlToken master", (await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Before transfer back funds")
+    console.log("Balance owlToken master: ", (await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Balance owlToken exchange: ", (await owlToken.balanceOf(exchange.address)).toString())
     for (const trader of slaveSafes) {
-      console.log("Balance owl trader: ", (await owlToken.balanceOf(trader)).toString())
+      console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
     }
 
     const dataTranferBack = await transferBackFundsData(masterSafe.address, withdrawals)
     await execTransaction(masterSafe, lw, multiSend.address, 0, dataTranferBack, 1, "transfer funds to master")
-    await waitForNSeconds(3001)
+
+    /*
+    // this is a compact alternative that should merge the two previous transactions together, but it doesn't work.
+    const dataCombined = await withdrawAndTransferBackFundsData(masterSafe.address, withdrawals)
+    await execTransaction(masterSafe, lw, multiSend.address, 0, dataCombined, 1, "withdraw and transfer back for all slaves")
+    */
 
     console.log("Balance owlToken master: ", (await owlToken.balanceOf(masterSafe.address)).toString())
+    console.log("Balance owlToken exchange: ", (await owlToken.balanceOf(exchange.address)).toString())
     for (const trader of slaveSafes) {
       console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
     }
+
   })
 })
