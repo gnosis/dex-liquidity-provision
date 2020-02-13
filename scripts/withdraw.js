@@ -49,9 +49,7 @@ const genericFundMovementData = async function (
 
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
   for (const withdrawal of withdrawals) {
-    const traderTransactions = []
-    // create transactions for the token
-    // create transactions for the token
+    // create transaction for the token
     let transactionData
     switch (functionName) {
     case "requestWithdraw":
@@ -63,18 +61,9 @@ const genericFundMovementData = async function (
     default:
       assert(false, "Function " + functionName + "is not implemented")
     }
-    traderTransactions.push({
-      operation: CALL,
-      to: exchange.address,
-      value: 0,
-      data: transactionData,
-    })
 
-    // merge trader transactions into single multisend transaction
-    // TODO: there is only one transaction, it's not needed to use multisend
-    const traderMultisendData = await encodeMultiSend(multiSend, traderTransactions)
     // Get data to execute multisend transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, transactionData, 0)
     masterTransactions.push({
       operation: CALL,
       to: withdrawal.traderAddress,
@@ -145,23 +134,13 @@ const transferBackFundsData = async function (
 
   // TODO: enforce that there are no overlapping withdrawals
   for (const withdrawal of withdrawals) {
-    const traderTransactions = []
     const token = await ERC20.at(withdrawal.tokenAddress)
     const amount = await token.balanceOf(withdrawal.traderAddress)
-    // create transactions for the token
+    // create transaction for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
-    traderTransactions.push({
-      operation: CALL,
-      to: token.address,
-      value: 0,
-      data: transactionData,
-    })
 
-    // merge trader transactions into single multisend transaction
-    // TODO: there is only one transaction, it's not needed to use multisend
-    const traderMultisendData = await encodeMultiSend(multiSend, traderTransactions)
-    // Get data to execute multisend transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
+    // Get data to execute transaction from fund account via trader
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, token.address, 0, transactionData, 0)
     masterTransactions.push({
       operation: CALL,
       to: withdrawal.traderAddress,
