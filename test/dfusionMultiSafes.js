@@ -7,10 +7,11 @@ const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
 
-const ERC20 = artifacts.require("ERC20Detailed")
 const MintableERC20 = artifacts.require("./ERC20Mintable")
 
 const { waitForNSeconds, toETH, encodeMultiSend, execTransaction, execTransactionData, deploySafe } = require("./utils.js")
+
+const { requestWithdrawData, withdrawData, transferBackFundsData } = require("../scripts/withdraw.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -113,6 +114,128 @@ contract("GnosisSafe", function(accounts) {
       )
       // This should always output 0 as the slaves should never directly hold funds
       console.log("Slave", index, "(", slaveSafeAddress, ") balance:", await testToken.balanceOf(slaveSafeAddress))
+    }
+  })
+
+  it.only("Test withdrawals", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    const amount = 100000
+
+    const owlToken = await TokenOWL.at(await exchange.feeToken())
+    await owlToken.setMinter(accounts[0])
+    await owlToken.mintOWL(accounts[0], toETH(10+amount))
+    await owlToken.approve(exchange.address, toETH(10), { from: accounts[0] })
+    await owlToken.transfer(masterSafe.address, toETH(amount), { from: accounts[0] })
+
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+    assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
+    await testToken.mint(accounts[0], toETH(amount))
+    await testToken.transfer(masterSafe.address, toETH(amount))
+
+    /* Deploy and deposit fleet of safes. Should be replaced by scripts */
+    const slaveSafes = []
+    for (let i = 0; i < 2; i++) {
+      const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterSafe.address], 1)
+      slaveSafes.push(newSafe.address)
+    }
+    const transactions = []
+    for (let index = 0; index < slaveSafes.length; index++) {
+      const slaveSafe = slaveSafes[index]
+      const tokenAmount = toETH(10).toString()
+      // Get data to move funds from master to slave
+      const transferDataTestToken = await testToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
+      const transferDataOwlToken = await owlToken.contract.methods.transfer(slaveSafe, tokenAmount).encodeABI()
+      transactions.push({
+        operation: CALL,
+        to: testToken.address,
+        value: 0,
+        data: transferDataTestToken,
+      },
+      {
+        operation: CALL,
+        to: owlToken.address,
+        value: 0,
+        data: transferDataOwlToken,
+      })
+      // Get data to approve funds from slave to exchange
+      const approveDataTestToken = await testToken.contract.methods.approve(exchange.address, tokenAmount).encodeABI()
+      const approveDataOwlToken = await owlToken.contract.methods.approve(exchange.address, tokenAmount).encodeABI()
+      // Get data to deposit funds from slave to exchange
+      const depositDataTestToken = await exchange.contract.methods.deposit(testToken.address, tokenAmount).encodeABI()
+      const depositDataOwlToken = await exchange.contract.methods.deposit(owlToken.address, tokenAmount).encodeABI()
+      // Get data for approve and deposit multisend on slave
+      const multiSendData = await encodeMultiSend(multiSend, [
+        { operation: CALL, to: testToken.address, value: 0, data: approveDataTestToken },
+        { operation: CALL, to: exchange.address, value: 0, data: depositDataTestToken },
+        { operation: CALL, to: owlToken.address, value: 0, data: approveDataOwlToken },
+        { operation: CALL, to: exchange.address, value: 0, data: depositDataOwlToken },
+      ])
+      // Get data to execute approve/deposit multisend via slave
+      const execData = await execTransactionData(
+        gnosisSafeMasterCopy,
+        masterSafe.address,
+        multiSend.address,
+        0,
+        multiSendData,
+        1
+      )
+      transactions.push({
+        operation: CALL,
+        to: slaveSafe,
+        value: 0,
+        data: execData,
+      })
+    }
+    // Get data to execute all fund/approve/deposit transactions at once
+    const finalData = await encodeMultiSend(multiSend, transactions)
+    await execTransaction(masterSafe, lw, multiSend.address, 0, finalData, 1, "deposit for all slaves")
+    await waitForNSeconds(3001)
+    /* end part to be replaced */
+
+    console.log("Balance owlToken master", (await owlToken.balanceOf(masterSafe.address)).toString())
+    for (const trader of slaveSafes) {
+      console.log("Exchange balance trader owlToken: ", (await exchange.getBalance(trader, owlToken.address)).toString())
+    }
+
+    // build withdrawal lists
+    const withdrawals = []
+    for (const trader of slaveSafes) {
+      withdrawals.push({tokenAddress: owlToken.address, traderAddress: trader})
+      withdrawals.push({tokenAddress: testToken.address, traderAddress: trader})
+    }
+
+    console.log((await owlToken.balanceOf(exchange.address)).toString())
+    console.log((await owlToken.balanceOf(masterSafe.address)).toString())
+
+    const dataRequestWithdrawal = await requestWithdrawData(masterSafe.address, withdrawals)
+    await execTransaction(masterSafe, lw, multiSend.address, 0, dataRequestWithdrawal, 1, "request withdrawal for all slaves")
+    await waitForNSeconds(3001)
+
+    for (const trader of slaveSafes) {
+      console.log("Exchange balance owlToken: ", (await exchange.getBalance(trader, owlToken.address)).toString())
+    }
+
+    console.log((await owlToken.balanceOf(exchange.address)).toString())
+    console.log((await owlToken.balanceOf(masterSafe.address)).toString())
+
+    const dataWithdrawal = await withdrawData(masterSafe.address, withdrawals)
+    await execTransaction(masterSafe, lw, multiSend.address, 0, dataWithdrawal, 1, "withdraw for all slaves")
+    await waitForNSeconds(3001)
+
+    //const transferBackFundsData
+
+    console.log("Balance owlToken master", (await owlToken.balanceOf(masterSafe.address)).toString())
+    for (const trader of slaveSafes) {
+      console.log("Balance owl trader: ", (await owlToken.balanceOf(trader)).toString())
+    }
+
+    const dataTranferBack = await transferBackFundsData(masterSafe.address, withdrawals)
+    await execTransaction(masterSafe, lw, multiSend.address, 0, dataTranferBack, 1, "transfer funds to master")
+    await waitForNSeconds(3001)
+
+    console.log("Balance owlToken master: ", (await owlToken.balanceOf(masterSafe.address)).toString())
+    for (const trader of slaveSafes) {
+      console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
     }
   })
 })
