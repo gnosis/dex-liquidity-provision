@@ -93,7 +93,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it.only("Places bracket orders on behalf of a fleet of safes", async () => {
+  it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     // Number of brackets is determined by fleet size
     const fleet = await deployFleetOfSafes(masterSafe.address, 20)
