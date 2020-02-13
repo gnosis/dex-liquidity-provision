@@ -5,6 +5,7 @@ const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const MultiSend = artifacts.require("./MultiSend.sol")
+const ERC20 = artifacts.require("ERC20Detailed")
 
 const { encodeMultiSend, execTransactionData } = require("../test/utils.js")
 
@@ -125,7 +126,56 @@ const withdrawData = async function (
   )
 }
 
+
+/**
+ * Batches together a collection of transfers from each trader safe to the master safer
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+*/
+const transferBackFundsData = async function (
+  masterAddress,
+  withdrawals
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const multiSend = await MultiSend.deployed()
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+  const masterTransactions = []
+
+  // TODO: enforce that there are no overlapping withdrawals
+  for (const withdrawal of withdrawals) {
+    const traderTransactions = []
+    const token = await ERC20.at(withdrawal.tokenAddress)
+    const amount = await token.balanceOf(withdrawal.traderAddress)
+    console.log(amount.toString())
+    // create transactions for the token
+    const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
+    traderTransactions.push({
+      operation: CALL,
+      to: token.address,
+      value: 0,
+      data: transactionData,
+    })
+
+    // merge trader transactions into single multisend transaction
+    // TODO: there is only one transaction, it's not needed to use multisend
+    const traderMultisendData = await encodeMultiSend(multiSend, traderTransactions)
+    // Get data to execute multisend transaction from fund account via trader
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, multiSend.address, 0, traderMultisendData, 1)
+    masterTransactions.push({
+      operation: CALL,
+      to: withdrawal.traderAddress,
+      value: 0,
+      data: execData,
+    })
+  }
+  // Get data to execute all transactions at once
+  return await encodeMultiSend(multiSend, masterTransactions)
+}
+
 module.exports = {
   requestWithdrawData,
-  withdrawData
+  withdrawData,
+  transferBackFundsData
 }
