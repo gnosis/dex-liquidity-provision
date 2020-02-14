@@ -65,6 +65,38 @@ const getBundledTransaction = async function (
 }
 
 /**
+ * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
+ * TODO: we can probably merge this function with execTransactionData.
+ * @param {EthereumAddress} masterAddress Address of a controlled Safe
+ * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
+ * @param {Transaction} transaction The transaction to be executed by execTransaction
+ * @return {Transaction} Transaction calling execTransaction; should be executed by master
+*/
+const getExecTransactionTransaction = async function (
+  masterAddress,
+  traderAddress,
+  transaction
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+  const execData = await execTransactionData(
+    gnosisSafeMasterCopy,
+    masterAddress,
+    transaction.to,
+    transaction.value,
+    transaction.data,
+    transaction.operation)
+  execTransactionTransaction = {
+    operation: CALL,
+    to: traderAddress,
+    value: 0,
+    data: execData,
+  }
+  return execTransactionTransaction
+}
+
+/**
  * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
  * on behalf of a fleet of safes owned by a single "Master Safe"
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
@@ -81,7 +113,6 @@ const getGenericFundMovementTransaction = async function (
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const masterTransactions = []
 
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
@@ -99,14 +130,20 @@ const getGenericFundMovementTransaction = async function (
       assert(false, "Function " + functionName + "is not implemented")
     }
 
-    // Get data to execute multisend transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, transactionData, CALL)
-    masterTransactions.push({
+    // prepare trader transaction
+    const transactionToExecute = {
       operation: CALL,
-      to: withdrawal.traderAddress,
+      to: exchange.address,
       value: 0,
-      data: execData,
-    })
+      data: transactionData
+    }
+    // build transaction to execute previous transaction through master
+    const execTransactionTransaction = await getExecTransactionTransaction(
+      masterAddress,
+      withdrawal.traderAddress,
+      transactionToExecute
+    )
+    masterTransactions.push(execTransactionTransaction)
   }
   return getBundledTransaction(masterTransactions)
 }
@@ -162,9 +199,6 @@ const getTransferFundsToMasterTransaction = async function (
   masterAddress,
   withdrawals
 ) {
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const masterTransactions = []
 
   // TODO: enforce that there are no overlapping withdrawals
@@ -174,18 +208,23 @@ const getTransferFundsToMasterTransaction = async function (
     // create transaction for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
-    // Get data to execute transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, token.address, 0, transactionData, CALL)
-    masterTransactions.push({
+    // prepare trader transaction
+    const transactionToExecute = {
       operation: CALL,
-      to: withdrawal.traderAddress,
+      to: token.address,
       value: 0,
-      data: execData,
-    })
+      data: transactionData
+    }
+    // build transaction to execute previous transaction through master
+    const execTransactionTransaction = await getExecTransactionTransaction(
+      masterAddress,
+      withdrawal.traderAddress,
+      transactionToExecute
+    )
+    masterTransactions.push(execTransactionTransaction)
   }
   return await getBundledTransaction(masterTransactions)
 }
-
 
 /**
  * Batches together a collection of transfers from each trader safe to the master safer
