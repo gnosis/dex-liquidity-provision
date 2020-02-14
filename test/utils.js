@@ -1,7 +1,6 @@
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const BN = require("bn.js")
-const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
@@ -53,7 +52,9 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, valu
     .encodeABI()
 }
 
-const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
+const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold, artifacts) {
+  const GnosisSafe = artifacts.require("GnosisSafe.sol")
+
   const initData = await gnosisSafeMasterCopy.contract.methods
     .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
     .encodeABI()
@@ -67,7 +68,7 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
   )
 }
 
-const encodeMultiSend = async function(multiSend, txs) {
+const encodeMultiSend = async function(multiSend, txs, web3) {
   return await multiSend.contract.methods
     .multiSend(
       `0x${txs

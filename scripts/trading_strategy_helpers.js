@@ -1,12 +1,8 @@
-const GnosisSafe = artifacts.require("./GnosisSafe.sol")
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
-const MultiSend = artifacts.require("./MultiSend.sol")
-
-const ERC20 = artifacts.require("ERC20Detailed")
 
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
+const assert = require("assert")
 const BN = require("bn.js")
 const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
 
@@ -82,7 +78,9 @@ const formatAmount = function(amount, token) {
  * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
  * @return {TokenObject[]} list of detailed/relevant token information
  */
-const fetchTokenInfo = async function(exchange, tokenIds) {
+const fetchTokenInfo = async function(exchange, tokenIds, artifacts) {
+  const ERC20 = artifacts.require("ERC20Detailed")
+
   console.log("Fetching token data from EVM")
   const tokenObjects = {}
   for (const id of tokenIds) {
@@ -106,7 +104,10 @@ const fetchTokenInfo = async function(exchange, tokenIds) {
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
+
   const proxyFactory = await ProxyFactory.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
@@ -141,16 +142,23 @@ const buildOrderTransactionData = async function(
   targetPrice,
   priceRangePercentage = 20,
   validFrom = 3,
-  expiry = maxU32
+  expiry = maxU32,
+  web3,
+  artifacts,
 ) {
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
+  console.log("Here we go!")
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const MultiSend = artifacts.require("MultiSend")
+
+  await BatchExchange.setProvider(web3.currentProvider)
+  await BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
   const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+  console.log("Batch Exchange", exchange.address)
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId])
+  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
 
   const targetToken = tokenInfo[targetTokenId]
   const stableToken = tokenInfo[stableTokenId]
@@ -210,9 +218,13 @@ const buildOrderTransactionData = async function(
     const orderData = await exchange.contract.methods
       .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
       .encodeABI()
-    const multiSendData = await encodeMultiSend(multiSend, [
-      { operation: CALL, to: exchange.address, value: 0, data: orderData },
-    ])
+    const multiSendData = await encodeMultiSend(
+      multiSend, 
+      [
+        { operation: CALL, to: exchange.address, value: 0, data: orderData }
+      ], 
+      web3
+    )
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwnerAddress, multiSend.address, 0, multiSendData, 1)
     transactions.push({
@@ -225,7 +237,7 @@ const buildOrderTransactionData = async function(
   }
   console.log("Multisend", multiSend.address)
   console.log("Transactions", transactions.length)
-  const finalData = await encodeMultiSend(multiSend, transactions)
+  const finalData = await encodeMultiSend(multiSend, transactions, web3)
   // console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
   return {
     to: multiSend.address,
@@ -241,7 +253,11 @@ const buildOrderTransactionData = async function(
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList) {
+const transferApproveDeposit = async function(fleetOwner, depositList, artifacts) {
+  const ERC20 = artifacts.require("ERC20Detailed")
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const MultiSend = artifacts.require("MultiSend")
+
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
@@ -270,10 +286,14 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
     // Get data to deposit funds from slave to exchange
     const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
     // Get data for approve and deposit multisend on slave
-    const multiSendData = await encodeMultiSend(multiSend, [
-      { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
-      { operation: CALL, to: exchange.address, value: 0, data: depositData },
-    ])
+    const multiSendData = await encodeMultiSend(
+      multiSend, 
+      [
+        { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
+        { operation: CALL, to: exchange.address, value: 0, data: depositData }, 
+      ],
+      web3
+    )
     // Get data to execute approve/deposit multisend via slave
     const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwner.address, multiSend.address, 0, multiSendData, 1)
     transactions.push({
@@ -284,8 +304,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
     })
   }
   // Get data to execute all fund/approve/deposit transactions at once
-  const finalData = await encodeMultiSend(multiSend, transactions)
-  // console.log(`Transaction Data for Transfer-Approve-Deposit: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
+  const finalData = await encodeMultiSend(multiSend, transactions, web3)
   return {
     to: multiSend.address,
     data: finalData,
