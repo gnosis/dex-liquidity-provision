@@ -87,7 +87,7 @@ const getExecTransactionTransaction = async function (
     transaction.value,
     transaction.data,
     transaction.operation)
-  execTransactionTransaction = {
+  const execTransactionTransaction = {
     operation: CALL,
     to: traderAddress,
     value: 0,
