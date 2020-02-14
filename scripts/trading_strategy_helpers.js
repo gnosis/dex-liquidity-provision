@@ -146,7 +146,6 @@ const buildOrderTransactionData = async function(
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-
   const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
@@ -179,7 +178,10 @@ const buildOrderTransactionData = async function(
     // x = max256 / 102
     const sellPrice = formatAmount(upperLimit, targetToken)
     // sellPrice = 102000000000000000000
-    const upperSellAmount = max128.div(sellPrice).mul(toETH(1)).toString()
+    const upperSellAmount = max128
+      .div(sellPrice)
+      .mul(toETH(1))
+      .toString()
     const upperBuyAmount = max128.toString()
 
     // Buy ETH at 101 for DAI (unlimited)
@@ -189,7 +191,10 @@ const buildOrderTransactionData = async function(
     // x = max256 / 101
     const buyPrice = formatAmount(lowerLimit, targetToken)
     const lowerSellAmount = max128.toString()
-    const lowerBuyAmount = max128.div(buyPrice).mul(toETH(1)).toString()
+    const lowerBuyAmount = max128
+      .div(buyPrice)
+      .mul(toETH(1))
+      .toString()
 
     console.log(
       `Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`
@@ -292,5 +297,5 @@ module.exports = {
   buildOrderTransactionData,
   transferApproveDeposit,
   max128,
-  maxU32
+  maxU32,
 }

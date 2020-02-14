@@ -9,7 +9,13 @@ const MultiSend = artifacts.require("MultiSend.sol")
 
 const TestToken = artifacts.require("DetailedMintableToken")
 
-const { deployFleetOfSafes, buildOrderTransactionData, transferApproveDeposit, max128, maxU32 } = require("../scripts/trading_strategy_helpers")
+const {
+  deployFleetOfSafes,
+  buildOrderTransactionData,
+  transferApproveDeposit,
+  max128,
+  maxU32,
+} = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
@@ -103,7 +109,13 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transactionData = await buildOrderTransactionData(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice)
+    const transactionData = await buildOrderTransactionData(
+      masterSafe.address,
+      slaveSafes,
+      targetToken,
+      stableToken,
+      targetPrice
+    )
     await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, 1)
 
     // Correctness assertions
