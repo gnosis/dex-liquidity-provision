@@ -91,10 +91,10 @@ const getGenericFundMovementTransaction = async function (
     switch (functionName) {
     case "requestWithdraw":
       transactionData = await exchange.contract.methods["requestWithdraw"](withdrawal.tokenAddress, MAXUINT.toString()).encodeABI()
-      break;
+      break
     case "withdraw":
       transactionData = await exchange.contract.methods["withdraw"](withdrawal.traderAddress, withdrawal.tokenAddress).encodeABI()
-      break;
+      break
     default:
       assert(false, "Function " + functionName + "is not implemented")
     }
