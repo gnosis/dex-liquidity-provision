@@ -81,7 +81,6 @@ const getGenericFundMovementTransaction = async function (
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const masterTransactions = []
 
@@ -109,15 +108,7 @@ const getGenericFundMovementTransaction = async function (
       data: execData,
     })
   }
-  // Get data to execute all transactions at once
-  const transactionData = await encodeMultiSend(multiSend, masterTransactions)
-  const transaction = {
-    operation: DELEGATECALL,
-    to: multiSend.address,
-    value: 0,
-    data: transactionData
-  }
-  return transaction
+  return getBundledTransaction(masterTransactions)
 }
 
 /**
@@ -173,7 +164,6 @@ const getTransferFundsToMasterTransaction = async function (
 ) {
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
-  const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const masterTransactions = []
 
@@ -193,8 +183,7 @@ const getTransferFundsToMasterTransaction = async function (
       data: execData,
     })
   }
-  // Get data to execute all transactions at once
-  return await encodeMultiSend(multiSend, masterTransactions)
+  return await getBundledTransaction(masterTransactions)
 }
 
 
@@ -208,20 +197,10 @@ const getWithdrawAndTransferFundsToMasterTransaction = async function (
   masterAddress,
   withdrawals
 ) {
-  const multiSend = await MultiSend.deployed()
   const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
   const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals)
 
-  const masterTransactions = [withdrawalTransaction, transferFundsToMasterTransaction]
-
-  const transactionData = await encodeMultiSend(multiSend, masterTransactions)
-  const transaction = {
-    operation: DELEGATECALL,
-    to: multiSend.address,
-    value: 0,
-    transactionData
-  }
-  return transaction
+  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
 }
 
 module.exports = {

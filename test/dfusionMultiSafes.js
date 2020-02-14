@@ -218,7 +218,6 @@ contract("GnosisSafe", function(accounts) {
     }
 
     const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals)
-    console.log(requestWithdrawalTransaction)
     await execTransaction(
       masterSafe,
       lw,
@@ -255,8 +254,16 @@ contract("GnosisSafe", function(accounts) {
       console.log("Balance owlToken trader: ", (await owlToken.balanceOf(trader)).toString())
     }
 
-    const dataTranferBack = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
-    await execTransaction(masterSafe, lw, multiSend.address, 0, dataTranferBack, 1, "transfer funds to master")
+    const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
+    await execTransaction(
+      masterSafe,
+      lw,
+      transferFundsToMasterTransaction.to,
+      transferFundsToMasterTransaction.value,
+      transferFundsToMasterTransaction.data,
+      transferFundsToMasterTransaction.operation,
+      "transfer funds to master for all slaves"
+    )
 
     /*
     // this is a compact alternative that should merge the two previous transactions together, but it doesn't work.
