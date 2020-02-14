@@ -1,4 +1,5 @@
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const BN = require("bn.js")
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 
@@ -33,14 +34,11 @@ function toETH(value) {
   return new BN(value * GWEI).mul(new BN(GWEI))
 }
 
-const execTransaction = async function(safe, lightWallet, to, value, data, operation, message) {
+const execTransaction = async function(safe, lightWallet, to, value, data, operation) {
   const nonce = await safe.nonce()
   const transactionHash = await safe.getTransactionHash(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, nonce)
   const sigs = utils.signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
-  utils.logGasUsage(
-    "execTransaction " + message,
-    await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
-  )
+  await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
 }
 
 const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, value, data, operation = 0) {
@@ -65,7 +63,7 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     "proxy",
     proxyFactory.address,
     GnosisSafe,
-    "create Gnosis Safe"
+    null
   )
 }
 
@@ -109,6 +107,21 @@ async function getParamFromTxEvent(transaction, eventName, paramName, contract, 
   }
 }
 
+// TODO - move this once dex-contracts updates npm package.
+function decodeOrdersBN(bytes) {
+  return decodeOrders(bytes).map(e => ({
+    user: e.user,
+    sellTokenBalance: new BN(e.sellTokenBalance),
+    buyToken: parseInt(e.buyToken),
+    sellToken: parseInt(e.sellToken),
+    validFrom: parseInt(e.validFrom),
+    validUntil: parseInt(e.validUntil),
+    priceNumerator: new BN(e.priceNumerator),
+    priceDenominator: new BN(e.priceDenominator),
+    remainingAmount: new BN(e.remainingAmount),
+  }))
+}
+
 module.exports = {
   waitForNSeconds,
   toETH,
@@ -116,4 +129,5 @@ module.exports = {
   execTransactionData,
   deploySafe,
   encodeMultiSend,
+  decodeOrdersBN,
 }
