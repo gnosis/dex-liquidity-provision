@@ -28,15 +28,52 @@ const DELEGATECALL = 1
  */
 
 /**
+ * @typedef Transaction
+ *  * Example:
+ *  {
+ *    operation: CALL,
+ *    to: "0x0000..000",
+ *    value: "10",
+ *    data: "0x00",
+ *  }
+ * @type {object}
+ * @property {int} operation Either CALL or DELEGATECALL
+ * @property {EthereumAddress} to Ethereum address receiving the transaction
+ * @property {string} value Amount of ETH transferred
+ * @property {string} data Data sent along with the transaction
+ */
+
+/**
+ * Given a collection of transactions, creates a single transaction that bundles all of them
+ * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
+ * @return {Transaction} Multisend transaction bundling all input transactions
+*/
+const getBundledTransaction = async function (
+  transactions
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const multiSend = await MultiSend.deployed()
+  const transactionData = await encodeMultiSend(multiSend, transactions)
+  const bundledTransaction = {
+    operation: DELEGATECALL,
+    to:  multiSend.address,
+    value: 0,
+    data: transactionData,
+  }
+  return bundledTransaction
+}
+
+/**
  * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
  * on behalf of a fleet of safes owned by a single "Master Safe"
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to either request
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const genericFundMovementData = async function (
+const getGenericFundMovementTransaction = async function (
   masterAddress,
   withdrawals,
   functionName
@@ -73,7 +110,14 @@ const genericFundMovementData = async function (
     })
   }
   // Get data to execute all transactions at once
-  return await encodeMultiSend(multiSend, masterTransactions)
+  const transactionData = await encodeMultiSend(multiSend, masterTransactions)
+  const transaction = {
+    operation: DELEGATECALL,
+    to: multiSend.address,
+    value: 0,
+    data: transactionData
+  }
+  return transaction
 }
 
 /**
@@ -81,14 +125,14 @@ const genericFundMovementData = async function (
  * on behalf of a fleet of safes owned by a single "Master Safe"
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to request
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const requestWithdrawData = async function (
+const getRequestWithdrawTransaction = async function (
   masterAddress,
   withdrawals
 ) {
-  return await genericFundMovementData(
+  return await getGenericFundMovementTransaction(
     masterAddress,
     withdrawals,
     "requestWithdraw"
@@ -103,13 +147,13 @@ const requestWithdrawData = async function (
  *          2. no trader orders have been executed on these tokens (a way to ensure this is to cancel the traders' standing orders)
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to withdraw the desired funds
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
 */
-const withdrawData = async function (
+const getWithdrawTransaction = async function (
   masterAddress,
   withdrawals
 ) {
-  return await genericFundMovementData(
+  return await getGenericFundMovementTransaction(
     masterAddress,
     withdrawals,
     "withdraw"
@@ -121,9 +165,9 @@ const withdrawData = async function (
  * Batches together a collection of transfers from each trader safe to the master safer
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
 */
-const transferBackFundsData = async function (
+const getTransferFundsToMasterTransaction = async function (
   masterAddress,
   withdrawals
 ) {
@@ -160,34 +204,29 @@ const transferBackFundsData = async function (
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
 */
-const withdrawAndTransferBackFundsData = async function (
+const getWithdrawAndTransferFundsToMasterTransaction = async function (
   masterAddress,
   withdrawals
 ) {
   const multiSend = await MultiSend.deployed()
-  const masterTransactions = []
-  const dataWithdrawal = await withdrawData(masterAddress, withdrawals)
-  masterTransactions.push({
+  const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
+  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals)
+
+  const masterTransactions = [withdrawalTransaction, transferFundsToMasterTransaction]
+
+  const transactionData = await encodeMultiSend(multiSend, masterTransactions)
+  const transaction = {
     operation: DELEGATECALL,
     to: multiSend.address,
     value: 0,
-    data: dataWithdrawal,
-  })
-
-  const dataTranferBack = await transferBackFundsData(masterAddress, withdrawals)
-  masterTransactions.push({
-    operation: DELEGATECALL,
-    to: multiSend.address,
-    value: 0,
-    data: dataTranferBack,
-  })
-
-  return await encodeMultiSend(multiSend, masterTransactions)
+    transactionData
+  }
+  return transaction
 }
 
 module.exports = {
-  requestWithdrawData,
-  withdrawData,
-  transferBackFundsData,
-  withdrawAndTransferBackFundsData
+  getRequestWithdrawTransaction,
+  getWithdrawTransaction,
+  getTransferFundsToMasterTransaction,
+  getWithdrawAndTransferFundsToMasterTransaction
 }
