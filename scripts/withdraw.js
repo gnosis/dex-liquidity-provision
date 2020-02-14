@@ -12,6 +12,7 @@ const { encodeMultiSend, execTransactionData } = require("../test/utils.js")
 // TODO: move constants to util file
 const MAXUINT = (new BN(2)).pow(new BN(256)).sub(new BN(1))
 const CALL = 0
+const DELEGATECALL = 1
 
 
 /**
@@ -63,7 +64,7 @@ const genericFundMovementData = async function (
     }
 
     // Get data to execute multisend transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, transactionData, 0)
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, exchange.address, 0, transactionData, CALL)
     masterTransactions.push({
       operation: CALL,
       to: withdrawal.traderAddress,
@@ -140,7 +141,7 @@ const transferBackFundsData = async function (
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
     // Get data to execute transaction from fund account via trader
-    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, token.address, 0, transactionData, 0)
+    const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, token.address, 0, transactionData, CALL)
     masterTransactions.push({
       operation: CALL,
       to: withdrawal.traderAddress,
@@ -167,7 +168,7 @@ const withdrawAndTransferBackFundsData = async function (
   const masterTransactions = []
   const dataWithdrawal = await withdrawData(masterAddress, withdrawals)
   masterTransactions.push({
-    operation: CALL,
+    operation: DELEGATECALL,
     to: multiSend.address,
     value: 0,
     data: dataWithdrawal,
@@ -175,7 +176,7 @@ const withdrawAndTransferBackFundsData = async function (
 
   const dataTranferBack = await transferBackFundsData(masterAddress, withdrawals)
   masterTransactions.push({
-    operation: CALL,
+    operation: DELEGATECALL,
     to: multiSend.address,
     value: 0,
     data: dataTranferBack,
