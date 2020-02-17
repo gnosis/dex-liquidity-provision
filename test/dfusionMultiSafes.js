@@ -31,8 +31,6 @@ contract("GnosisSafe", function(accounts) {
   let exchange
   let multiSend
 
-  const CALL = 0
-
   beforeEach(async function() {
     // Create lightwallet
     // TODO - can we just use accounts provided by ganache?
