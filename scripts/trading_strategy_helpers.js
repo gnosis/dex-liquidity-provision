@@ -11,8 +11,10 @@ const BN = require("bn.js")
 const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
 
 const CALL = 0
+const DELEGATECALL = 1
 const maxU32 = 2 ** 32 - 1
-const max128 = new BN(2).pow(new BN(128)).subn(1)
+const max128 = (new BN(2)).pow(new BN(128)).subn(1)
+const maxUINT = (new BN(2)).pow(new BN(256)).sub(new BN(1))
 
 /**
  * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
@@ -27,6 +29,22 @@ const max128 = new BN(2).pow(new BN(128)).subn(1)
  * This particular type is that of a JS object representing the Smart contract ABI.
  * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
  * @typedef SmartContract
+ */
+
+/**
+ * @typedef Transaction
+ *  * Example:
+ *  {
+ *    operation: CALL,
+ *    to: "0x0000..000",
+ *    value: "10",
+ *    data: "0x00",
+ *  }
+ * @type {object}
+ * @property {int} operation Either CALL or DELEGATECALL
+ * @property {EthereumAddress} to Ethereum address receiving the transaction
+ * @property {string} value Amount of ETH transferred
+ * @property {string} data Data sent along with the transaction
  */
 
 /**
@@ -57,6 +75,18 @@ const max128 = new BN(2).pow(new BN(128)).subn(1)
  * @property {integer} amount integer denoting amount to be deposited
  * @property {EthereumAddress} tokenAddress {@link EthereumAddress} of token to be deposited
  * @property {EthereumAddress} userAddress address of user depositing
+ */
+
+/**
+ * @typedef Withdrawal
+ *  * Example:
+ * {
+ *   traderAddress: "0x0000000000000000000000000000000000000000",
+ *   tokenAddress: "0x0000000000000000000000000000000000000000",
+ * }
+ * @type {object}
+ * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
+ * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
 
 /**
@@ -98,6 +128,59 @@ const fetchTokenInfo = async function(exchange, tokenIds) {
     console.log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
   }
   return tokenObjects
+}
+
+/**
+ * Given a collection of transactions, creates a single transaction that bundles all of them
+ * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
+ * @return {Transaction} Multisend transaction bundling all input transactions
+*/
+const getBundledTransaction = async function (
+  transactions
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const multiSend = await MultiSend.deployed()
+  const transactionData = await encodeMultiSend(multiSend, transactions)
+  const bundledTransaction = {
+    operation: DELEGATECALL,
+    to:  multiSend.address,
+    value: 0,
+    data: transactionData,
+  }
+  return bundledTransaction
+}
+
+/**
+ * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
+ * TODO: we can probably merge this function with execTransactionData.
+ * @param {EthereumAddress} masterAddress Address of a controlled Safe
+ * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
+ * @param {Transaction} transaction The transaction to be executed by execTransaction
+ * @return {Transaction} Transaction calling execTransaction; should be executed by master
+*/
+const getExecTransactionTransaction = async function (
+  masterAddress,
+  traderAddress,
+  transaction
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+  const execData = await execTransactionData(
+    gnosisSafeMasterCopy,
+    masterAddress,
+    transaction.to,
+    transaction.value,
+    transaction.data,
+    transaction.operation)
+  const execTransactionTransaction = {
+    operation: CALL,
+    to: traderAddress,
+    value: 0,
+    data: execData,
+  }
+  return execTransactionTransaction
 }
 
 /**
@@ -234,6 +317,58 @@ const buildOrderTransactionData = async function(
 }
 
 /**
+ * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
+withdrawal of or to withdraw the desired funds
+*/
+const getGenericFundMovementTransaction = async function (
+  masterAddress,
+  withdrawals,
+  functionName
+) {
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const exchange = await BatchExchange.deployed()
+  const masterTransactions = []
+
+  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
+  for (const withdrawal of withdrawals) {
+    // create transaction for the token
+    let transactionData
+    switch (functionName) {
+    case "requestWithdraw":
+      transactionData = await exchange.contract.methods["requestWithdraw"](withdrawal.tokenAddress, maxUINT.toString()).encodeABI()
+      break
+    case "withdraw":
+      transactionData = await exchange.contract.methods["withdraw"](withdrawal.traderAddress, withdrawal.tokenAddress).encodeABI()
+      break
+    default:
+      assert(false, "Function " + functionName + "is not implemented")
+    }
+
+    // prepare trader transaction
+    const transactionToExecute = {
+      operation: CALL,
+      to: exchange.address,
+      value: 0,
+      data: transactionData
+    }
+    // build transaction to execute previous transaction through master
+    const execTransactionTransaction = await getExecTransactionTransaction(
+      masterAddress,
+      withdrawal.traderAddress,
+      transactionToExecute
+    )
+    masterTransactions.push(execTransactionTransaction)
+  }
+  return getBundledTransaction(masterTransactions)
+}
+
+/**
  * Batches together a collection of transfer-related transaction data.
  * Particularily, the resulting transaction data is that of transfering all sufficient funds from fleetOwner
  * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe.
@@ -258,7 +393,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
 
     const depositToken = await ERC20.at(deposit.tokenAddress)
     // Get data to move funds from master to slave
-    const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount).encodeABI()
+    const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount.toString()).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -266,9 +401,9 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
       data: transferData,
     })
     // Get data to approve funds from slave to exchange
-    const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
+    const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount.toString()).encodeABI()
     // Get data to deposit funds from slave to exchange
-    const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
+    const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount.toString()).encodeABI()
     // Get data for approve and deposit multisend on slave
     const multiSendData = await encodeMultiSend(multiSend, [
       { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
@@ -292,10 +427,108 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
   }
 }
 
+/**
+ * Batches together a collection of "requestWithdraw" calls on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to request
+withdrawal of the desired funds
+*/
+const getRequestWithdrawTransaction = async function (
+  masterAddress,
+  withdrawals
+) {
+  return await getGenericFundMovementTransaction(
+    masterAddress,
+    withdrawals,
+    "requestWithdraw"
+  )
+}
+
+/**
+ * Batches together a collection of "withdraw" calls on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * Warning: if any bundled transaction fails, then no funds are withdrawn from the exchange.
+ *   Ensure 1. to have executed requestWithdraw for every input before executing
+ *          2. no trader orders have been executed on these tokens (a way to ensure this is to cancel the traders' standing orders)
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
+*/
+const getWithdrawTransaction = async function (
+  masterAddress,
+  withdrawals
+) {
+  return await getGenericFundMovementTransaction(
+    masterAddress,
+    withdrawals,
+    "withdraw"
+  )
+}
+
+/**
+ * Batches together a collection of transfers from each trader safe to the master safer
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
+*/
+const getTransferFundsToMasterTransaction = async function (
+  masterAddress,
+  withdrawals
+) {
+  const masterTransactions = []
+
+  // TODO: enforce that there are no overlapping withdrawals
+  for (const withdrawal of withdrawals) {
+    const token = await ERC20.at(withdrawal.tokenAddress)
+    const amount = await token.balanceOf(withdrawal.traderAddress)
+    // create transaction for the token
+    const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
+
+    // prepare trader transaction
+    const transactionToExecute = {
+      operation: CALL,
+      to: token.address,
+      value: 0,
+      data: transactionData
+    }
+    // build transaction to execute previous transaction through master
+    const execTransactionTransaction = await getExecTransactionTransaction(
+      masterAddress,
+      withdrawal.traderAddress,
+      transactionToExecute
+    )
+    masterTransactions.push(execTransactionTransaction)
+  }
+  return await getBundledTransaction(masterTransactions)
+}
+
+/**
+ * Batches together a collection of transfers from each trader safe to the master safer
+ * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+ * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+ * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+*/
+const getWithdrawAndTransferFundsToMasterTransaction = async function (
+  masterAddress,
+  withdrawals
+) {
+  const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
+  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals)
+
+  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
+}
+
 module.exports = {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
+  getRequestWithdrawTransaction,
+  getWithdrawTransaction,
+  getTransferFundsToMasterTransaction,
+  getWithdrawAndTransferFundsToMasterTransaction,
   max128,
   maxU32,
+  maxUINT,
 }
