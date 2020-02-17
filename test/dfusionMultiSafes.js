@@ -142,8 +142,9 @@ contract("GnosisSafe", function(accounts) {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
     const depositAmount = toETH(20)
-    await testToken.mint(accounts[0], (depositAmount * slaveSafes.length).toString())
-    await testToken.transfer(masterSafe.address, (depositAmount * slaveSafes.length).toString())
+    const fullTokenAmount = depositAmount * slaveSafes.length
+    await testToken.mint(accounts[0], fullTokenAmount.toString())
+    await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
     // Note that we have NOT registered the tokens on the exchange but can deposit them nontheless.
 
     const deposits = slaveSafes.map(slaveAddress => ({
@@ -159,22 +160,15 @@ contract("GnosisSafe", function(accounts) {
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
-    console.log("Balance testToken master", (await testToken.balanceOf(masterSafe.address)).toString())
-    for (const trader of slaveSafes) {
-      console.log("Exchange balance trader testToken: ", (await exchange.getBalance(trader, testToken.address)).toString())
-    }
-
     // build withdrawal lists
     const withdrawals = []
     for (const trader of slaveSafes)
       withdrawals.push({tokenAddress: testToken.address, traderAddress: trader})
 
-    console.log("Before request withdrawal")
-    console.log("Balance testToken master: ", (await testToken.balanceOf(masterSafe.address)).toString())
-    console.log("Balance testToken exchange: ", (await testToken.balanceOf(exchange.address)).toString())
-    for (const trader of slaveSafes) {
-      console.log("Balance testToken trader: ", (await testToken.balanceOf(trader)).toString())
-    }
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Balance setup failed: master Safe still holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), fullTokenAmount.toString(), "Balance setup failed: the exchange does not hold all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Balance setup failed: trader Safes still holds funds")
 
     const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals)
     await execTransaction(
@@ -186,14 +180,12 @@ contract("GnosisSafe", function(accounts) {
       requestWithdrawalTransaction.operation,
       "request withdrawal for all slaves"
     )
-    await waitForNSeconds(3001)
+    await waitForNSeconds(301)
 
-    console.log("Before withdraw")
-    console.log("Balance testToken master: ", (await testToken.balanceOf(masterSafe.address)).toString())
-    console.log("Balance testToken exchange: ", (await testToken.balanceOf(exchange.address)).toString())
-    for (const trader of slaveSafes) {
-      console.log("Balance testToken trader: ", (await testToken.balanceOf(trader)).toString())
-    }
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Unexpected behavior in requestWithdraw: master Safe holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), fullTokenAmount.toString(), "Unexpected behavior in requestWithdraw: the exchange does not hold all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Unexpected behavior in requestWithdraw: trader Safes holds funds")
 
     const withdrawalTransaction = await getWithdrawTransaction(masterSafe.address, withdrawals)
     await execTransaction(
@@ -206,12 +198,10 @@ contract("GnosisSafe", function(accounts) {
       "withdraw for all slaves"
     )
 
-    console.log("Before transfer back funds")
-    console.log("Balance testToken master: ", (await testToken.balanceOf(masterSafe.address)).toString())
-    console.log("Balance testToken exchange: ", (await testToken.balanceOf(exchange.address)).toString())
-    for (const trader of slaveSafes) {
-      console.log("Balance testToken trader: ", (await testToken.balanceOf(trader)).toString())
-    }
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Unexpected behavior when withdrawing: master Safe holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), "0", "Withdrawing failed: the exchange still holds all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), depositAmount.toString(), "Withdrawing failed: trader Safes do not hold the correct amount of funds")
 
     const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
     await execTransaction(
@@ -238,11 +228,9 @@ contract("GnosisSafe", function(accounts) {
     )
     */
 
-    console.log("Balance testToken master: ", (await testToken.balanceOf(masterSafe.address)).toString())
-    console.log("Balance testToken exchange: ", (await testToken.balanceOf(exchange.address)).toString())
-    for (const trader of slaveSafes) {
-      console.log("Balance testToken trader: ", (await testToken.balanceOf(trader)).toString())
-    }
-
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), fullTokenAmount.toString(), "Fund retrieval failed: master Safe does not hold all funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), "0", "Unexpected behavior when retrieving funds: the exchange holds funds")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Fund retrieval failed: trader Safes still hold some funds")
   })
 })
