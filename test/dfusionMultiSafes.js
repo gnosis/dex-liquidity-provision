@@ -134,7 +134,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it.only("Test withdrawals", async () => {
+  it("Test withdrawals", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
     const depositAmount = toETH(20)
