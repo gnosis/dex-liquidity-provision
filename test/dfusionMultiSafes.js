@@ -13,8 +13,13 @@ const {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
+  getRequestWithdrawTransaction,
+  getWithdrawTransaction,
+  getTransferFundsToMasterTransaction,
+  getWithdrawAndTransferFundsToMasterTransaction,
   max128,
   maxU32,
+  maxUINT,
 } = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
 
@@ -25,8 +30,6 @@ contract("GnosisSafe", function(accounts) {
   let testToken
   let exchange
   let multiSend
-
-  const CALL = 0
 
   beforeEach(async function() {
     // Create lightwallet
@@ -129,5 +132,106 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
     }
+  })
+
+  it("Test withdrawals", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
+    const depositAmount = toETH(20)
+    const fullTokenAmount = depositAmount * slaveSafes.length
+    await testToken.mint(accounts[0], fullTokenAmount.toString())
+    await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
+    // Note that we have NOT registered the tokens on the exchange but can deposit them nontheless.
+
+    const deposits = slaveSafes.map(slaveAddress => ({
+      amount: depositAmount,
+      tokenAddress: testToken.address,
+      userAddress: slaveAddress,
+    }))
+
+    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
+    assert.equal(batchedTransactions.to, multiSend.address)
+
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1)
+    // Close auction for deposits to be refelcted in exchange balance
+    await waitForNSeconds(301)
+
+    // build withdrawal lists
+    const withdrawals = []
+    for (const trader of slaveSafes)
+      withdrawals.push({tokenAddress: testToken.address, traderAddress: trader})
+
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Balance setup failed: master Safe still holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), fullTokenAmount.toString(), "Balance setup failed: the exchange does not hold all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Balance setup failed: trader Safes still holds funds")
+
+    const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals)
+    await execTransaction(
+      masterSafe,
+      lw,
+      requestWithdrawalTransaction.to,
+      requestWithdrawalTransaction.value,
+      requestWithdrawalTransaction.data,
+      requestWithdrawalTransaction.operation,
+      "request withdrawal for all slaves"
+    )
+    await waitForNSeconds(301)
+
+    for (const trader of slaveSafes) {
+      const pendingWithdrawal = await exchange.getPendingWithdraw(trader, testToken.address)
+      assert.equal(pendingWithdrawal[0].toString(), maxUINT.toString(), "Withdrawal was not registered on the exchange")
+    }
+
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Unexpected behavior in requestWithdraw: master Safe holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), fullTokenAmount.toString(), "Unexpected behavior in requestWithdraw: the exchange does not hold all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Unexpected behavior in requestWithdraw: trader Safes holds funds")
+
+    const withdrawalTransaction = await getWithdrawTransaction(masterSafe.address, withdrawals)
+    await execTransaction(
+      masterSafe,
+      lw,
+      withdrawalTransaction.to,
+      withdrawalTransaction.value,
+      withdrawalTransaction.data,
+      withdrawalTransaction.operation,
+      "withdraw for all slaves"
+    )
+
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Unexpected behavior when withdrawing: master Safe holds funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), "0", "Withdrawing failed: the exchange still holds all tokens")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), depositAmount.toString(), "Withdrawing failed: trader Safes do not hold the correct amount of funds")
+
+    const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
+    await execTransaction(
+      masterSafe,
+      lw,
+      transferFundsToMasterTransaction.to,
+      transferFundsToMasterTransaction.value,
+      transferFundsToMasterTransaction.data,
+      transferFundsToMasterTransaction.operation,
+      "transfer funds to master for all slaves"
+    )
+
+    /*
+    // this is a compact alternative that should merge the two previous transactions together, but it doesn't work.
+    const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
+    await execTransaction(
+      masterSafe,
+      lw,
+      withdrawAndTransferFundsToMasterTransaction.to,
+      withdrawAndTransferFundsToMasterTransaction.value,
+      withdrawAndTransferFundsToMasterTransaction.data,
+      withdrawAndTransferFundsToMasterTransaction.operation,
+      "withdraw and transfer back for all slaves"
+    )
+    */
+
+    assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), fullTokenAmount.toString(), "Fund retrieval failed: master Safe does not hold all funds")
+    assert.equal((await testToken.balanceOf(exchange.address)).toString(), "0", "Unexpected behavior when retrieving funds: the exchange holds funds")
+    for (const trader of slaveSafes)
+      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Fund retrieval failed: trader Safes still hold some funds")
   })
 })
