@@ -178,6 +178,11 @@ contract("GnosisSafe", function(accounts) {
     )
     await waitForNSeconds(301)
 
+    for (const trader of slaveSafes) {
+      const pendingWithdrawal = await exchange.getPendingWithdraw(trader, testToken.address)
+      assert.equal(pendingWithdrawal[0].toString(), maxUINT.toString(), "Withdrawal was not registered on the exchange")
+    }
+
     assert.equal((await testToken.balanceOf(masterSafe.address)).toString(), "0", "Unexpected behavior in requestWithdraw: master Safe holds funds")
     assert.equal((await testToken.balanceOf(exchange.address)).toString(), fullTokenAmount.toString(), "Unexpected behavior in requestWithdraw: the exchange does not hold all tokens")
     for (const trader of slaveSafes)
