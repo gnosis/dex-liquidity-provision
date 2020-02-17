@@ -258,7 +258,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
 
     const depositToken = await ERC20.at(deposit.tokenAddress)
     // Get data to move funds from master to slave
-    const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount).encodeABI()
+    const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount.toString()).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -266,9 +266,9 @@ const transferApproveDeposit = async function(fleetOwner, depositList) {
       data: transferData,
     })
     // Get data to approve funds from slave to exchange
-    const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
+    const approveData = await depositToken.contract.methods.approve(exchange.address, deposit.amount.toString()).encodeABI()
     // Get data to deposit funds from slave to exchange
-    const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
+    const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount.toString()).encodeABI()
     // Get data for approve and deposit multisend on slave
     const multiSendData = await encodeMultiSend(multiSend, [
       { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
