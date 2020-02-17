@@ -187,7 +187,7 @@ const getExecTransactionTransaction = async function (
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts=artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
@@ -226,8 +226,8 @@ const buildOrderTransactionData = async function(
   priceRangePercentage = 20,
   validFrom = 3,
   expiry = maxU32,
-  web3,
-  artifacts,
+  web3=web3,
+  artifacts=artifacts,
 ) {
   console.log("Here we go!")
   const GnosisSafe = artifacts.require("GnosisSafe")
@@ -388,7 +388,7 @@ const getGenericFundMovementTransaction = async function (
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList, artifacts) {
+const transferApproveDeposit = async function(fleetOwner, depositList, artifacts=artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
@@ -494,10 +494,11 @@ const getWithdrawTransaction = async function (
 */
 const getTransferFundsToMasterTransaction = async function (
   masterAddress,
-  withdrawals
+  withdrawals,
+  artifacts=artifacts
 ) {
   const masterTransactions = []
-
+  const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
   for (const withdrawal of withdrawals) {
     const token = await ERC20.at(withdrawal.tokenAddress)
