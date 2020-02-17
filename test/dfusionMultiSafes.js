@@ -13,17 +13,15 @@ const {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
-  max128,
-  maxU32,
-} = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
-
-const { 
   getRequestWithdrawTransaction,
   getWithdrawTransaction,
   getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction
-} = require("../scripts/withdraw.js")
+  getWithdrawAndTransferFundsToMasterTransaction,
+  max128,
+  maxU32,
+  maxUINT,
+} = require("../scripts/trading_strategy_helpers")
+const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
