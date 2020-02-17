@@ -60,8 +60,8 @@ contract("GnosisSafe", function(accounts) {
   })
 
   it("Deploys Fleet of Gnosis Safes", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    const fleet = await deployFleetOfSafes(masterSafe.address, 10)
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
     assert.equal(fleet.length, 10)
     for (const slaveAddress of fleet) {
       const slaveSafe = await GnosisSafe.at(slaveAddress)
@@ -72,8 +72,8 @@ contract("GnosisSafe", function(accounts) {
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = 1000
     await testToken.mint(accounts[0], depositAmount * slaveSafes.length)
     await testToken.transfer(masterSafe.address, depositAmount * slaveSafes.length)
@@ -85,7 +85,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
+    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1)
@@ -101,9 +101,9 @@ contract("GnosisSafe", function(accounts) {
     }
   })
   it("Places bracket orders on behalf of a fleet of safes", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 20)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 20, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
     // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
@@ -117,7 +117,9 @@ contract("GnosisSafe", function(accounts) {
       slaveSafes,
       targetToken,
       stableToken,
-      targetPrice
+      targetPrice,
+      web3,
+      artifacts,
     )
     await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, 1)
 
@@ -135,8 +137,8 @@ contract("GnosisSafe", function(accounts) {
   })
 
   it("Test withdrawals", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2)
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = toETH(20)
     const fullTokenAmount = depositAmount * slaveSafes.length
     await testToken.mint(accounts[0], fullTokenAmount.toString())
@@ -149,7 +151,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits)
+    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, 1)
@@ -204,7 +206,7 @@ contract("GnosisSafe", function(accounts) {
     for (const trader of slaveSafes)
       assert.equal((await testToken.balanceOf(trader)).toString(), depositAmount.toString(), "Withdrawing failed: trader Safes do not hold the correct amount of funds")
 
-    const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
+    const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals, artifacts)
     await execTransaction(
       masterSafe,
       lw,

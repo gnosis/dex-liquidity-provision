@@ -108,10 +108,11 @@ const formatAmount = function(amount, token) {
  * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
  * @return {TokenObject[]} list of detailed/relevant token information
  */
-const fetchTokenInfo = async function(exchange, tokenIds, artifacts) {
+const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = false) {
+  const log = debug ? () => console.log.apply(arguments) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
-  console.log("Fetching token data from EVM")
+  log("Fetching token data from EVM")
   const tokenObjects = {}
   for (const id of tokenIds) {
     const tokenAddress = await exchange.tokenIdToAddressMap(id)
@@ -123,7 +124,7 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts) {
       decimals: (await tokenInstance.decimals.call()).toNumber(),
     }
     tokenObjects[id] = tokenInfo
-    console.log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
+    log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
   }
   return tokenObjects
 }
@@ -134,12 +135,14 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts) {
  * @return {Transaction} Multisend transaction bundling all input transactions
 */
 const getBundledTransaction = async function (
-  transactions
+  transactions,
+  artifacts
 ) {
+  const MultiSend = artifacts.require("MultiSend")
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const multiSend = await MultiSend.deployed()
-  const transactionData = await encodeMultiSend(multiSend, transactions)
+  const transactionData = await encodeMultiSend(multiSend, transactions, web3)
   const bundledTransaction = {
     operation: DELEGATECALL,
     to:  multiSend.address,
@@ -160,11 +163,12 @@ const getBundledTransaction = async function (
 const getExecTransactionTransaction = async function (
   masterAddress,
   traderAddress,
-  transaction
+  transaction,
+  artifacts
 ) {
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
+  const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+
   const execData = await execTransactionData(
     gnosisSafeMasterCopy,
     masterAddress,
@@ -197,7 +201,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts=artif
   // TODO - Batch all of this in a single transaction
   const slaveSafes = []
   for (let i = 0; i < fleetSize; i++) {
-    const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1)
+    const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1, artifacts)
     slaveSafes.push(newSafe.address)
   }
   // console.log("Safes deployed:", slaveSafes)
@@ -223,13 +227,15 @@ const buildOrderTransactionData = async function(
   targetTokenId,
   stableTokenId,
   targetPrice,
+  web3,
+  artifacts,
+  debug = false,
   priceRangePercentage = 20,
   validFrom = 3,
   expiry = maxU32,
-  web3=web3,
-  artifacts=artifacts,
 ) {
-  console.log("Here we go!")
+  const log = debug ? () => console.log.apply(arguments) : () => {}
+  log("Here we go!")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
 
@@ -238,7 +244,7 @@ const buildOrderTransactionData = async function(
   const exchange = await BatchExchange.deployed()
   const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-  console.log("Batch Exchange", exchange.address)
+  log("Batch Exchange", exchange.address)
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
   const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
@@ -256,7 +262,7 @@ const buildOrderTransactionData = async function(
 
   let safeIndex = 0
   const transactions = []
-  console.log(
+  log(
     `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken} per ${targetToken.symbol}`
   )
   for (let lowerLimit = lowestLimit; lowerLimit <= highestLimit - stepSize; lowerLimit += stepSize) {
@@ -287,10 +293,10 @@ const buildOrderTransactionData = async function(
       .mul(toETH(1))
       .toString()
 
-    console.log(
+    log(
       `Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`
     )
-    console.log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
+    log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
     const buyTokens = [targetTokenId, stableTokenId]
     const sellTokens = [stableTokenId, targetTokenId]
     const validFroms = [batch_index + validFrom, batch_index + validFrom]
@@ -318,8 +324,8 @@ const buildOrderTransactionData = async function(
     })
     safeIndex += 1
   }
-  console.log("Multisend", multiSend.address)
-  console.log("Transactions", transactions.length)
+  log("Multisend", multiSend.address)
+  log("Transactions", transactions.length)
   const finalData = await encodeMultiSend(multiSend, transactions, web3)
   // console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
   return {
@@ -373,11 +379,12 @@ const getGenericFundMovementTransaction = async function (
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
       withdrawal.traderAddress,
-      transactionToExecute
+      transactionToExecute,
+      artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return getBundledTransaction(masterTransactions)
+  return getBundledTransaction(masterTransactions, artifacts)
 }
 
 /**
@@ -517,11 +524,12 @@ const getTransferFundsToMasterTransaction = async function (
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
       withdrawal.traderAddress,
-      transactionToExecute
+      transactionToExecute,
+      artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return await getBundledTransaction(masterTransactions)
+  return await getBundledTransaction(masterTransactions, artifacts)
 }
 
 /**
@@ -535,9 +543,9 @@ const getWithdrawAndTransferFundsToMasterTransaction = async function (
   withdrawals
 ) {
   const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
-  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals)
+  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, artifacts)
 
-  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
+  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], artifacts)
 }
 
 module.exports = {

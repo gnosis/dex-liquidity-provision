@@ -52,7 +52,7 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, valu
     .encodeABI()
 }
 
-const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold, artifacts) {
+const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold, artifacts=artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
 
   const initData = await gnosisSafeMasterCopy.contract.methods
@@ -68,7 +68,7 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
   )
 }
 
-const encodeMultiSend = async function(multiSend, txs, web3) {
+const encodeMultiSend = async function(multiSend, txs, web3=web3) {
   return await multiSend.contract.methods
     .multiSend(
       `0x${txs
