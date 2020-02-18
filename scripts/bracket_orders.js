@@ -1,7 +1,8 @@
-const axios = require("axios")
+
 
 const { signTransaction, createLightwallet } = require("../test/utils")
 const { buildOrderTransactionData, DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
+const { signAndSend } = require("./sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -49,6 +50,9 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+
     console.log("Preparing order transaction data")
     const transactionData = await buildOrderTransactionData(
       argv.masterSafe,
@@ -64,47 +68,7 @@ module.exports = async callback => {
       argv.expiry
     )
 
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
-
-    const nonce = await masterSafe.nonce()
-    console.log("Aquiring Transaction Hash")
-    const transactionHash = await masterSafe.getTransactionHash(
-      transactionData.to,
-      0,
-      transactionData.data,
-      DELEGATECALL,
-      0,
-      0,
-      0,
-      ADDRESS_0,
-      ADDRESS_0,
-      nonce
-    )
-    const lightWallet = await createLightwallet()
-    const account = lightWallet.accounts[0]
-    console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
-    const sigs = signTransaction(lightWallet, [account], transactionHash)
-    const endpoint = `https://safe-transaction.rinkeby.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
-    const postData = {
-      to: transactionData.to,
-      value: 0,
-      data: transactionData.data,
-      operation: DELEGATECALL,
-      safeTxGas: 0, // magic later
-      baseGas: 0,
-      gasPrice: 0, // important that this is zero
-      gasToken: ADDRESS_0,
-      refundReceiver: ADDRESS_0,
-      nonce: nonce.toNumber(),
-      contractTransactionHash: transactionHash,
-      sender: web3.utils.toChecksumAddress(account),
-      signature: sigs,
-    }
-    await axios.post(endpoint, postData)
-    console.log(
-      `Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/safes/${masterSafe.address}/transactions`
-    )
+    await signAndSend(masterSafe, transactionData, web3)
     callback()
   } catch (error) {
     console.log(error.response)

@@ -5,6 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
 
+const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const CALL = 0
 const DELEGATECALL = 1
 const maxU32 = 2 ** 32 - 1
@@ -543,4 +544,5 @@ module.exports = {
   maxUINT,
   DELEGATECALL,
   CALL,
+  ADDRESS_0,
 }
