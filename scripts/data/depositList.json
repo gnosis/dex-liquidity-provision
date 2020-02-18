@@ -1,0 +1,12 @@
+[
+    {
+        "amount": 1,
+        "tokenAddress": "0x784b46a4331f5c7c495f296ae700652265ab2fc6",
+        "userAddress": "0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636"
+    },
+    {
+        "amount": 1,
+        "tokenAddress": "0x0000000000085d4780b73119b644ae5ecd22b376",
+        "userAddress": "0xfA4a18c2218945bC018BF94D093BCa66c88D3c40"
+    }
+]

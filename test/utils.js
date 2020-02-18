@@ -145,7 +145,7 @@ async function createLightwallet() {
 function signTransaction(lw, signers, transactionHash) {
   let signatureBytes = "0x"
   signers.sort()
-  for (let i=0; i<signers.length; i++) {
+  for (let i = 0; i < signers.length; i++) {
     const sig = lightwallet.signing.signMsgHash(lw.keystore, lw.passwords, transactionHash, signers[i])
     signatureBytes += sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
   }
@@ -166,5 +166,5 @@ module.exports = {
   encodeMultiSend,
   decodeOrdersBN,
   createLightwallet,
-  signTransaction
+  signTransaction,
 }
