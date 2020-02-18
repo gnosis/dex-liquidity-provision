@@ -1,5 +1,4 @@
 const axios = require("axios")
-const fetch = require("node-fetch")
 
 const { signTransaction, createLightwallet } = require("../test/utils")
 const { transferApproveDeposit, DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
@@ -24,14 +23,12 @@ module.exports = async callback => {
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
-    const deposits = await fetch(argv.depositFile)
-      .then(response => {
-        return response.json()
-      })
-    console.log(deposits)
-    const transactionData = await transferApproveDeposit(masterSafe, deposits, artifacts)
-
+    const deposits = require(argv.depositFile)
+    console.log("Deposits", deposits)
+    const transactionData = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    console.log("Aquired transaction data", transactionData.data)
     const nonce = await masterSafe.nonce()
+    console.log("Using nonce", nonce.toNumber())
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
       transactionData.to,
@@ -43,7 +40,7 @@ module.exports = async callback => {
       0,
       ADDRESS_0,
       ADDRESS_0,
-      nonce
+      nonce.toNumber()
     )
     const lightWallet = await createLightwallet()
     const account = lightWallet.accounts[0]

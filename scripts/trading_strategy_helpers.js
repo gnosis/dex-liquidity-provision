@@ -391,7 +391,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList, artifacts = artifacts) {
+const transferApproveDeposit = async function(fleetOwner, depositList, web3, artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
