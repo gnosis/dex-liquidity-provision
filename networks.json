@@ -1,0 +1,30 @@
+{
+    "GnosisSafe": {
+        "4": {
+            "links": {},
+            "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F",
+            "transactionHash": "0xd0c013ccb66480ea59d26997adcf551e1ce18e048d5eb898e5bb39c06610361f"
+        }
+    },
+    "GnosisSafeProxyFactory": {
+        "4": {
+            "links": {},
+            "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
+            "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
+        }
+    },
+    "MultiSend": {
+        "4": {
+            "links": {},
+            "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
+            "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
+        }
+    },
+    "Migrations": {
+        "4": {
+            "links": {},
+            "address": "0x457c89E69850efEb71701aEfd23Eb20f61Fa6cAC",
+            "transactionHash": "0xa75f39990aed4dbef074363aeeccef45ba73a063cda1c8bce87f0bbf68ff651d"
+        }
+    }
+}

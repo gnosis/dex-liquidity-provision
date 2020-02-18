@@ -1,4 +1,5 @@
 const { buildOrderTransactionData } = require("./trading_strategy_helpers")
+const { signAndSend } = require("./sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -12,19 +13,21 @@ const argv = require("yargs")
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
+  .option("masterSafe", {
+    type: "string",
+    describe: "Address of Gnosis Safe owning slaveSafes",
+  })
+  .option("slaves", {
+    type: "string",
+    describe: "Trader account addresses to place orders on behalf of.",
+    coerce: str => {
+      return str.split(",")
+    },
+  })
   .option("priceRange", {
     type: "float",
     describe: "Percentage above and below the target price for which orders are to be placed",
     default: 20,
-  })
-  .option("masterSafe", {
-    type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes"
-  })
-  .option("slaveSafes", {
-    type: "array",
-    describe:
-      "Trader account addresses to place orders on behalf of.",
   })
   .option("validFrom", {
     type: "int",
@@ -36,7 +39,7 @@ const argv = require("yargs")
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
   })
-  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "slaveSafes"])
+  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "slaves"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -44,23 +47,28 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    console.log("Preparing Order Data")
-    console.log("Master Safe:", argv.masterSafe)
-    console.log("Slave Safes:", argv.slaveSafes)
-    const transactionData = buildOrderTransactionData(
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+
+    console.log("Preparing order transaction data")
+    const transactionData = await buildOrderTransactionData(
       argv.masterSafe,
-      argv.slaveSafes,
+      argv.slaves,
       argv.targetToken,
       argv.stableToken,
       argv.targetPrice,
+      web3,
+      artifacts,
+      true,
       argv.priceRange,
       argv.validFrom,
       argv.expiry
     )
-    console.log(`Transaction Data for Order Placement: \n    To: ${transactionData.to}\n\n    Hex:\n${transactionData.data}`)
 
+    await signAndSend(masterSafe, transactionData, web3)
     callback()
   } catch (error) {
+    console.log(error.response)
     callback(error)
   }
 }
