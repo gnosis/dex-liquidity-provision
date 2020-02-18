@@ -1,4 +1,5 @@
-const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const util = require("util")
+const lightwallet = require("eth-lightwallet")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const BN = require("bn.js")
 
@@ -36,7 +37,7 @@ function toETH(value) {
 const execTransaction = async function(safe, lightWallet, to, value, data, operation) {
   const nonce = await safe.nonce()
   const transactionHash = await safe.getTransactionHash(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, nonce)
-  const sigs = utils.signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
+  const sigs = signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
   await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
 }
 
@@ -90,7 +91,7 @@ const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
 async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
   assert.isObject(transaction)
   if (subject != null) {
-    utils.logGasUsage(subject, transaction)
+    logGasUsage(subject, transaction)
   }
   let logs = transaction.logs
   if (eventName != null) {
@@ -123,6 +124,39 @@ function decodeOrdersBN(bytes) {
   }))
 }
 
+async function createLightwallet() {
+  // Create lightwallet accounts
+  const createVault = util.promisify(lightwallet.keystore.createVault).bind(lightwallet.keystore)
+  const keystore = await createVault({
+    hdPathString: "m/44'/60'/0'/0",
+    seedPhrase: "myth like bonus scare over problem client lizard pioneer submit female collect",
+    password: "test",
+    salt: "testsalt",
+  })
+  const keyFromPassword = await util.promisify(keystore.keyFromPassword).bind(keystore)("test")
+  keystore.generateNewAddress(keyFromPassword, 20)
+  return {
+    keystore: keystore,
+    accounts: keystore.getAddresses(),
+    passwords: keyFromPassword,
+  }
+}
+
+function signTransaction(lw, signers, transactionHash) {
+  let signatureBytes = "0x"
+  signers.sort()
+  for (let i=0; i<signers.length; i++) {
+    const sig = lightwallet.signing.signMsgHash(lw.keystore, lw.passwords, transactionHash, signers[i])
+    signatureBytes += sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
+  }
+  return signatureBytes
+}
+
+function logGasUsage(subject, transactionOrReceipt) {
+  const receipt = transactionOrReceipt.receipt || transactionOrReceipt
+  console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
+}
+
 module.exports = {
   waitForNSeconds,
   toETH,
@@ -131,4 +165,6 @@ module.exports = {
   deploySafe,
   encodeMultiSend,
   decodeOrdersBN,
+  createLightwallet,
+  signTransaction
 }

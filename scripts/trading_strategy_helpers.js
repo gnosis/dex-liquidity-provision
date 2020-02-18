@@ -227,7 +227,6 @@ const buildOrderTransactionData = async function(
   expiry = maxU32
 ) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
-  log("Here we go!")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
 
