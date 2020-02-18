@@ -13,6 +13,9 @@ truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetP
 ```
 
 
+
+### Transfer-Approve-Deposit
+
 ```js
 truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --depositFile="./data/depositList.json" --network=rinkeby
 ```
