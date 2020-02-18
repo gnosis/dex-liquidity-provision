@@ -93,7 +93,7 @@ module.exports = async callback => {
       operation: DELEGATECALL,
       safeTxGas: 0, // magic later
       baseGas: 0,
-      gasPrice: 0, // import that it is zero
+      gasPrice: 0, // important that this is zero
       gasToken: ADDRESS_0,
       refundReceiver: ADDRESS_0,
       nonce: nonce.toNumber(),
