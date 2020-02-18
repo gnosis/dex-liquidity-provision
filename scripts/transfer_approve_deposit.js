@@ -1,8 +1,5 @@
-const axios = require("axios")
-
 const { signAndSend } = require("./sign_and_send")
-const { signTransaction, createLightwallet } = require("../test/utils")
-const { transferApproveDeposit, DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
+const { transferApproveDeposit } = require("./trading_strategy_helpers")
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -27,7 +24,7 @@ module.exports = async callback => {
     const deposits = require(argv.depositFile)
     console.log("Deposits", deposits)
     const transactionData = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
-    
+
     await signAndSend(masterSafe, transactionData, web3)
 
     callback()

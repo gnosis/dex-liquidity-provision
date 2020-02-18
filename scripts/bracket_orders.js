@@ -1,7 +1,4 @@
-
-
-const { signTransaction, createLightwallet } = require("../test/utils")
-const { buildOrderTransactionData, DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
+const { buildOrderTransactionData } = require("./trading_strategy_helpers")
 const { signAndSend } = require("./sign_and_send")
 
 const argv = require("yargs")

@@ -349,6 +349,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
     // create transaction for the token
     let transactionData
     switch (functionName) {
+    /* eslint-disable indent */
       case "requestWithdraw":
         transactionData = await exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
@@ -363,6 +364,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
         break
       default:
         assert(false, "Function " + functionName + "is not implemented")
+    /* eslint-enable indent */
     }
 
     // prepare trader transaction
