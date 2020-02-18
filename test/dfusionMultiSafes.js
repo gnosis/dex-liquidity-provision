@@ -16,7 +16,6 @@ const {
   getRequestWithdrawTransaction,
   getWithdrawTransaction,
   getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction,
   max128,
   maxU32,
   maxUINT,
