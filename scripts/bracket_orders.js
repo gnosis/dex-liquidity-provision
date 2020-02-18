@@ -1,4 +1,6 @@
-const { buildOrderTransactionData } = require("./trading_strategy_helpers")
+const safeUtils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const { buildOrderTransactionData, DELEGATECALL } = require("./trading_strategy_helpers")
+const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -55,13 +57,33 @@ module.exports = async callback => {
       argv.targetToken,
       argv.stableToken,
       argv.targetPrice,
-      argv.priceRange,
-      argv.validFrom,
-      argv.expiry,
       web3,
       artifacts,
+      true,
+      argv.priceRange,
+      argv.validFrom,
+      argv.expiry
     )
+
     console.log(`Transaction Data for Order Placement: \n    To: ${transactionData.to}\n\n    Hex:\n${transactionData.data}`)
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const masterSafe = GnosisSafe.at(argv.masterSafe)
+
+    const nonce = await masterSafe.nonce()
+    const transactionHash = await masterSafe.getTransactionHash(
+      transactionData.to,
+      0,
+      transactionData.data,
+      DELEGATECALL,
+      0,
+      0,
+      0,
+      ADDRESS_0,
+      ADDRESS_0,
+      nonce
+    )
+    console.log(transactionHash)
+    // const sigs = safeUtils.signTransaction(web3.accounts[0], [web3.accounts[0]], transactionHash)
 
     callback()
   } catch (error) {

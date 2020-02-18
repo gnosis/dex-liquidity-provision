@@ -1,4 +1,3 @@
-
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
@@ -9,8 +8,8 @@ const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../
 const CALL = 0
 const DELEGATECALL = 1
 const maxU32 = 2 ** 32 - 1
-const max128 = (new BN(2)).pow(new BN(128)).subn(1)
-const maxUINT = (new BN(2)).pow(new BN(256)).sub(new BN(1))
+const max128 = new BN(2).pow(new BN(128)).subn(1)
+const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
 /**
  * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
@@ -133,11 +132,8 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
  * Given a collection of transactions, creates a single transaction that bundles all of them
  * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
  * @return {Transaction} Multisend transaction bundling all input transactions
-*/
-const getBundledTransaction = async function (
-  transactions,
-  artifacts
-) {
+ */
+const getBundledTransaction = async function(transactions, artifacts) {
   const MultiSend = artifacts.require("MultiSend")
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
@@ -145,7 +141,7 @@ const getBundledTransaction = async function (
   const transactionData = await encodeMultiSend(multiSend, transactions, web3)
   const bundledTransaction = {
     operation: DELEGATECALL,
-    to:  multiSend.address,
+    to: multiSend.address,
     value: 0,
     data: transactionData,
   }
@@ -159,13 +155,8 @@ const getBundledTransaction = async function (
  * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
-*/
-const getExecTransactionTransaction = async function (
-  masterAddress,
-  traderAddress,
-  transaction,
-  artifacts
-) {
+ */
+const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
@@ -175,7 +166,8 @@ const getExecTransactionTransaction = async function (
     transaction.to,
     transaction.value,
     transaction.data,
-    transaction.operation)
+    transaction.operation
+  )
   const execTransactionTransaction = {
     operation: CALL,
     to: traderAddress,
@@ -191,7 +183,7 @@ const getExecTransactionTransaction = async function (
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts=artifacts) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts = artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
@@ -232,7 +224,7 @@ const buildOrderTransactionData = async function(
   debug = false,
   priceRangePercentage = 20,
   validFrom = 3,
-  expiry = maxU32,
+  expiry = maxU32
 ) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
   log("Here we go!")
@@ -293,9 +285,7 @@ const buildOrderTransactionData = async function(
       .mul(toETH(1))
       .toString()
 
-    log(
-      `Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`
-    )
+    log(`Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
     log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
     const buyTokens = [targetTokenId, stableTokenId]
     const sellTokens = [stableTokenId, targetTokenId]
@@ -308,14 +298,19 @@ const buildOrderTransactionData = async function(
       .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
       .encodeABI()
     const multiSendData = await encodeMultiSend(
-      multiSend, 
-      [
-        { operation: CALL, to: exchange.address, value: 0, data: orderData }
-      ], 
+      multiSend,
+      [{ operation: CALL, to: exchange.address, value: 0, data: orderData }],
       web3
     )
 
-    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwnerAddress, multiSend.address, 0, multiSendData, 1)
+    const execData = await execTransactionData(
+      gnosisSafeMasterCopy,
+      fleetOwnerAddress,
+      multiSend.address,
+      0,
+      multiSendData,
+      DELEGATECALL
+    )
     transactions.push({
       operation: CALL,
       to: traderAddress,
@@ -343,11 +338,7 @@ const buildOrderTransactionData = async function(
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const getGenericFundMovementTransaction = async function (
-  masterAddress,
-  withdrawals,
-  functionName
-) {
+const getGenericFundMovementTransaction = async function(masterAddress, withdrawals, functionName) {
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
@@ -358,14 +349,20 @@ const getGenericFundMovementTransaction = async function (
     // create transaction for the token
     let transactionData
     switch (functionName) {
-    case "requestWithdraw":
-      transactionData = await exchange.contract.methods["requestWithdraw"](withdrawal.tokenAddress, maxUINT.toString()).encodeABI()
-      break
-    case "withdraw":
-      transactionData = await exchange.contract.methods["withdraw"](withdrawal.traderAddress, withdrawal.tokenAddress).encodeABI()
-      break
-    default:
-      assert(false, "Function " + functionName + "is not implemented")
+      case "requestWithdraw":
+        transactionData = await exchange.contract.methods["requestWithdraw"](
+          withdrawal.tokenAddress,
+          maxUINT.toString()
+        ).encodeABI()
+        break
+      case "withdraw":
+        transactionData = await exchange.contract.methods["withdraw"](
+          withdrawal.traderAddress,
+          withdrawal.tokenAddress
+        ).encodeABI()
+        break
+      default:
+        assert(false, "Function " + functionName + "is not implemented")
     }
 
     // prepare trader transaction
@@ -373,7 +370,7 @@ const getGenericFundMovementTransaction = async function (
       operation: CALL,
       to: exchange.address,
       value: 0,
-      data: transactionData
+      data: transactionData,
     }
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
@@ -395,7 +392,7 @@ const getGenericFundMovementTransaction = async function (
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList, artifacts=artifacts) {
+const transferApproveDeposit = async function(fleetOwner, depositList, artifacts = artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
@@ -429,15 +426,22 @@ const transferApproveDeposit = async function(fleetOwner, depositList, artifacts
     const depositData = await exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount.toString()).encodeABI()
     // Get data for approve and deposit multisend on slave
     const multiSendData = await encodeMultiSend(
-      multiSend, 
+      multiSend,
       [
         { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
-        { operation: CALL, to: exchange.address, value: 0, data: depositData }, 
+        { operation: CALL, to: exchange.address, value: 0, data: depositData },
       ],
       web3
     )
     // Get data to execute approve/deposit multisend via slave
-    const execData = await execTransactionData(gnosisSafeMasterCopy, fleetOwner.address, multiSend.address, 0, multiSendData, 1)
+    const execData = await execTransactionData(
+      gnosisSafeMasterCopy,
+      fleetOwner.address,
+      multiSend.address,
+      0,
+      multiSendData,
+      DELEGATECALL
+    )
     transactions.push({
       operation: CALL,
       to: deposit.userAddress,
@@ -461,15 +465,8 @@ const transferApproveDeposit = async function(fleetOwner, depositList, artifacts
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const getRequestWithdrawTransaction = async function (
-  masterAddress,
-  withdrawals
-) {
-  return await getGenericFundMovementTransaction(
-    masterAddress,
-    withdrawals,
-    "requestWithdraw"
-  )
+const getRequestWithdrawTransaction = async function(masterAddress, withdrawals) {
+  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "requestWithdraw")
 }
 
 /**
@@ -481,16 +478,9 @@ const getRequestWithdrawTransaction = async function (
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
-*/
-const getWithdrawTransaction = async function (
-  masterAddress,
-  withdrawals
-) {
-  return await getGenericFundMovementTransaction(
-    masterAddress,
-    withdrawals,
-    "withdraw"
-  )
+ */
+const getWithdrawTransaction = async function(masterAddress, withdrawals) {
+  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "withdraw")
 }
 
 /**
@@ -498,12 +488,8 @@ const getWithdrawTransaction = async function (
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
-*/
-const getTransferFundsToMasterTransaction = async function (
-  masterAddress,
-  withdrawals,
-  artifacts=artifacts
-) {
+ */
+const getTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, artifacts = artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
@@ -518,7 +504,7 @@ const getTransferFundsToMasterTransaction = async function (
       operation: CALL,
       to: token.address,
       value: 0,
-      data: transactionData
+      data: transactionData,
     }
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
@@ -537,11 +523,8 @@ const getTransferFundsToMasterTransaction = async function (
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
-*/
-const getWithdrawAndTransferFundsToMasterTransaction = async function (
-  masterAddress,
-  withdrawals
-) {
+ */
+const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddress, withdrawals) {
   const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
   const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, artifacts)
 
@@ -559,4 +542,6 @@ module.exports = {
   max128,
   maxU32,
   maxUINT,
+  DELEGATECALL,
+  CALL,
 }

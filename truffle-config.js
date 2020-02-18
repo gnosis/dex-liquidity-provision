@@ -59,7 +59,7 @@ module.exports = {
       showTimeSpent: true,
     },
   },
-  plugins: ["truffle-plugin-verify", "solidity-coverage"],
+  plugins: ["truffle-plugin-verify"],
   api_keys: {
     etherscan: process.env.MY_ETHERSCAN_API_KEY,
   },
