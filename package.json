@@ -21,7 +21,9 @@
     "@gnosis.pm/solidity-data-structures": "^1.2.2",
     "@gnosis.pm/util-contracts": "^2.0.6",
     "@truffle/contract": "^4.1.6",
+    "axios": "^0.19.2",
     "dotenv": "^8.0.0",
+    "eth-gas-reporter": "^0.2.15",
     "openzeppelin-solidity": "^2.4.0",
     "truffle": "^5.0.34",
     "truffle-plugin-verify": "^0.3.9"

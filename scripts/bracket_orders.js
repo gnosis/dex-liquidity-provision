@@ -1,6 +1,27 @@
 const safeUtils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const axios = require("axios")
+const util = require("util")
+const lightwallet = require("eth-lightwallet")
 const { buildOrderTransactionData, DELEGATECALL } = require("./trading_strategy_helpers")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
+
+async function createLightwallet() {
+  // Create lightwallet accounts
+  const createVault = util.promisify(lightwallet.keystore.createVault).bind(lightwallet.keystore)
+  const keystore = await createVault({
+    hdPathString: "m/44'/60'/0'/0",
+    seedPhrase: "myth like bonus scare over problem client lizard pioneer submit female collect",
+    password: "test",
+    salt: "testsalt",
+  })
+  const keyFromPassword = await util.promisify(keystore.keyFromPassword).bind(keystore)("test")
+  keystore.generateNewAddress(keyFromPassword, 20)
+  return {
+    keystore: keystore,
+    accounts: keystore.getAddresses(),
+    passwords: keyFromPassword,
+  }
+}
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -50,7 +71,7 @@ module.exports = async callback => {
   try {
     console.log("Preparing Order Data")
     console.log("Master Safe:", argv.masterSafe)
-    console.log("Slave Safes:", argv.slaves)
+    console.log("Slaves:", argv.slaves)
     const transactionData = await buildOrderTransactionData(
       argv.masterSafe,
       argv.slaves,
@@ -65,11 +86,12 @@ module.exports = async callback => {
       argv.expiry
     )
 
-    console.log(`Transaction Data for Order Placement: \n    To: ${transactionData.to}\n\n    Hex:\n${transactionData.data}`)
+    // console.log(`Transaction Data for Order Placement: \n    To: ${transactionData.to}\n\n    Hex:\n${transactionData.data}`)
     const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = GnosisSafe.at(argv.masterSafe)
+    const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const nonce = await masterSafe.nonce()
+    // console.log("Safe Nonce", nonce.toNumber())
     const transactionHash = await masterSafe.getTransactionHash(
       transactionData.to,
       0,
@@ -82,11 +104,36 @@ module.exports = async callback => {
       ADDRESS_0,
       nonce
     )
-    console.log(transactionHash)
-    // const sigs = safeUtils.signTransaction(web3.accounts[0], [web3.accounts[0]], transactionHash)
+    // console.log("Transaction Hash", transactionHash)
+    const lightWallet = await createLightwallet()
+    const account = lightWallet.accounts[0]
+    // console.log("Using account", account)
+    const sigs = safeUtils.signTransaction(lightWallet, [account], transactionHash)
 
+    // console.log("Signatures", sigs)
+
+    const endpoint =
+      "https://safe-transaction.rinkeby.gnosis.io/api/v1/safes/0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c/transactions/"
+    const postData = {
+      to: transactionData.to,
+      value: 0,
+      data: transactionData.data,
+      operation: DELEGATECALL,
+      safeTxGas: 0, // magic later
+      baseGas: 0,
+      gasPrice: 0, // import that it is zero
+      gasToken: ADDRESS_0,
+      refundReceiver: ADDRESS_0,
+      nonce: nonce.toNumber(),
+      contractTransactionHash: transactionHash,
+      sender: web3.utils.toChecksumAddress(account),
+      signature: sigs,
+    }
+    await axios.post(endpoint, postData)
+    console.log("Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/safes/0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c/transactions")
     callback()
   } catch (error) {
+    console.log(error.response)
     callback(error)
   }
 }
