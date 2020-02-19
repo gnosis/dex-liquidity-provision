@@ -145,5 +145,5 @@ Ensure that your `depositFile` contains all the correct information regarding co
 says to deposit 2 DAI and 1 WETH to the batch exchange on behalf of `0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636` and `0xfA4a18c2218945bC018BF94D093BCa66c88D3c40` respectively.
 
 ```js
-truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --depositFile="./data/depositList.json" --network=rinkeby
+truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xb2162C8868AB135604270c92ed1faFA47b2BB50B --depositFile="./data/largeDepositList.json" --network=rinkeby
 ```

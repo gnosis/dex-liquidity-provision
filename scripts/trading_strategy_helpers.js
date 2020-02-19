@@ -261,6 +261,11 @@ const buildOrderTransactionData = async function(
   )
   for (let safeIndex = 0; safeIndex < subSafeAddresses.length; safeIndex++) {
     const traderAddress = subSafeAddresses[safeIndex]
+    const traderSafe = await GnosisSafe.at(traderAddress)
+    const slaveOwners = await traderSafe.getOwners()
+    assert.equal(slaveOwners[0], fleetOwnerAddress, "All depositors must be owned by master safe")
+    assert.equal(slaveOwners.length, 1, "Can only submit transactions on behalf of singly owned safes")
+
     const lowerLimit = lowestLimit + safeIndex * stepSize
     const upperLimit = lowestLimit + (safeIndex + 1) * stepSize
 
