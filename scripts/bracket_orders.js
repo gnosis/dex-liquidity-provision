@@ -1,6 +1,17 @@
 const { buildOrderTransactionData } = require("./trading_strategy_helpers")
 const { signAndSend } = require("./sign_and_send")
 
+const readline = require("readline")
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+})
+
+const promptUser = function(message) {
+  return new Promise(resolve => rl.question(message, answer => resolve(answer)))
+}
+
 const argv = require("yargs")
   .option("targetToken", {
     type: "int",
@@ -65,7 +76,11 @@ module.exports = async callback => {
       argv.expiry
     )
 
-    await signAndSend(masterSafe, transactionData, web3)
+    const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
+    if (answer == "y" || answer.toLowerCase() == "yes") {
+      await signAndSend(masterSafe, transactionData, web3)
+    }
+
     callback()
   } catch (error) {
     console.log(error.response)

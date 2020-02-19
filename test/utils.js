@@ -2,7 +2,7 @@ const util = require("util")
 const lightwallet = require("eth-lightwallet")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const BN = require("bn.js")
-
+const assert = require("assert")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
 const jsonrpc = "2.0"
@@ -89,7 +89,7 @@ const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
 
 // Need some small adjustments to default implementation for web3js 1.x
 async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
-  assert.isObject(transaction)
+  // assert.isObject(transaction)
   if (subject != null) {
     logGasUsage(subject, transaction)
   }
@@ -102,7 +102,7 @@ async function getParamFromTxEvent(transaction, eventName, paramName, contract, 
   if (contractFactory != null) {
     // Adjustment: add await
     const contract = await contractFactory.at(param)
-    assert.isObject(contract, `getting ${paramName} failed for ${param}`)
+    // assert.isObject(contract, `getting ${paramName} failed for ${param}`)
     return contract
   } else {
     return param

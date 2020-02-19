@@ -184,7 +184,7 @@ const getExecTransactionTransaction = async function(masterAddress, traderAddres
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts = artifacts) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
@@ -227,7 +227,7 @@ const buildOrderTransactionData = async function(
   validFrom = 3,
   expiry = maxU32
 ) {
-  const log = debug ? () => console.log.apply(arguments) : () => {}
+  const log = debug ? (...a) => console.log(...a) : () => {}
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
 
@@ -250,16 +250,19 @@ const buildOrderTransactionData = async function(
   // Number of brackets is determined by subsafeAddresses.length
   const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
   const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
+  log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
+
   const stepSize = (highestLimit - lowestLimit) / subSafeAddresses.length
 
-  let safeIndex = 0
+  // let safeIndex = 0
   const transactions = []
   log(
     `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken} per ${targetToken.symbol}`
   )
-  for (let lowerLimit = lowestLimit; lowerLimit <= highestLimit - stepSize; lowerLimit += stepSize) {
+  for (let safeIndex = 0; safeIndex < subSafeAddresses.length; safeIndex++) {
     const traderAddress = subSafeAddresses[safeIndex]
-    const upperLimit = lowerLimit + stepSize
+    const lowerLimit = lowestLimit + safeIndex * stepSize
+    const upperLimit = lowestLimit + (safeIndex + 1) * stepSize
 
     // Sell targetToken for stableToken at targetTokenPrice = upperLimit
     // Sell 1 ETH at for 102 DAI (unlimited)
@@ -317,12 +320,9 @@ const buildOrderTransactionData = async function(
       value: 0,
       data: execData,
     })
-    safeIndex += 1
   }
-  log("Multisend", multiSend.address)
-  log("Transactions", transactions.length)
+  log("Transaction bundle size", transactions.length)
   const finalData = await encodeMultiSend(multiSend, transactions, web3)
-  // console.log(`Transaction Data for Order Placement: \n    To: ${multiSend.address}\n    Hex: ${finalData}`)
   return {
     to: multiSend.address,
     data: finalData,
