@@ -175,7 +175,7 @@ contract("GnosisSafe", function(accounts) {
     for (const trader of slaveSafes)
       assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Balance setup failed: trader Safes still holds funds")
 
-    const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals)
+    const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
     await execTransaction(
       masterSafe,
       lw,
@@ -209,7 +209,7 @@ contract("GnosisSafe", function(accounts) {
         "Unexpected behavior in requestWithdraw: trader Safes holds funds"
       )
 
-    const withdrawalTransaction = await getWithdrawTransaction(masterSafe.address, withdrawals)
+    const withdrawalTransaction = await getWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
     await execTransaction(
       masterSafe,
       lw,
