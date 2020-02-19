@@ -1,6 +1,18 @@
 const axios = require("axios")
 const { DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
 const { signTransaction, createLightwallet } = require("../test/utils")
+
+const readline = require("readline")
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+})
+
+const promptUser = function(message) {
+  return new Promise(resolve => rl.question(message, answer => resolve(answer)))
+}
+
 /**
  * Deploys specified number singler-owner Gnosis Safes having specified ownership
  * @param {string} fleetOwner {@link EthereumAddress} of Gnosis Safe (Multi-Sig)
@@ -50,4 +62,5 @@ const signAndSend = async function(masterSafe, transactionData, web3) {
 
 module.exports = {
   signAndSend,
+  promptUser
 }

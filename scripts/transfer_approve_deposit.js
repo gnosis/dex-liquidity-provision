@@ -1,4 +1,4 @@
-const { signAndSend } = require("./sign_and_send")
+const { signAndSend, promptUser } = require("./sign_and_send")
 const { transferApproveDeposit } = require("./trading_strategy_helpers")
 
 const argv = require("yargs")
@@ -22,10 +22,15 @@ module.exports = async callback => {
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const deposits = require(argv.depositFile)
-    console.log("Deposits", deposits)
-    const transactionData = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    // TODO - make a simpler to construct deposit file style
+    console.log("Raw Deposits", deposits)
+    console.log("Preparing transaction data...")
+    const transactionData = await transferApproveDeposit(masterSafe, deposits, web3, artifacts, true)
 
-    await signAndSend(masterSafe, transactionData, web3)
+    const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
+    if (answer == "y" || answer.toLowerCase() == "yes") {
+      await signAndSend(masterSafe, transactionData, web3)
+    }
 
     callback()
   } catch (error) {

@@ -399,7 +399,8 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList, web3, artifacts) {
+const transferApproveDeposit = async function(fleetOwner, depositList, web3, artifacts, debug=false) {
+  const log = debug ? (...a) => console.log(...a) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const MultiSend = artifacts.require("MultiSend")
@@ -407,18 +408,28 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
+  log("Aquired Batch Exchange", exchange.address)
   const multiSend = await MultiSend.deployed()
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-
   const transactions = []
+  // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
+  // TODO - make deposit list easier so that we dont' have to query the token every time.
   for (const deposit of depositList) {
-    const slaveSafe = await GnosisSafe.at(deposit.userAddress)
-    const slaveOwners = await slaveSafe.getOwners()
-    assert.equal(slaveOwners[0], fleetOwner.address, "All depositors must be owned by master safe")
+    // const slaveSafe = await GnosisSafe.at(deposit.userAddress)
+    // const slaveOwners = await slaveSafe.getOwners()
+    // assert.equal(slaveOwners[0], fleetOwner.address, "All depositors must be owned by master safe")
+    
     // No need to assert exchange has token since deposits and withdraws are not limited to registered tokens.
     // assert(await exchange.hasToken(deposit.tokenAddress), "Requested deposit token not listed on the exchange")
 
     const depositToken = await ERC20.at(deposit.tokenAddress)
+    const tokenDecimals = (await depositToken.decimals.call()).toNumber()
+    const tokenSymbol = await depositToken.symbol.call()
+    // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
+    assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
+
+    const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
+    log(`Safe ${deposit.userAddress} receiving (from ${fleetOwner.address}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
     // Get data to move funds from master to slave
     const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount.toString()).encodeABI()
     transactions.push({

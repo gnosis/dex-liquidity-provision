@@ -1,16 +1,5 @@
 const { buildOrderTransactionData } = require("./trading_strategy_helpers")
-const { signAndSend } = require("./sign_and_send")
-
-const readline = require("readline")
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-})
-
-const promptUser = function(message) {
-  return new Promise(resolve => rl.question(message, answer => resolve(answer)))
-}
+const { signAndSend, promptUser } = require("./sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {
