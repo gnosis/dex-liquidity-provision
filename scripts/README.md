@@ -20,9 +20,6 @@ truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xd9395aeE9141a3Ef
 ```
 
 
-
-
-
 ### Full Cycle Test
 
 To begin, you must have an existing "Master Safe" created through the interface (here)[https://rinkeby.gnosis-safe.io] for convienience, add an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the  "Proposer" account, who will be responsible for submitting the transaction from the terminal and ensure the safe requires at least two transactions. Note that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
@@ -124,3 +121,29 @@ Follow the link from the last line to complete signing and execution of the prop
 
 When propted to confirm and execute transaction, be sure to adjust the gas estimates suggested by metamask (10x)
 
+
+
+3. Transfer-Approve-Deposit
+
+Ensure that your `depositFile` contains all the correct information regarding correct Safe and Token addresses. For example, 
+
+```
+[
+    {
+        "amount": "2000000000000000000",
+        "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
+        "userAddress": "0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636"
+    },
+    {
+        "amount": "1000000000000000000",
+        "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
+        "userAddress": "    "
+    }
+]
+```
+
+says to deposit 2 DAI and 1 WETH to the batch exchange on behalf of `0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636` and `0xfA4a18c2218945bC018BF94D093BCa66c88D3c40` respectively.
+
+```js
+truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --depositFile="./data/depositList.json" --network=rinkeby
+```
