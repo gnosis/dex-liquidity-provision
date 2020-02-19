@@ -134,7 +134,7 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
  * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
  * @return {Transaction} Multisend transaction bundling all input transactions
  */
-const getBundledTransaction = async function(transactions, artifacts) {
+const getBundledTransaction = async function(transactions, web3, artifacts) {
   const MultiSend = artifacts.require("MultiSend")
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
@@ -157,7 +157,7 @@ const getBundledTransaction = async function(transactions, artifacts) {
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
  */
-const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, artifacts) {
+const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
@@ -379,11 +379,12 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
       masterAddress,
       withdrawal.traderAddress,
       transactionToExecute,
+      web3,
       artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return getBundledTransaction(masterTransactions, artifacts)
+  return getBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -513,11 +514,12 @@ const getTransferFundsToMasterTransaction = async function(masterAddress, withdr
       masterAddress,
       withdrawal.traderAddress,
       transactionToExecute,
+      web3,
       artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return await getBundledTransaction(masterTransactions, artifacts)
+  return await getBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -530,7 +532,7 @@ const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddr
   const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals, web3, artifacts)
   const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, web3, artifacts)
 
-  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], artifacts)
+  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
 
 module.exports = {
