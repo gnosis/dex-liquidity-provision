@@ -1,7 +1,17 @@
 
-
-
 ## Script Usage:
+
+### Prerequisites
+
+Contracts must be compiled and, if working on any non-local network, deployment addresses must be injected into built contracts.
+To do so, run:
+
+```
+npx truffle compile
+yarn run networks-inject
+```
+
+### Confirming multisig orders with Metamask
 
 Note that metamask underestimates the gas consumption. Just add a 4 at the beginning of the gas limit.
 
