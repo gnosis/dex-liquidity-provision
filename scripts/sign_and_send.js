@@ -38,6 +38,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const account = lightWallet.accounts[0]
   console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
   const sigs = signTransaction(lightWallet, [account], transactionHash)
+  // TODO - this should be somehow less... something
   const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
     to: transactionData.to,
@@ -54,9 +55,13 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     sender: web3.utils.toChecksumAddress(account),
     signature: sigs,
   }
-  await axios.post(endpoint, postData)
+  // await axios.post(endpoint, postData)
+  let linkPrefix = ""
+  if (network == "rinkeby") {
+    linkPrefix = "rinkeby."
+  } 
   console.log(
-    `Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/safes/${masterSafe.address}/transactions`
+    `Transaction awaiting execution in the interface https://${linkPrefix}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
 }
 
