@@ -55,7 +55,8 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     sender: web3.utils.toChecksumAddress(account),
     signature: sigs,
   }
-  // await axios.post(endpoint, postData)
+  await axios.post(endpoint, postData)
+  // TODO - make this one line
   let linkPrefix = ""
   if (network == "rinkeby") {
     linkPrefix = "rinkeby."
