@@ -1,13 +1,25 @@
 const axios = require("axios")
 const { DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
 const { signTransaction, createLightwallet } = require("../test/utils")
+
+const readline = require("readline")
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+})
+
+const promptUser = function(message) {
+  return new Promise(resolve => rl.question(message, answer => resolve(answer)))
+}
+
 /**
  * Deploys specified number singler-owner Gnosis Safes having specified ownership
  * @param {string} fleetOwner {@link EthereumAddress} of Gnosis Safe (Multi-Sig)
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const signAndSend = async function(masterSafe, transactionData, web3) {
+const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const nonce = await masterSafe.nonce()
   console.log("Aquiring Transaction Hash")
   const transactionHash = await masterSafe.getTransactionHash(
@@ -26,7 +38,8 @@ const signAndSend = async function(masterSafe, transactionData, web3) {
   const account = lightWallet.accounts[0]
   console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
   const sigs = signTransaction(lightWallet, [account], transactionHash)
-  const endpoint = `https://safe-transaction.rinkeby.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
+  // TODO - this should be somehow less... something
+  const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
     to: transactionData.to,
     value: 0,
@@ -43,11 +56,17 @@ const signAndSend = async function(masterSafe, transactionData, web3) {
     signature: sigs,
   }
   await axios.post(endpoint, postData)
+  // TODO - make this one line
+  let linkPrefix = ""
+  if (network == "rinkeby") {
+    linkPrefix = "rinkeby."
+  } 
   console.log(
-    `Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/safes/${masterSafe.address}/transactions`
+    `Transaction awaiting execution in the interface https://${linkPrefix}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
 }
 
 module.exports = {
   signAndSend,
+  promptUser
 }
