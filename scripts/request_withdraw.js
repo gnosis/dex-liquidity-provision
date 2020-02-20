@@ -1,5 +1,5 @@
 const { signAndSend } = require("./sign_and_send")
-const { getRequestWithdrawTransaction } = require("./trading_strategy_helpers")
+const { getRequestWithdrawTransaction, getWithdrawTransaction } = require("./trading_strategy_helpers")
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -41,25 +41,41 @@ const extractWithdrawals = function(deposits) {
   return withdrawals
 }
 
+const genericExecWithdraw = async function(functionName) {
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const masterSafe = await GnosisSafe.at(argv.masterSafe)
+
+  let withdrawals
+  if (argv.withdrawalFile) {
+    withdrawals = require(argv.withdrawalFile)
+  } else { // argv.withdrawalsFromDepositFile is defined
+    const deposits = require(argv.withdrawalsFromDepositFile)
+    withdrawals = extractWithdrawals(deposits)
+  }
+  console.log("Withdrawals", withdrawals)
+  let transaction
+  switch (functionName) {
+  /* eslint-disable indent */
+    case "requestWithdraw":
+      transaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      break
+    case "withdraw":
+      transaction = await getWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      break
+    default:
+      assert(false, "Function " + functionName + "is not implemented")
+  /* eslint-enable indent */
+  }
+
+  // careful! transaction.operation and transaction.value are ignored by signAndSend.
+  // this is fine for, since we only send transactions to multisend, but we should
+  // TODO: generalize signAndSend to accept any transaction
+  await signAndSend(masterSafe, transaction, web3)
+}
+
 module.exports = async callback => {
   try {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
-
-    let withdrawals
-    if (argv.withdrawalFile) {
-      withdrawals = require(argv.withdrawalFile)
-    } else { // argv.withdrawalsFromDepositFile is defined
-      const deposits = require(argv.withdrawalsFromDepositFile)
-      withdrawals = extractWithdrawals(deposits)
-    }
-    console.log("Withdrawals", withdrawals)
-    const transaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
-
-    // careful! transaction.operation and transaction.value are ignored by signAndSend.
-    // this is fine for, since we only send transactions to multisend, but we should
-    // TODO: generalize signAndSend to accept any transaction
-    await signAndSend(masterSafe, transaction, web3)
+    await genericExecWithdraw("requestWithdraw")
 
     callback()
   } catch (error) {
