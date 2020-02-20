@@ -19,7 +19,7 @@ const promptUser = function(message) {
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const signAndSend = async function(masterSafe, transactionData, web3) {
+const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const nonce = await masterSafe.nonce()
   console.log("Aquiring Transaction Hash")
   const transactionHash = await masterSafe.getTransactionHash(
@@ -38,7 +38,7 @@ const signAndSend = async function(masterSafe, transactionData, web3) {
   const account = lightWallet.accounts[0]
   console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
   const sigs = signTransaction(lightWallet, [account], transactionHash)
-  const endpoint = `https://safe-transaction.rinkeby.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
+  const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
     to: transactionData.to,
     value: 0,

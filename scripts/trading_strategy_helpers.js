@@ -195,9 +195,9 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
   const slaveSafes = []
   for (let i = 0; i < fleetSize; i++) {
     const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1, artifacts)
+    console.log("New Safe Created", newSafe.address)
     slaveSafes.push(newSafe.address)
   }
-  // console.log("Safes deployed:", slaveSafes)
   return slaveSafes
 }
 
@@ -257,7 +257,7 @@ const buildOrderTransactionData = async function(
   // let safeIndex = 0
   const transactions = []
   log(
-    `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken} per ${targetToken.symbol}`
+    `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
   )
   for (let safeIndex = 0; safeIndex < subSafeAddresses.length; safeIndex++) {
     const traderAddress = subSafeAddresses[safeIndex]

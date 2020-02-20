@@ -20,6 +20,7 @@ Note that metamask underestimates the gas consumption. Just add a 4 at the begin
 truffle exec scripts/deploy_safes.js --masterSafe=0xb2162C8868AB135604270c92ed1faFA47b2BB50B 
 --fleetSize=20 --network rinkeby
 ```
+
 ### Place Orders
 
 Requires that Master and Slave Safes are already deployed.
