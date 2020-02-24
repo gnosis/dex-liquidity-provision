@@ -30,18 +30,14 @@ const argv = require("yargs")
   .version(false).argv
 
 const extractWithdrawals = function(deposits) {
-  const withdrawals = []
-  for (const deposit of deposits) {
-    const withdrawal = {
-      traderAddress: deposit.userAddress,
-      tokenAddress: deposit.tokenAddress,
-    }
-    withdrawals.push(withdrawal)
-  }
-  return withdrawals
+  return deposits.map(deposit => ({
+    amount: deposit.amount,
+    tokenAddress: deposit.tokenAddress,
+    traderAddress: deposit.userAddress,
+  }))
 }
 
-const genericExecWithdraw = async function(functionName) {
+const genericExecWithdraw = async function(functionName, web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
@@ -70,12 +66,12 @@ const genericExecWithdraw = async function(functionName) {
   // careful! transaction.operation and transaction.value are ignored by signAndSend.
   // this is fine for, since we only send transactions to multisend, but we should
   // TODO: generalize signAndSend to accept any transaction
-  await signAndSend(masterSafe, transaction, web3)
+  await signAndSend(masterSafe, transaction, web3, argv.network)
 }
 
 module.exports = async callback => {
   try {
-    await genericExecWithdraw("requestWithdraw")
+    await genericExecWithdraw("requestWithdraw", web3, artifacts)
 
     callback()
   } catch (error) {
