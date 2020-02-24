@@ -429,7 +429,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
     assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
 
-    const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
+    const unitAmount = web3.utils.fromWei(deposit.amount.toString(), "ether")
     log(`Safe ${deposit.userAddress} receiving (from ${fleetOwner.address.slice(0,6)}...${fleetOwner.address.slice(-2)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
     // Get data to move funds from master to slave
     const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount.toString()).encodeABI()
