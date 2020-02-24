@@ -1,7 +1,10 @@
+const BN = require("bn.js")
+
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const TokenOWL = artifacts.require("TokenOWL")
+const ERC20 = artifacts.require("ERC20Detailed")
 
 const GnosisSafe = artifacts.require("GnosisSafe.sol")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
@@ -16,6 +19,7 @@ const {
   getRequestWithdrawTransaction,
   getWithdrawTransaction,
   getTransferFundsToMasterTransaction,
+  getWithdrawAndTransferFundsToMasterTransaction,
   max128,
   maxU32,
   maxUINT,
@@ -136,151 +140,230 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("Test withdrawals", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
-    const depositAmount = toETH(20)
-    const fullTokenAmount = depositAmount * slaveSafes.length
-    await testToken.mint(accounts[0], fullTokenAmount.toString())
-    await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
-    // Note that we have NOT registered the tokens on the exchange but can deposit them nontheless.
+  describe("Test withdrawals", async function() {
+    const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
+      const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+      assert.equal(batchedTransactions.to, multiSend.address)
 
-    const deposits = slaveSafes.map(slaveAddress => ({
-      amount: depositAmount,
-      tokenAddress: testToken.address,
-      userAddress: slaveAddress,
-    }))
+      await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+      // Close auction for deposits to be refelcted in exchange balance
+      await waitForNSeconds(301)
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
-    assert.equal(batchedTransactions.to, multiSend.address)
+      const totalDepositedAmount = {}
+      for (const {amount, tokenAddress, userAddress} of deposits) {
+        const token = await ERC20.at(tokenAddress)
+        assert.equal(
+          (await token.balanceOf(userAddress)).toString(),
+          "0",
+          "Balance setup failed: trader Safes still holds funds"
+        )
 
-    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
-    // Close auction for deposits to be refelcted in exchange balance
-    await waitForNSeconds(301)
+        if (typeof totalDepositedAmount[tokenAddress] === "undefined")
+          totalDepositedAmount[tokenAddress] = new BN(amount)
+        else 
+          totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
+      }
 
-    // build withdrawal lists
-    const withdrawals = []
-    for (const trader of slaveSafes) withdrawals.push({ tokenAddress: testToken.address, traderAddress: trader })
+      for (const [tokenAddress, totalAmountForToken] of Object.entries(totalDepositedAmount)) {
+        const token = await ERC20.at(tokenAddress)
+        assert.equal(
+          (await token.balanceOf(masterSafe.address)).toString(),
+          "0",
+          "Balance setup failed: master Safe still holds funds"
+        )
+        assert.equal(
+          (await token.balanceOf(exchange.address)).toString(),
+          totalAmountForToken.toString(),
+          "Balance setup failed: the exchange does not hold all tokens"
+        )
+      }        
 
-    assert.equal(
-      (await testToken.balanceOf(masterSafe.address)).toString(),
-      "0",
-      "Balance setup failed: master Safe still holds funds"
-    )
-    assert.equal(
-      (await testToken.balanceOf(exchange.address)).toString(),
-      fullTokenAmount.toString(),
-      "Balance setup failed: the exchange does not hold all tokens"
-    )
-    for (const trader of slaveSafes)
-      assert.equal((await testToken.balanceOf(trader)).toString(), "0", "Balance setup failed: trader Safes still holds funds")
+      const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      await execTransaction(
+        masterSafe,
+        lw,
+        requestWithdrawalTransaction.to,
+        requestWithdrawalTransaction.value,
+        requestWithdrawalTransaction.data,
+        requestWithdrawalTransaction.operation, // This is DELEGATECALL
+        "request withdrawal for all slaves"
+      )
+      await waitForNSeconds(301)
 
-    const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
-    await execTransaction(
-      masterSafe,
-      lw,
-      requestWithdrawalTransaction.to,
-      requestWithdrawalTransaction.value,
-      requestWithdrawalTransaction.data,
-      requestWithdrawalTransaction.operation, // This is DELEGATECALL
-      "request withdrawal for all slaves"
-    )
-    await waitForNSeconds(301)
+      const totalWithdrawnAmount = {}
+      for (const {amount, tokenAddress, traderAddress} of withdrawals) {
+        const pendingWithdrawal = await exchange.getPendingWithdraw(traderAddress, tokenAddress)
+        assert.equal(pendingWithdrawal[0].toString(), amount.toString(), "Withdrawal was not registered on the exchange")
 
-    for (const trader of slaveSafes) {
-      const pendingWithdrawal = await exchange.getPendingWithdraw(trader, testToken.address)
-      assert.equal(pendingWithdrawal[0].toString(), maxUINT.toString(), "Withdrawal was not registered on the exchange")
+        const token = await ERC20.at(tokenAddress)
+        assert.equal(
+          (await token.balanceOf(traderAddress)).toString(),
+          "0",
+          "Unexpected behavior in requestWithdraw: trader Safes holds funds"
+        )
+
+        if (typeof totalWithdrawnAmount[tokenAddress] === "undefined")
+          totalWithdrawnAmount[tokenAddress] = new BN(amount)
+        else 
+          totalWithdrawnAmount[tokenAddress] = totalWithdrawnAmount[tokenAddress].add(new BN(amount))
+      }
+
+      for (const [tokenAddress, totalAmountForToken] of Object.entries(totalWithdrawnAmount)) {
+        const token = await ERC20.at(tokenAddress)
+        assert.equal(
+          (await token.balanceOf(masterSafe.address)).toString(),
+          "0",
+          "Unexpected behavior in requestWithdraw: master Safe holds funds"
+        )
+        assert.equal(
+          (await token.balanceOf(exchange.address)).toString(),
+          totalAmountForToken.toString(),
+          "Unexpected behavior in requestWithdraw: the exchange does not hold all tokens"
+        )
+      }
     }
 
-    assert.equal(
-      (await testToken.balanceOf(masterSafe.address)).toString(),
-      "0",
-      "Unexpected behavior in requestWithdraw: master Safe holds funds"
-    )
-    assert.equal(
-      (await testToken.balanceOf(exchange.address)).toString(),
-      fullTokenAmount.toString(),
-      "Unexpected behavior in requestWithdraw: the exchange does not hold all tokens"
-    )
-    for (const trader of slaveSafes)
+    it.only("Withdraw full amount, three steps", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+      const depositAmount = toETH(200)
+      const fullTokenAmount = depositAmount * slaveSafes.length
+
+      await testToken.mint(accounts[0], fullTokenAmount.toString())
+      await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
+
+      const deposits = slaveSafes.map(slaveAddress => ({
+        amount: depositAmount,
+        tokenAddress: testToken.address,
+        userAddress: slaveAddress,
+      }))
+      // build withdrawal lists mirroring deposits
+      const withdrawals = deposits.map(deposit => ({
+        amount: deposit.amount,
+        tokenAddress: deposit.tokenAddress,
+        traderAddress: deposit.userAddress,
+      }))
+
+      await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
+
+      const withdrawalTransaction = await getWithdrawTransaction(
+        masterSafe.address, 
+        withdrawals, 
+        web3, 
+        artifacts
+      )
+      await execTransaction(
+        masterSafe,
+        lw,
+        withdrawalTransaction.to,
+        withdrawalTransaction.value,
+        withdrawalTransaction.data,
+        withdrawalTransaction.operation,
+        "withdraw for all slaves"
+      )
+
       assert.equal(
-        (await testToken.balanceOf(trader)).toString(),
+        (await testToken.balanceOf(masterSafe.address)).toString(),
         "0",
-        "Unexpected behavior in requestWithdraw: trader Safes holds funds"
+        "Unexpected behavior when withdrawing: master Safe holds funds"
       )
-
-    const withdrawalTransaction = await getWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
-    await execTransaction(
-      masterSafe,
-      lw,
-      withdrawalTransaction.to,
-      withdrawalTransaction.value,
-      withdrawalTransaction.data,
-      withdrawalTransaction.operation, // DELEGATECALL
-      "withdraw for all slaves"
-    )
-
-    assert.equal(
-      (await testToken.balanceOf(masterSafe.address)).toString(),
-      "0",
-      "Unexpected behavior when withdrawing: master Safe holds funds"
-    )
-    assert.equal(
-      (await testToken.balanceOf(exchange.address)).toString(),
-      "0",
-      "Withdrawing failed: the exchange still holds all tokens"
-    )
-    for (const trader of slaveSafes)
       assert.equal(
-        (await testToken.balanceOf(trader)).toString(),
-        depositAmount.toString(),
-        "Withdrawing failed: trader Safes do not hold the correct amount of funds"
-      )
-
-    const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(
-      masterSafe.address,
-      withdrawals,
-      artifacts
-    )
-    await execTransaction(
-      masterSafe,
-      lw,
-      transferFundsToMasterTransaction.to,
-      transferFundsToMasterTransaction.value,
-      transferFundsToMasterTransaction.data,
-      transferFundsToMasterTransaction.operation, // DELEGATECALL
-      "transfer funds to master for all slaves"
-    )
-
-    /*
-    // this is a compact alternative that should merge the two previous transactions together, but it doesn't work.
-    const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMasterTransaction(masterSafe.address, withdrawals)
-    await execTransaction(
-      masterSafe,
-      lw,
-      withdrawAndTransferFundsToMasterTransaction.to,
-      withdrawAndTransferFundsToMasterTransaction.value,
-      withdrawAndTransferFundsToMasterTransaction.data,
-      withdrawAndTransferFundsToMasterTransaction.operation,
-      "withdraw and transfer back for all slaves"
-    )
-    */
-
-    assert.equal(
-      (await testToken.balanceOf(masterSafe.address)).toString(),
-      fullTokenAmount.toString(),
-      "Fund retrieval failed: master Safe does not hold all funds"
-    )
-    assert.equal(
-      (await testToken.balanceOf(exchange.address)).toString(),
-      "0",
-      "Unexpected behavior when retrieving funds: the exchange holds funds"
-    )
-    for (const trader of slaveSafes)
-      assert.equal(
-        (await testToken.balanceOf(trader)).toString(),
+        (await testToken.balanceOf(exchange.address)).toString(),
         "0",
-        "Fund retrieval failed: trader Safes still hold some funds"
+        "Withdrawing failed: the exchange still holds all tokens"
       )
+      for (const trader of slaveSafes)
+        assert.equal(
+          (await testToken.balanceOf(trader)).toString(),
+          depositAmount.toString(),
+          "Withdrawing failed: trader Safes do not hold the correct amount of funds"
+        )
+
+      const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(
+        masterSafe.address,
+        withdrawals,
+        web3,
+        artifacts
+      )
+      await execTransaction(
+        masterSafe,
+        lw,
+        transferFundsToMasterTransaction.to,
+        transferFundsToMasterTransaction.value,
+        transferFundsToMasterTransaction.data,
+        transferFundsToMasterTransaction.operation,
+        "transfer funds to master for all slaves"
+      )
+
+      assert.equal(
+        (await testToken.balanceOf(masterSafe.address)).toString(),
+        fullTokenAmount.toString(),
+        "Fund retrieval failed: master Safe does not hold all funds"
+      )
+      assert.equal(
+        (await testToken.balanceOf(exchange.address)).toString(),
+        "0",
+        "Unexpected behavior when retrieving funds: the exchange holds funds"
+      )
+      for (const trader of slaveSafes)
+        assert.equal(
+          (await testToken.balanceOf(trader)).toString(),
+          "0",
+          "Fund retrieval failed: trader Safes still hold some funds"
+        )
+    })
+
+
+    it.only("Withdraw full amount, two steps", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+      const depositAmount = toETH(200)
+      const fullTokenAmount = depositAmount * slaveSafes.length
+
+      await testToken.mint(accounts[0], fullTokenAmount.toString())
+      await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
+
+      const deposits = slaveSafes.map(slaveAddress => ({
+        amount: depositAmount,
+        tokenAddress: testToken.address,
+        userAddress: slaveAddress,
+      }))
+      // build withdrawal lists mirroring deposits
+      const withdrawals = deposits.map(deposit => ({
+        amount: deposit.amount,
+        tokenAddress: deposit.tokenAddress,
+        traderAddress: deposit.userAddress,
+      }))
+
+      await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
+
+      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMasterTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      await execTransaction(
+        masterSafe,
+        lw,
+        withdrawAndTransferFundsToMasterTransaction.to,
+        withdrawAndTransferFundsToMasterTransaction.value,
+        withdrawAndTransferFundsToMasterTransaction.data,
+        withdrawAndTransferFundsToMasterTransaction.operation,
+        "withdraw and transfer back for all slaves"
+      )
+
+      assert.equal(
+        (await testToken.balanceOf(masterSafe.address)).toString(),
+        fullTokenAmount.toString(),
+        "Fund retrieval failed: master Safe does not hold all funds"
+      )
+      assert.equal(
+        (await testToken.balanceOf(exchange.address)).toString(),
+        "0",
+        "Unexpected behavior when retrieving funds: the exchange holds funds"
+      )
+      for (const trader of slaveSafes)
+        assert.equal(
+          (await testToken.balanceOf(trader)).toString(),
+          "0",
+          "Fund retrieval failed: trader Safes still hold some funds"
+        )
+    })
   })
 })

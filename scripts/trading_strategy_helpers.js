@@ -77,10 +77,12 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @typedef Withdrawal
  *  * Example:
  * {
+ *   amount: "100",
  *   traderAddress: "0x0000000000000000000000000000000000000000",
  *   tokenAddress: "0x0000000000000000000000000000000000000000",
  * }
  * @type {object}
+ * @property {integer} amount Integer denoting amount to be deposited
  * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
  * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
@@ -358,7 +360,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
       case "requestWithdraw":
         transactionData = await exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
-          maxUINT.toString()
+          withdrawal.amount.toString()
         ).encodeABI()
         break
       case "withdraw":
@@ -508,13 +510,13 @@ const getWithdrawTransaction = async function(masterAddress, withdrawals, web3, 
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, artifacts) {
+const getTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
   for (const withdrawal of withdrawals) {
     const token = await ERC20.at(withdrawal.tokenAddress)
-    const amount = await token.balanceOf(withdrawal.traderAddress)
+    const amount = withdrawal.amount
     // create transaction for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
@@ -544,7 +546,7 @@ const getTransferFundsToMasterTransaction = async function(masterAddress, withdr
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddress, withdrawals) {
+const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
   const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals, web3, artifacts)
   const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, web3, artifacts)
 
