@@ -109,21 +109,6 @@ async function getParamFromTxEvent(transaction, eventName, paramName, contract, 
   }
 }
 
-// TODO - move this once dex-contracts updates npm package.
-function decodeOrdersBN(bytes) {
-  return decodeOrders(bytes).map(e => ({
-    user: e.user,
-    sellTokenBalance: new BN(e.sellTokenBalance),
-    buyToken: parseInt(e.buyToken),
-    sellToken: parseInt(e.sellToken),
-    validFrom: parseInt(e.validFrom),
-    validUntil: parseInt(e.validUntil),
-    priceNumerator: new BN(e.priceNumerator),
-    priceDenominator: new BN(e.priceDenominator),
-    remainingAmount: new BN(e.remainingAmount),
-  }))
-}
-
 async function createLightwallet() {
   // Create lightwallet accounts
   const createVault = util.promisify(lightwallet.keystore.createVault).bind(lightwallet.keystore)
@@ -164,7 +149,6 @@ module.exports = {
   execTransactionData,
   deploySafe,
   encodeMultiSend,
-  decodeOrdersBN,
   createLightwallet,
   signTransaction,
 }
