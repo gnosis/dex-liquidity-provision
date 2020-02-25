@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - 10
+cache: yarn
+before_install:
+  - rm -rf build
+  - npm install -g yarn@latest
+  - yarn --version
+  - npm install -g ganache-cli@latest
+  - ganache-cli --version
+before_script:
+  - ganache-cli -l 8e6 > /dev/null &
+script:
+  - yarn run lint
+  - yarn run test test/dfusionMultiSafes.js

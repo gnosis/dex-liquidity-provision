@@ -15,6 +15,9 @@
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   },
   "scripts": {
+    "lint": "eslint .",
+    "solhint": "solhint \"contracts/**/*.sol\"",
+    "test": "truffle test",
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js"
   },
   "dependencies": {
@@ -26,7 +29,9 @@
     "@truffle/contract": "^4.1.6",
     "axios": "^0.19.2",
     "dotenv": "^8.0.0",
+    "eslint": "^6.8.0",
     "eth-gas-reporter": "^0.2.15",
+    "solhint": "^2.3.0",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
     "truffle": "^5.0.34",

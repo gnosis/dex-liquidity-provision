@@ -1,6 +1,5 @@
 const util = require("util")
 const lightwallet = require("eth-lightwallet")
-const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const BN = require("bn.js")
 const assert = require("assert")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
