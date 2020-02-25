@@ -17,8 +17,7 @@ Note that metamask underestimates the gas consumption. Just add a 4 at the begin
 
 ### Deploy Safes
 ```js
-truffle exec scripts/deploy_safes.js --masterSafe=0xb2162C8868AB135604270c92ed1faFA47b2BB50B 
---fleetSize=20 --network rinkeby
+truffle exec scripts/deploy_safes.js --masterSafe=0xb2162C8868AB135604270c92ed1faFA47b2BB50B --fleetSize=2 --network rinkeby
 ```
 
 ### Place Orders
