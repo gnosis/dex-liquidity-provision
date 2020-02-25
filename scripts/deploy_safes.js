@@ -19,7 +19,7 @@ module.exports = async callback => {
   try {
     console.log("Master Safe:", argv.masterSafe)
     console.log(`Deploying ${argv.fleetSize} subsafes `)
-    const slaves = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts)
+    const slaves = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts, true)
     console.log("Slave Addresses", slaves.join())
     callback()
   } catch (error) {

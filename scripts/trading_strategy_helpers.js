@@ -184,7 +184,8 @@ const getExecTransactionTransaction = async function(masterAddress, traderAddres
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts, debug=false) {
+  const log = debug ? (...a) => console.log(...a) : () => {}
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
@@ -195,7 +196,7 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts) {
   const slaveSafes = []
   for (let i = 0; i < fleetSize; i++) {
     const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [fleetOwner], 1, artifacts)
-    console.log("New Safe Created", newSafe.address)
+    log("New Safe Created", newSafe.address)
     slaveSafes.push(newSafe.address)
   }
   return slaveSafes

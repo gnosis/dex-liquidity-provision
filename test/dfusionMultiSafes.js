@@ -1,11 +1,12 @@
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const TokenOWL = artifacts.require("TokenOWL")
 
-const GnosisSafe = artifacts.require("GnosisSafe.sol")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
-const MultiSend = artifacts.require("MultiSend.sol")
+const GnosisSafe = artifacts.require("GnosisSafe")
+const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const MultiSend = artifacts.require("MultiSend")
 
 const TestToken = artifacts.require("DetailedMintableToken")
 
@@ -21,7 +22,7 @@ const {
   maxUINT,
   DELEGATECALL,
 } = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe, decodeOrdersBN } = require("./utils.js")
+const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
 
 contract("GnosisSafe", function(accounts) {
   let lw
@@ -80,7 +81,7 @@ contract("GnosisSafe", function(accounts) {
     // Note that we are have NOT registered the tokens on the exchange but can deposit them nontheless.
 
     const deposits = slaveSafes.map(slaveAddress => ({
-      amount: depositAmount,
+      amount: depositAmount.toString(),
       tokenAddress: testToken.address,
       userAddress: slaveAddress,
     }))
@@ -125,7 +126,7 @@ contract("GnosisSafe", function(accounts) {
 
     // Correctness assertions
     for (const slaveAddress of slaveSafes) {
-      const auctionElements = decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
       assert(buyOrder.priceDenominator.eq(max128))
