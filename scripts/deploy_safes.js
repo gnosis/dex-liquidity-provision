@@ -17,10 +17,10 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    console.log(`Deploying ${argv.fleetSize} subsafes `)
     console.log("Master Safe:", argv.masterSafe)
+    console.log(`Deploying ${argv.fleetSize} subsafes `)
     const slaves = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts)
-    console.log("Slave Addresses", slaves)
+    console.log("Slave Addresses", slaves.join())
     callback()
   } catch (error) {
     callback(error)
