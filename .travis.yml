@@ -13,4 +13,4 @@ before_script:
 script:
   - yarn run lint
   - yarn run solhint
-  - yarn run test ./test/dfusionMultiSafes.js
+  - yarn run test test/dfusionMultiSafes.js
