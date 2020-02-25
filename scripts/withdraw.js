@@ -74,7 +74,6 @@ module.exports = async callback => {
       const deposits = require(argv.withdrawalsFromDepositFile)
       withdrawals = extractWithdrawals(deposits)
     }
-    console.log("Withdrawals", withdrawals)
     let transaction
     if (argv.requestWithdraw)
       transaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)

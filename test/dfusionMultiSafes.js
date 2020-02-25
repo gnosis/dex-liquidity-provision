@@ -23,7 +23,6 @@ const {
   getWithdrawAndTransferFundsToMasterTransaction,
   max128,
   maxU32,
-  maxUINT,
   DELEGATECALL,
 } = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
@@ -224,7 +223,7 @@ contract("GnosisSafe", function(accounts) {
       }
     }
 
-    it.only("Withdraw full amount, three steps", async () => {
+    it("Withdraw full amount, three steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
       const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
       const depositAmount = toETH(200)
@@ -315,7 +314,7 @@ contract("GnosisSafe", function(accounts) {
     })
 
 
-    it.only("Withdraw full amount, two steps", async () => {
+    it("Withdraw full amount, two steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
       const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
       const depositAmount = toETH(200)
