@@ -146,7 +146,7 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(batchedTransactions.to, multiSend.address)
 
       await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
-      // Close auction for deposits to be refelcted in exchange balance
+      // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
 
       const totalDepositedAmount = {}
