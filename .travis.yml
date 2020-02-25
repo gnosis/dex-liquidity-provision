@@ -12,5 +12,4 @@ before_script:
   - ganache-cli -l 8e6 > /dev/null &
 script:
   - yarn run lint
-  - yarn run solhint
   - yarn run test test/dfusionMultiSafes.js
