@@ -60,7 +60,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     sender: web3.utils.toChecksumAddress(account),
     signature: sigs,
   }
-  // await axios.post(endpoint, postData)
+  await axios.post(endpoint, postData)
   console.log(
     `Transaction awaiting execution in the interface https://${linkPrefix[network]}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
