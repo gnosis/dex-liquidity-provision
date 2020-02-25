@@ -1,9 +1,9 @@
 const { signAndSend } = require("./sign_and_send")
 const {
-  getRequestWithdrawTransaction,
-  getWithdrawTransaction,
-  getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction
+  getRequestWithdraw,
+  getWithdraw,
+  getTransferFundsToMaster,
+  getWithdrawAndTransferFundsToMaster
 } = require("./trading_strategy_helpers")
 
 const argv = require("yargs")
@@ -76,13 +76,13 @@ module.exports = async callback => {
     }
     let transaction
     if (argv.requestWithdraw)
-      transaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (argv.withdraw && !argv.transferBackToMaster)
-      transaction = await getWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transaction = await getTransferFundsToMasterTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transaction = await getWithdrawAndTransferFundsToMasterTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await getWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
     else {
       throw(new Error("No operation specified"))
     }

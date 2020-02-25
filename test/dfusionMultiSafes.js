@@ -17,10 +17,10 @@ const {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
-  getRequestWithdrawTransaction,
-  getWithdrawTransaction,
-  getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction,
+  getRequestWithdraw,
+  getWithdraw,
+  getTransferFundsToMaster,
+  getWithdrawAndTransferFundsToMaster,
   max128,
   maxU32,
   DELEGATECALL,
@@ -178,7 +178,7 @@ contract("GnosisSafe", function(accounts) {
         )
       }        
 
-      const requestWithdrawalTransaction = await getRequestWithdrawTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
         lw,
@@ -246,7 +246,7 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-      const withdrawalTransaction = await getWithdrawTransaction(
+      const withdrawalTransaction = await getWithdraw(
         masterSafe.address, 
         withdrawals, 
         web3, 
@@ -279,7 +279,7 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
-      const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(
+      const transferFundsToMasterTransaction = await getTransferFundsToMaster(
         masterSafe.address,
         withdrawals,
         web3,
@@ -337,7 +337,7 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMasterTransaction(masterSafe.address, withdrawals, web3, artifacts)
+      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
         lw,

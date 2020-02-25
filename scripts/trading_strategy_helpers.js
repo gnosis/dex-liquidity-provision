@@ -487,7 +487,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const getRequestWithdrawTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
+const getRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
   return await getGenericFundMovementTransaction(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
@@ -501,7 +501,7 @@ const getRequestWithdrawTransaction = async function(masterAddress, withdrawals,
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
-const getWithdrawTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
+const getWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
   return await getGenericFundMovementTransaction(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
@@ -511,7 +511,7 @@ const getWithdrawTransaction = async function(masterAddress, withdrawals, web3, 
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
+const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
@@ -547,9 +547,9 @@ const getTransferFundsToMasterTransaction = async function(masterAddress, withdr
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, web3, artifacts) {
-  const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals, web3, artifacts)
-  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, web3, artifacts)
+const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
+  const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
+  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, web3, artifacts)
 
   return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
@@ -558,10 +558,10 @@ module.exports = {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
-  getRequestWithdrawTransaction,
-  getWithdrawTransaction,
-  getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction,
+  getRequestWithdraw,
+  getWithdraw,
+  getTransferFundsToMaster,
+  getWithdrawAndTransferFundsToMaster,
   max128,
   maxU32,
   maxUINT,
