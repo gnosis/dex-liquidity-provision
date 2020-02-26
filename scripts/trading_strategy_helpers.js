@@ -429,7 +429,8 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
         deposit.amount,
         deposit.userAddress,
         masterSafeAddress,
-        artifacts
+        artifacts,
+        web3
       )
     )
   }
@@ -455,7 +456,9 @@ const buildTransferApproveDepositTransactionData = async function(
   stableTokenAddress,
   investmentStableToken,
   targetTokenAddress,
-  investmentTargetToken
+  investmentTargetToken,
+  artifacts,
+  web3
 ) {
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
 
@@ -463,21 +466,23 @@ const buildTransferApproveDepositTransactionData = async function(
   const FleetSizeDiv2 = fleetSize / 2
   for (const i of Array(FleetSizeDiv2).keys()) {
     fundingTransactionData.concat(
-      calculateTransactionForTransferApproveDeposit(
+      await calculateTransactionForTransferApproveDeposit(
         stableTokenAddress,
         investmentStableToken.div(new BN(FleetSizeDiv2)),
         slaves[i],
         masterSafeAddress,
-        artifacts
+        artifacts,
+        web3
       )
     )
     fundingTransactionData.concat(
-      calculateTransactionForTransferApproveDeposit(
+      await calculateTransactionForTransferApproveDeposit(
         targetTokenAddress,
         investmentTargetToken.div(new BN(FleetSizeDiv2)),
         slaves[FleetSizeDiv2 + i],
         masterSafeAddress,
-        artifacts
+        artifacts,
+        web3
       )
     )
   }
@@ -497,7 +502,8 @@ const calculateTransactionForTransferApproveDeposit = async (
   amount,
   userAddress,
   masterSafeAddress,
-  artifacts
+  artifacts,
+  web3 = web3
 ) => {
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))

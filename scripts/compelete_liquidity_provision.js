@@ -86,7 +86,9 @@ module.exports = async callback => {
       stableToken.address,
       investmentStableToken,
       targetToken.address,
-      investmentTargetToken
+      investmentTargetToken,
+      artifacts,
+      web3
     )
 
     console.log("4. Sending out transaction")
