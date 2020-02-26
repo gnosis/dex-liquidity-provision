@@ -462,10 +462,10 @@ const buildTransferApproveDepositTransactionData = async function(
 ) {
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
 
-  const fundingTransactionData = []
+  let fundingTransactionData = []
   const FleetSizeDiv2 = fleetSize / 2
   for (const i of Array(FleetSizeDiv2).keys()) {
-    fundingTransactionData.concat(
+    fundingTransactionData = fundingTransactionData.concat(
       await calculateTransactionForTransferApproveDeposit(
         stableTokenAddress,
         investmentStableToken.div(new BN(FleetSizeDiv2)),
@@ -475,7 +475,7 @@ const buildTransferApproveDepositTransactionData = async function(
         web3
       )
     )
-    fundingTransactionData.concat(
+    fundingTransactionData = fundingTransactionData.concat(
       await calculateTransactionForTransferApproveDeposit(
         targetTokenAddress,
         investmentTargetToken.div(new BN(FleetSizeDiv2)),

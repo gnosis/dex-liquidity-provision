@@ -7,6 +7,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const MultiSend = artifacts.require("MultiSend")
+const BN = require("bn.js")
 
 const TestToken = artifacts.require("DetailedMintableToken")
 
@@ -17,6 +18,7 @@ const {
   getRequestWithdrawTransaction,
   getWithdrawTransaction,
   getTransferFundsToMasterTransaction,
+  buildTransferApproveDepositTransactionData,
   max128,
   maxU32,
   maxUINT,
@@ -72,7 +74,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("transfers tokens from fund account through trader accounts and into exchange", async () => {
+  it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = 1000
@@ -101,6 +103,57 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(slavePersonalTokenBalance, 0)
     }
   })
+
+  it.only("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const fleetSize = 2
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
+    const depositAmountStableToken = new BN(1000)
+    const stableToken = await TestToken.new(18)
+    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    const depositAmountTargetToken = new BN(2000)
+    const targetToken = await TestToken.new(18)
+    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+
+    const batchedTransactions = await buildTransferApproveDepositTransactionData(
+      fleetSize,
+      masterSafe.address,
+      slaveSafes,
+      stableToken.address,
+      depositAmountStableToken,
+      targetToken.address,
+      depositAmountTargetToken,
+      artifacts,
+      web3
+    )
+    assert.equal(batchedTransactions.to, multiSend.address)
+
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+    // Close auction for deposits to be refelcted in exchange balance
+    await waitForNSeconds(301)
+
+    for (const slaveAddress of slaveSafes.slice(0, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountStableToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+    for (const slaveAddress of slaveSafes.slice(fleetSize / 2 + 1, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountTargetToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+  })
+
   it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
