@@ -104,7 +104,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it.only("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+  it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const fleetSize = 2
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
