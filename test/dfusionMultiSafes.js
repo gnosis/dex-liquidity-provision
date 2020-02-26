@@ -118,7 +118,6 @@ contract("GnosisSafe", function(accounts) {
     await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
 
     const batchedTransactions = await buildTransferApproveDepositTransactionData(
-      fleetSize,
       masterSafe.address,
       slaveSafes,
       stableToken.address,

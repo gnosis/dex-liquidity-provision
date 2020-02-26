@@ -45,7 +45,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     value: 0,
     data: transactionData.data,
     operation: DELEGATECALL,
-    safeTxGas: 0, // magic later
+    safeTxGas: 0, // ToDo: magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero
     gasToken: ADDRESS_0,
@@ -60,7 +60,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
   let linkPrefix = ""
   if (network == "rinkeby") {
     linkPrefix = "rinkeby."
-  } 
+  }
   console.log(
     `Transaction awaiting execution in the interface https://${linkPrefix}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
@@ -68,5 +68,5 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
 
 module.exports = {
   signAndSend,
-  promptUser
+  promptUser,
 }

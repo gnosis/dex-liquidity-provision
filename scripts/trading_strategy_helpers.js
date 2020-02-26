@@ -441,16 +441,21 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
     data: finalData,
   }
 }
+
 /**
- * Batches together a collection of transfers from each trader safe to the master safer
- * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
- * @param {BN} amount Amount to be deposited
- * @param {EthereumAddress} tokenAddress for the funds to be deposited
- * @param {EthereumAddress} userAddress The address of the user/contract owning the funds in the Exchange
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+ * Batches together a collection of transfer-related transaction data.
+ * Particularly, the resulting transaction data is that of transfering all sufficient funds from fleetOwner
+ * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe. * Batches together a collection of order placements on BatchExchange
+ * on behalf of a fleet of safes owned by a single "Master Safe"
+ * @param {integer} fleetSize Size of the fleet
+ * @param {Address} masterSafeAddress Address of the master safe owning the fleet
+ * @param {Address} stableTokenAddress one token to be traded in bracket strategy
+ * @param {Address} targetTokenAddress second token to be traded in bracket strategy
+ * @param {number} investmentStableToken Amount of stable tokens to be invested (in total)
+ * @param {number} investmentStableToken Amoutn of target tokens to be invested (in total)
+ * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
 const buildTransferApproveDepositTransactionData = async function(
-  fleetSize,
   masterSafeAddress,
   slaves,
   stableTokenAddress,
@@ -460,6 +465,7 @@ const buildTransferApproveDepositTransactionData = async function(
   artifacts,
   web3
 ) {
+  const fleetSize = slaves.length
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
 
   let fundingTransactionData = []
