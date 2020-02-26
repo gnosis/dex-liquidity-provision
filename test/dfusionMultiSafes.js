@@ -191,13 +191,13 @@ contract("GnosisSafe", function(accounts) {
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
-      for (const {amount, tokenAddress, traderAddress} of withdrawals) {
-        const pendingWithdrawal = await exchange.getPendingWithdraw(traderAddress, tokenAddress)
+      for (const {amount, tokenAddress, userAddress} of withdrawals) {
+        const pendingWithdrawal = await exchange.getPendingWithdraw(userAddress, tokenAddress)
         assert.equal(pendingWithdrawal[0].toString(), amount.toString(), "Withdrawal was not registered on the exchange")
 
         const token = await ERC20.at(tokenAddress)
         assert.equal(
-          (await token.balanceOf(traderAddress)).toString(),
+          (await token.balanceOf(userAddress)).toString(),
           "0",
           "Unexpected behavior in requestWithdraw: trader Safes holds funds"
         )
@@ -238,7 +238,7 @@ contract("GnosisSafe", function(accounts) {
       const withdrawals = deposits.map(deposit => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
-        traderAddress: deposit.userAddress,
+        userAddress: deposit.userAddress,
       }))
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
@@ -329,7 +329,7 @@ contract("GnosisSafe", function(accounts) {
       const withdrawals = deposits.map(deposit => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
-        traderAddress: deposit.userAddress,
+        userAddress: deposit.userAddress,
       }))
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
