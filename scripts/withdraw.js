@@ -124,7 +124,18 @@ module.exports = async callback => {
         throw(new Error("These scripts currently only support tokens with 18 decimals."))
 
       const unitAmount = web3.utils.fromWei(withdrawal.amount.toString(), "ether")
-      console.log(`Safe ${withdrawal.userAddress} receiving (from ${masterSafe.address.slice(0,6)}...${masterSafe.address.slice(-2)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
+
+      if (argv.requestWithdraw)
+        console.log(`Requesting withdrawal of ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.userAddress}`)
+      else if (argv.withdraw && !argv.transferBackToMaster)
+        console.log(`Withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.userAddress}`)
+      else if (!argv.withdraw && argv.transferBackToMaster)
+        console.log(`Transferring ${unitAmount} ${tokenSymbol} from Safe ${withdrawal.userAddress} into master Safe ${masterSafe.address.slice(0,6)}...${masterSafe.address.slice(-2)}) and depositing  into BatchExchange`)
+      else if (argv.withdraw && argv.transferBackToMaster)
+        console.log(`Safe ${withdrawal.userAddress} withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${masterSafe.address.slice(0,6)}...${masterSafe.address.slice(-2)})`)
+      else {
+        throw(new Error("No operation specified"))
+      }
     }
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
