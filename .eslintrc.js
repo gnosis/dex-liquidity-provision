@@ -3,7 +3,7 @@ module.exports = {
     browser: true,
     commonjs: true,
     es6: true,
-    node: true
+    node: true,
   },
   extends: "eslint:recommended",
   parserOptions: {
@@ -14,7 +14,7 @@ module.exports = {
   },
   plugins: ["react"],
   rules: {
-    indent: ["error", 2],
+    indent: ["error", 2, { SwitchCase: 1 }],
     "linebreak-style": ["error", "unix"],
     quotes: ["error", "double"],
     semi: ["error", "never"],

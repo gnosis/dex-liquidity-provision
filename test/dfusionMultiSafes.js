@@ -86,7 +86,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
@@ -152,7 +152,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
@@ -241,6 +241,7 @@ contract("GnosisSafe", function(accounts) {
     const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(
       masterSafe.address,
       withdrawals,
+      web3,
       artifacts
     )
     await execTransaction(
