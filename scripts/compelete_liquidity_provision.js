@@ -33,6 +33,11 @@ const argv = require("yargs")
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
+  .option("priceRangePercentage", {
+    type: "int",
+    default: 30,
+    describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+  })
   .demand(["masterSafe", "targetToken", "stableToken", "targetPrice", "investmentTargetToken", "investmentStableToken"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
@@ -77,10 +82,10 @@ module.exports = async callback => {
       argv.targetPrice,
       web3,
       artifacts,
-      true
+      true,
+      argv.priceRangePercentage
     )
     const bundledFundingTransactionData = await buildTransferApproveDepositTransactionData(
-      argv.fleetSize,
       masterSafe.address,
       slaves,
       stableToken.address,
