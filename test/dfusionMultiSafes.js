@@ -202,10 +202,7 @@ contract("GnosisSafe", function(accounts) {
           "Unexpected behavior in requestWithdraw: trader Safes holds funds"
         )
 
-        if (typeof totalWithdrawnAmount[tokenAddress] === "undefined")
-          totalWithdrawnAmount[tokenAddress] = new BN(amount)
-        else 
-          totalWithdrawnAmount[tokenAddress] = totalWithdrawnAmount[tokenAddress].add(new BN(amount))
+        totalWithdrawnAmount[tokenAddress] = (totalWithdrawnAmount[tokenAddress] || new BN(0)).add(new BN(amount))
       }
 
       for (const [tokenAddress, totalAmountForToken] of Object.entries(totalWithdrawnAmount)) {
