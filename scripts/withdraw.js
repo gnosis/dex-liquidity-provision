@@ -93,7 +93,7 @@ module.exports = async callback => {
       withdrawals = await Promise.all(
         withdrawals.map(
           async withdrawal => ({
-            traderAddress: withdrawal.userAddress,
+            userAddress: withdrawal.userAddress,
             tokenAddress: withdrawal.tokenAddress,
             amount: await getAmount(withdrawal.userAddress, withdrawal.tokenAddress, exchange),
           })
@@ -124,7 +124,7 @@ module.exports = async callback => {
         throw(new Error("These scripts currently only support tokens with 18 decimals."))
 
       const unitAmount = web3.utils.fromWei(withdrawal.amount.toString(), "ether")
-      console.log(`Safe ${withdrawal.traderAddress} receiving (from ${masterSafe.address.slice(0,6)}...${masterSafe.address.slice(-2)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
+      console.log(`Safe ${withdrawal.userAddress} receiving (from ${masterSafe.address.slice(0,6)}...${masterSafe.address.slice(-2)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
     }
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")

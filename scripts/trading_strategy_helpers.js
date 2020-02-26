@@ -78,12 +78,12 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  *  * Example:
  * {
  *   amount: "100",
- *   traderAddress: "0x0000000000000000000000000000000000000000",
+ *   userAddress: "0x0000000000000000000000000000000000000000",
  *   tokenAddress: "0x0000000000000000000000000000000000000000",
  * }
  * @type {object}
  * @property {integer} amount Integer denoting amount to be deposited
- * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
+ * @property {EthereumAddress} userAddress Ethereum address of the trader performing the withdrawal
  * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
 
@@ -366,7 +366,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
         break
       case "withdraw":
         transactionData = await exchange.contract.methods["withdraw"](
-          withdrawal.traderAddress,
+          withdrawal.userAddress,
           withdrawal.tokenAddress
         ).encodeABI()
         break
@@ -385,7 +385,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
-      withdrawal.traderAddress,
+      withdrawal.userAddress,
       transactionToExecute,
       web3,
       artifacts
@@ -531,7 +531,7 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
-      withdrawal.traderAddress,
+      withdrawal.userAddress,
       transactionToExecute,
       web3,
       artifacts
