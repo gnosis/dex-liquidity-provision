@@ -184,7 +184,7 @@ const getExecTransactionTransaction = async function(masterAddress, traderAddres
  * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
  * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
  */
-const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts, debug=false) {
+const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
@@ -355,7 +355,6 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
     // create transaction for the token
     let transactionData
     switch (functionName) {
-    /* eslint-disable indent */
       case "requestWithdraw":
         transactionData = await exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
@@ -370,7 +369,6 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
         break
       default:
         assert(false, "Function " + functionName + "is not implemented")
-    /* eslint-enable indent */
     }
 
     // prepare trader transaction
@@ -400,7 +398,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(fleetOwner, depositList, web3, artifacts, debug=false) {
+const transferApproveDeposit = async function(fleetOwner, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
   const GnosisSafe = artifacts.require("GnosisSafe")
@@ -419,7 +417,7 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
     // const slaveSafe = await GnosisSafe.at(deposit.userAddress)
     // const slaveOwners = await slaveSafe.getOwners()
     // assert.equal(slaveOwners[0], fleetOwner.address, "All depositors must be owned by master safe")
-    
+
     // No need to assert exchange has token since deposits and withdraws are not limited to registered tokens.
     // assert(await exchange.hasToken(deposit.tokenAddress), "Requested deposit token not listed on the exchange")
 
@@ -430,7 +428,11 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
     assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
 
     const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
-    log(`Safe ${deposit.userAddress} receiving (from ${fleetOwner.address.slice(0,6)}...${fleetOwner.address.slice(-2)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`)
+    log(
+      `Safe ${deposit.userAddress} receiving (from ${fleetOwner.address.slice(0, 6)}...${fleetOwner.address.slice(
+        -2
+      )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+    )
     // Get data to move funds from master to slave
     const transferData = await depositToken.contract.methods.transfer(deposit.userAddress, deposit.amount.toString()).encodeABI()
     transactions.push({
