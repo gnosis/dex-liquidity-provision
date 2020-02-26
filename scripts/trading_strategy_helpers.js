@@ -403,6 +403,7 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
  * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
  */
+
 const transferApproveDeposit = async function(masterSafeAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
 
