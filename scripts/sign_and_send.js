@@ -45,7 +45,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     value: 0,
     data: transactionData.data,
     operation: DELEGATECALL,
-    safeTxGas: 0, // ToDo: magic later
+    safeTxGas: 0, // TODO: magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero
     gasToken: ADDRESS_0,
