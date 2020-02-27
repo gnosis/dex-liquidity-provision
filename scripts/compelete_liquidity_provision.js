@@ -13,8 +13,8 @@ const assert = require("assert")
 const argv = require("yargs")
   .option("fleetSize", {
     type: "int",
-    default: 10,
-    describe: "Number of (sub)safes to be deployed",
+    default: 20,
+    describe: "Even number of (sub)safes to be deployed",
   })
   .option("targetToken", {
     type: "int",
@@ -35,7 +35,7 @@ const argv = require("yargs")
   })
   .option("priceRangePercentage", {
     type: "int",
-    default: 30,
+    default: 20,
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
   .demand(["masterSafe", "targetToken", "stableToken", "targetPrice", "investmentTargetToken", "investmentStableToken"])
@@ -59,7 +59,6 @@ module.exports = async callback => {
     const targetToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.targetToken))
     const stableToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.stableToken))
 
-    console.log("0. Do all sanity checks upfront")
     assert(argv.fleetSize % 2 == 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("1. Check for sufficient funds")

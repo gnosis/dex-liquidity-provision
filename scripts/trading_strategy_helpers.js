@@ -134,7 +134,7 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
  * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
  * @return {Transaction} Multisend transaction bundling all input transactions
  */
-const getBundledTransaction = async function(transactions, web3 = web3, artifacts) {
+const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
   const MultiSend = artifacts.require("MultiSend")
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
@@ -333,11 +333,7 @@ const buildOrderTransactionData = async function(
 
 const checkSufficiencyOfBalance = async function(token, owner, amount) {
   const depositor_balance = await token.balanceOf.call(owner)
-  if (depositor_balance.lt(amount)) {
-    return false
-  } else {
-    return true
-  }
+  return depositor_balance.gte(amount)
 }
 
 /**
