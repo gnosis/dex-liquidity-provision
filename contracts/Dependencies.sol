@@ -10,6 +10,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol";
 import "@gnosis.pm/owl-token/contracts/TokenOWLProxy.sol";
 import "@gnosis.pm/owl-token/contracts/TokenOWL.sol";
+import "canonical-weth/contracts/WETH9.sol";
 // Batch Exchange dependencies
 import "@gnosis.pm/solidity-data-structures/contracts/libraries/IdToAddressBiMap.sol";
 import "@gnosis.pm/solidity-data-structures/contracts/libraries/IterableAppendOnlySet.sol";
