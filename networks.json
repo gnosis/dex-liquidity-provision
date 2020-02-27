@@ -31,6 +31,16 @@
             "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
         }
     },
+    "WETH9": {
+        "1": {
+            "links": {},
+            "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+        },
+        "4": {
+            "links": {},
+            "address": "0xc778417e063141139fce010982780140aa0cd5ab"
+        }
+    },
     "Migrations": {
         "1": {
             "links": {},
