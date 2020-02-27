@@ -77,11 +77,13 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @typedef Withdrawal
  *  * Example:
  * {
- *   traderAddress: "0x0000000000000000000000000000000000000000",
+ *   amount: "100",
+ *   userAddress: "0x0000000000000000000000000000000000000000",
  *   tokenAddress: "0x0000000000000000000000000000000000000000",
  * }
  * @type {object}
- * @property {EthereumAddress} traderAddress Ethereum address of the trader performing the withdrawal
+ * @property {integer} amount Integer denoting amount to be deposited
+ * @property {EthereumAddress} userAddress Ethereum address of the trader performing the withdrawal
  * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
 
@@ -134,7 +136,7 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
  * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
  * @return {Transaction} Multisend transaction bundling all input transactions
  */
-const getBundledTransaction = async function(transactions, artifacts) {
+const getBundledTransaction = async function(transactions, web3, artifacts) {
   const MultiSend = artifacts.require("MultiSend")
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
@@ -157,7 +159,7 @@ const getBundledTransaction = async function(transactions, artifacts) {
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
  */
-const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, artifacts) {
+const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
@@ -344,7 +346,7 @@ const buildOrderTransactionData = async function(
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const getGenericFundMovementTransaction = async function(masterAddress, withdrawals, functionName) {
+const getGenericFundMovementTransaction = async function(masterAddress, withdrawals, functionName, web3, artifacts) {
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
@@ -358,12 +360,12 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
       case "requestWithdraw":
         transactionData = await exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
-          maxUINT.toString()
+          withdrawal.amount.toString()
         ).encodeABI()
         break
       case "withdraw":
         transactionData = await exchange.contract.methods["withdraw"](
-          withdrawal.traderAddress,
+          withdrawal.userAddress,
           withdrawal.tokenAddress
         ).encodeABI()
         break
@@ -381,13 +383,14 @@ const getGenericFundMovementTransaction = async function(masterAddress, withdraw
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
-      withdrawal.traderAddress,
+      withdrawal.userAddress,
       transactionToExecute,
+      web3,
       artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return getBundledTransaction(masterTransactions, artifacts)
+  return getBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -486,8 +489,8 @@ const transferApproveDeposit = async function(fleetOwner, depositList, web3, art
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const getRequestWithdrawTransaction = async function(masterAddress, withdrawals) {
-  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "requestWithdraw")
+const getRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
 /**
@@ -500,8 +503,8 @@ const getRequestWithdrawTransaction = async function(masterAddress, withdrawals)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
-const getWithdrawTransaction = async function(masterAddress, withdrawals) {
-  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "withdraw")
+const getWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
 /**
@@ -510,13 +513,13 @@ const getWithdrawTransaction = async function(masterAddress, withdrawals) {
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getTransferFundsToMasterTransaction = async function(masterAddress, withdrawals, artifacts = artifacts) {
+const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
   for (const withdrawal of withdrawals) {
     const token = await ERC20.at(withdrawal.tokenAddress)
-    const amount = await token.balanceOf(withdrawal.traderAddress)
+    const amount = withdrawal.amount
     // create transaction for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
@@ -530,13 +533,14 @@ const getTransferFundsToMasterTransaction = async function(masterAddress, withdr
     // build transaction to execute previous transaction through master
     const execTransactionTransaction = await getExecTransactionTransaction(
       masterAddress,
-      withdrawal.traderAddress,
+      withdrawal.userAddress,
       transactionToExecute,
+      web3,
       artifacts
     )
     masterTransactions.push(execTransactionTransaction)
   }
-  return await getBundledTransaction(masterTransactions, artifacts)
+  return await getBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -545,21 +549,21 @@ const getTransferFundsToMasterTransaction = async function(masterAddress, withdr
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getWithdrawAndTransferFundsToMasterTransaction = async function(masterAddress, withdrawals) {
-  const withdrawalTransaction = await getWithdrawTransaction(masterAddress, withdrawals)
-  const transferFundsToMasterTransaction = await getTransferFundsToMasterTransaction(masterAddress, withdrawals, artifacts)
+const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
+  const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
+  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, web3, artifacts)
 
-  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], artifacts)
+  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
 
 module.exports = {
   deployFleetOfSafes,
   buildOrderTransactionData,
   transferApproveDeposit,
-  getRequestWithdrawTransaction,
-  getWithdrawTransaction,
-  getTransferFundsToMasterTransaction,
-  getWithdrawAndTransferFundsToMasterTransaction,
+  getRequestWithdraw,
+  getWithdraw,
+  getTransferFundsToMaster,
+  getWithdrawAndTransferFundsToMaster,
   max128,
   maxU32,
   maxUINT,

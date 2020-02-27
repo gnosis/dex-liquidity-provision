@@ -34,6 +34,39 @@ truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetP
 truffle exec scripts/transfer_approve_deposit.js --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --depositFile="./data/depositList.json" --network=rinkeby
 ```
 
+### Withdrawing
+
+To withdraw funds, all withdrawals have to be specified in a file with the following format:
+```
+    {
+        "amount": "100000000000000000",
+        "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
+        "userAddress": "0xfA4a18c2218945bC018BF94D093BCa66c88D3c40"
+    }
+]
+```
+The script can automatically determine the amount, instead of having to specify it on the file.
+This is achieved by adding the flag `--allTokens` to the withraw command. This is possible in any of the following commands.
+
+Withdrawing is a two-step process: first a withdraw must be requested on the exchange, then the withdraw is executed and at the same time the funds are sent back to the master Safe.
+
+```js
+truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --withdrawals="./data/depositList.json" --network=rinkeby
+```
+
+```js
+truffle exec scripts/withdraw.js --withdraw --transferBackToMaster --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --withdrawals="./data/depositList.json" --network=rinkeby
+```
+
+The latter instruction can be split into two independent units, if needed: withdrawing from the exchange to the traders and transferring funds from the traders to the master Safe.
+
+```js
+truffle exec scripts/withdraw.js --withdraw --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --withdrawalsFromDepositFile="./data/depositList.json" --network=rinkeby 
+```
+
+```js
+truffle exec scripts/withdraw.js --transferBackToMaster --masterSafe=0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --withdrawalsFromDepositFile="./data/depositList.json" --network=rinkeby 
+```
 
 ### Full Cycle Test
 
