@@ -22,11 +22,15 @@ const promptUser = function(message) {
 const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const nonce = await masterSafe.nonce()
   console.log("Aquiring Transaction Hash")
+  if (transactionData.operation === undefined)
+    transactionData.operation = DELEGATECALL
+  if (transactionData.value === undefined)
+    transactionData.value = "0"
   const transactionHash = await masterSafe.getTransactionHash(
     transactionData.to,
-    0,
+    transactionData.value,
     transactionData.data,
-    DELEGATECALL,
+    transactionData.operation,
     0,
     0,
     0,
@@ -42,9 +46,9 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
     to: transactionData.to,
-    value: 0,
+    value: transactionData.value,
     data: transactionData.data,
-    operation: DELEGATECALL,
+    operation: transactionData.operation,
     safeTxGas: 0, // magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero

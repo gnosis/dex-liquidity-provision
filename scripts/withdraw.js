@@ -140,9 +140,6 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      // careful! transaction.operation and transaction.value are ignored by signAndSend.
-      // this is fine for, since we only send transactions to multisend, but we should
-      // TODO: generalize signAndSend to accept any transaction
       await signAndSend(masterSafe, transaction, web3, argv.network)
     }
 
