@@ -243,9 +243,6 @@ Could show potential returns from
 
 ### TODO
 
-- Complete pseudo code for Stategy 2
-- Complete pseudo code for scheduled giveaway orders
-- Expiry dates on giveaway orders?
 - Tracking the addresses / portfolios thereof / trading history
   This boils down to having metrics and is analogous to "how do we test if this works in reality"
 
