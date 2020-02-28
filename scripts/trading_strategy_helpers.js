@@ -431,10 +431,10 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
 
     transactions = transactions.concat(
       await calculateTransactionForTransferApproveDeposit(
-        deposit.tokenAddress,
-        deposit.amount,
-        deposit.userAddress,
         masterSafeAddress,
+        deposit.tokenAddress,
+        deposit.userAddress,
+        deposit.amount,
         artifacts,
         web3
       )
@@ -479,20 +479,20 @@ const buildTransferApproveDepositTransactionData = async function(
   for (const i of Array(FleetSizeDiv2).keys()) {
     fundingTransactionData = fundingTransactionData.concat(
       await calculateTransactionForTransferApproveDeposit(
-        stableTokenAddress,
-        investmentStableToken.div(new BN(FleetSizeDiv2)),
-        slaves[i],
         masterSafeAddress,
+        stableTokenAddress,
+        slaves[i],
+        investmentStableToken.div(new BN(FleetSizeDiv2)),
         artifacts,
         web3
       )
     )
     fundingTransactionData = fundingTransactionData.concat(
       await calculateTransactionForTransferApproveDeposit(
-        targetTokenAddress,
-        investmentTargetToken.div(new BN(FleetSizeDiv2)),
-        slaves[FleetSizeDiv2 + i],
         masterSafeAddress,
+        targetTokenAddress,
+        slaves[FleetSizeDiv2 + i],
+        investmentTargetToken.div(new BN(FleetSizeDiv2)),
         artifacts,
         web3
       )
@@ -507,13 +507,13 @@ const buildTransferApproveDepositTransactionData = async function(
  * @param {BN} amount Amount to be deposited
  * @param {EthereumAddress} tokenAddress for the funds to be deposited
  * @param {EthereumAddress} userAddress The address of the user/contract owning the funds in the Exchange
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+ * @return {BatchedTransactionData} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
 const calculateTransactionForTransferApproveDeposit = async (
-  tokenAddress,
-  amount,
-  userAddress,
   masterSafeAddress,
+  tokenAddress,
+  userAddress,
+  amount,
   artifacts,
   web3 = web3
 ) => {
