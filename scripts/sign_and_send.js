@@ -10,8 +10,8 @@ const rl = readline.createInterface({
 })
 
 const linkPrefix = {
-  "rinkeby": "rinkeby.",
-  "mainnet": "",
+  rinkeby: "rinkeby.",
+  mainnet: "",
 }
 
 const promptUser = function(message) {
@@ -50,7 +50,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     value: 0,
     data: transactionData.data,
     operation: DELEGATECALL,
-    safeTxGas: 0, // magic later
+    safeTxGas: 0, // TODO: magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero
     gasToken: ADDRESS_0,
@@ -61,6 +61,7 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     signature: sigs,
   }
   await axios.post(endpoint, postData)
+
   console.log(
     `Transaction awaiting execution in the interface https://${linkPrefix[network]}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
@@ -68,5 +69,5 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
 
 module.exports = {
   signAndSend,
-  promptUser
+  promptUser,
 }
