@@ -640,8 +640,8 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3
  * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
 const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
-  const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals)
-  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, artifacts)
+  const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
+  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, web3, artifacts)
   return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
 
