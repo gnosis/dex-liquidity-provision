@@ -513,13 +513,18 @@ const getWithdraw = async function(masterAddress, withdrawals, web3, artifacts) 
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
+const getTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount, web3, artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
   for (const withdrawal of withdrawals) {
     const token = await ERC20.at(withdrawal.tokenAddress)
-    const amount = withdrawal.amount
+    let amount
+    if (limitToMaxWithdrawableAmount) {
+      amount = BN.min(new BN(withdrawal.amount), new BN(await token.balanceOf.call(withdrawal.userAddress)))
+    } else {
+      amount = withdrawal.amount
+    }
     // create transaction for the token
     const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
@@ -551,7 +556,7 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, web3
  */
 const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3, artifacts) {
   const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
-  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, web3, artifacts)
+  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
 
   return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
