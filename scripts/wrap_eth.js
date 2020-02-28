@@ -4,11 +4,11 @@ const { CALL } = require("./trading_strategy_helpers")
 const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes",
+    describe: "Address of the Gnosis Safe that holds the ETH to be wrapped",
   })
   .option("amount", {
     type: "string",
-    describe: "amount of ETH to convert (e.g. \"1.1\")",
+    describe: "amount of ETH to convert (in ETH, e.g. \"3.14159\")",
   })
   .demand(["masterSafe", "amount"])
   .help(
