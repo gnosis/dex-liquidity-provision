@@ -1,3 +1,5 @@
+const Contract = require("@truffle/contract")
+
 const { signAndSend, promptUser } = require("./sign_and_send")
 const { CALL } = require("./trading_strategy_helpers")
 
@@ -18,7 +20,10 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    const WETH = artifacts.require("WETH9")
+    const WETH = Contract(require("canonical-weth/build/contracts/WETH9"))
+    WETH.setProvider(web3.currentProvider)
+    WETH.setNetwork(web3.network_id)
+
     const weth = await WETH.deployed()
 
     const GnosisSafe = artifacts.require("GnosisSafe")
