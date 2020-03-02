@@ -209,6 +209,20 @@ contract("GnosisSafe", function(accounts) {
         else totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
       }
 
+      for (const [tokenAddress, totalAmountForToken] of Object.entries(totalDepositedAmount)) {
+        const token = await ERC20.at(tokenAddress)
+        assert.equal(
+          (await token.balanceOf(masterSafe.address)).toString(),
+          "0",
+          "Balance setup failed: master Safe still holds funds"
+        )
+        assert.equal(
+          (await token.balanceOf(exchange.address)).toString(),
+          totalAmountForToken.toString(),
+          "Balance setup failed: the exchange does not hold all tokens"
+        )
+      }
+
       const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
@@ -274,7 +288,15 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+      // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
+      // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
+      const withdrawalsModified = withdrawals
+      withdrawalsModified.map(withdraw => {
+        withdraw.amount = withdraw.amount.add(toETH(1))
+        withdraw
+      })
+      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
+
       await execTransaction(
         masterSafe,
         lw,
@@ -302,7 +324,15 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
-      const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      // tries to transfer more funds to master than available, script should be aware of it
+      const transferFundsToMasterTransaction = await getTransferFundsToMaster(
+        masterSafe.address,
+        withdrawalsModified,
+        true,
+        web3,
+        artifacts
+      )
+
       await execTransaction(
         masterSafe,
         lw,
