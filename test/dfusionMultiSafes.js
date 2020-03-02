@@ -1,16 +1,13 @@
 const BN = require("bn.js")
-
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
-
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const MultiSend = artifacts.require("MultiSend")
-
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
@@ -18,6 +15,7 @@ const {
   buildOrderTransactionData,
   transferApproveDeposit,
   getRequestWithdraw,
+  buildTransferApproveDepositTransactionData,
   getWithdraw,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
@@ -75,7 +73,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("transfers tokens from fund account through trader accounts and into exchange", async () => {
+  it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = 1000
@@ -89,7 +87,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
@@ -104,6 +102,56 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(slavePersonalTokenBalance, 0)
     }
   })
+
+  it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const fleetSize = 2
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
+    const depositAmountStableToken = new BN(1000)
+    const stableToken = await TestToken.new(18)
+    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    const depositAmountTargetToken = new BN(2000)
+    const targetToken = await TestToken.new(18)
+    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+
+    const batchedTransactions = await buildTransferApproveDepositTransactionData(
+      masterSafe.address,
+      slaveSafes,
+      stableToken.address,
+      depositAmountStableToken,
+      targetToken.address,
+      depositAmountTargetToken,
+      artifacts,
+      web3
+    )
+    assert.equal(batchedTransactions.to, multiSend.address)
+
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+    // Close auction for deposits to be refelcted in exchange balance
+    await waitForNSeconds(301)
+
+    for (const slaveAddress of slaveSafes.slice(0, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountStableToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+    for (const slaveAddress of slaveSafes.slice(fleetSize / 2 + 1, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountTargetToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+  })
+
   it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
@@ -142,13 +190,12 @@ contract("GnosisSafe", function(accounts) {
 
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
-      const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+      const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
       assert.equal(batchedTransactions.to, multiSend.address)
 
       await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
-
       const totalDepositedAmount = {}
       for (const { amount, tokenAddress, userAddress } of deposits) {
         const token = await ERC20.at(tokenAddress)
@@ -162,6 +209,7 @@ contract("GnosisSafe", function(accounts) {
         else totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
       }
 
+<<<<<<< HEAD
       for (const [tokenAddress, totalAmountForToken] of Object.entries(totalDepositedAmount)) {
         const token = await ERC20.at(tokenAddress)
         assert.equal(
@@ -176,6 +224,8 @@ contract("GnosisSafe", function(accounts) {
         )
       }
 
+=======
+>>>>>>> origin/master
       const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
@@ -241,6 +291,7 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
+<<<<<<< HEAD
       // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
       // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
       const withdrawalsModified = withdrawals
@@ -250,6 +301,9 @@ contract("GnosisSafe", function(accounts) {
       })
       const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
+=======
+      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+>>>>>>> origin/master
       await execTransaction(
         masterSafe,
         lw,
@@ -277,6 +331,7 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
+<<<<<<< HEAD
       // tries to transfer more funds to master than available, script should be aware of it
       const transferFundsToMasterTransaction = await getTransferFundsToMaster(
         masterSafe.address,
@@ -285,6 +340,9 @@ contract("GnosisSafe", function(accounts) {
         web3,
         artifacts
       )
+=======
+      const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+>>>>>>> origin/master
       await execTransaction(
         masterSafe,
         lw,
