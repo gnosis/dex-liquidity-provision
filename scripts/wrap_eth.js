@@ -10,7 +10,7 @@ const argv = require("yargs")
   })
   .option("amount", {
     type: "string",
-    describe: "amount of ETH to convert (in ETH, e.g. \"3.14159\")",
+    describe: "Amount of ETH to convert (in ETH, e.g. 3.14159)",
   })
   .demand(["masterSafe", "amount"])
   .help(
