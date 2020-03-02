@@ -1,5 +1,6 @@
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+const BN = require("bn.js")
 
 const { signAndSend, promptUser } = require("./sign_and_send")
 const {
@@ -118,7 +119,7 @@ module.exports = async callback => {
       const tokenSymbol = await token.symbol.call()
       if (tokenDecimals != 18) throw new Error("These scripts currently only support tokens with 18 decimals.")
 
-      const unitAmount = web3.utils.fromWei(withdrawal.amount.toString(), "ether")
+      const unitAmount = new BN(withdrawal.amount).mul(new BN(10).pow(tokenDecimals))
 
       if (argv.requestWithdraw)
         console.log(

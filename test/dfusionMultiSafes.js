@@ -240,10 +240,15 @@ contract("GnosisSafe", function(accounts) {
       }))
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
-      // tries to withdraw more than available, script should be aware of it
-      withdrawals.forEach(withdraw => (withdraw.amount = withdraw.amount.add(toETH(1))))
-      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
-      withdrawals.forEach(withdraw => (withdraw.amount = withdraw.amount.sub(toETH(1))))
+
+      // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
+      // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
+      const withdrawalsModified = withdrawals
+      withdrawalsModified.map(withdraw => {
+        withdraw.amount = withdraw.amount.add(toETH(1))
+        withdraw
+      })
+      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
       await execTransaction(
         masterSafe,
@@ -272,9 +277,10 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
+      // tries to transfer more funds to master than available, script should be aware of it
       const transferFundsToMasterTransaction = await getTransferFundsToMaster(
         masterSafe.address,
-        withdrawals,
+        withdrawalsModified,
         true,
         web3,
         artifacts
