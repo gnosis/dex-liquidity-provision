@@ -25,13 +25,13 @@ module.exports = async callback => {
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const amountInWei = await web3.utils.toWei(argv.amount)
-    
+
     const transactionData = await weth.contract.methods.deposit().encodeABI()
     const transaction = {
       to: weth.address,
       value: amountInWei,
       operation: CALL,
-      data: transactionData
+      data: transactionData,
     }
 
     console.log(await weth.name(), "at address", weth.address)
