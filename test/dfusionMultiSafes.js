@@ -209,7 +209,6 @@ contract("GnosisSafe", function(accounts) {
         else totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
       }
 
-<<<<<<< HEAD
       for (const [tokenAddress, totalAmountForToken] of Object.entries(totalDepositedAmount)) {
         const token = await ERC20.at(tokenAddress)
         assert.equal(
@@ -224,8 +223,6 @@ contract("GnosisSafe", function(accounts) {
         )
       }
 
-=======
->>>>>>> origin/master
       const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
@@ -291,7 +288,6 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-<<<<<<< HEAD
       // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
       // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
       const withdrawalsModified = withdrawals
@@ -301,9 +297,6 @@ contract("GnosisSafe", function(accounts) {
       })
       const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
-=======
-      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
->>>>>>> origin/master
       await execTransaction(
         masterSafe,
         lw,
@@ -331,7 +324,6 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
-<<<<<<< HEAD
       // tries to transfer more funds to master than available, script should be aware of it
       const transferFundsToMasterTransaction = await getTransferFundsToMaster(
         masterSafe.address,
@@ -340,9 +332,7 @@ contract("GnosisSafe", function(accounts) {
         web3,
         artifacts
       )
-=======
-      const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
->>>>>>> origin/master
+
       await execTransaction(
         masterSafe,
         lw,
