@@ -1,16 +1,13 @@
 const BN = require("bn.js")
-
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
-
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const MultiSend = artifacts.require("MultiSend")
-
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
@@ -18,6 +15,7 @@ const {
   buildOrderTransactionData,
   transferApproveDeposit,
   getRequestWithdraw,
+  buildTransferApproveDepositTransactionData,
   getWithdraw,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
@@ -75,7 +73,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("transfers tokens from fund account through trader accounts and into exchange", async () => {
+  it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = 1000
@@ -89,7 +87,7 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+    const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
     assert.equal(batchedTransactions.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
@@ -104,6 +102,56 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(slavePersonalTokenBalance, 0)
     }
   })
+
+  it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const fleetSize = 2
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
+    const depositAmountStableToken = new BN(1000)
+    const stableToken = await TestToken.new(18)
+    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    const depositAmountTargetToken = new BN(2000)
+    const targetToken = await TestToken.new(18)
+    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+
+    const batchedTransactions = await buildTransferApproveDepositTransactionData(
+      masterSafe.address,
+      slaveSafes,
+      stableToken.address,
+      depositAmountStableToken,
+      targetToken.address,
+      depositAmountTargetToken,
+      artifacts,
+      web3
+    )
+    assert.equal(batchedTransactions.to, multiSend.address)
+
+    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+    // Close auction for deposits to be refelcted in exchange balance
+    await waitForNSeconds(301)
+
+    for (const slaveAddress of slaveSafes.slice(0, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountStableToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+    for (const slaveAddress of slaveSafes.slice(fleetSize / 2 + 1, fleetSize / 2)) {
+      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, depositAmountTargetToken)
+      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
+      assert.equal(slaveExchangeBalance, 0)
+      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
+      // This should always output 0 as the slaves should never directly hold funds
+      assert.equal(slavePersonalTokenBalance, 0)
+    }
+  })
+
   it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
@@ -142,15 +190,14 @@ contract("GnosisSafe", function(accounts) {
 
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
-      const batchedTransactions = await transferApproveDeposit(masterSafe, deposits, web3, artifacts)
+      const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
       assert.equal(batchedTransactions.to, multiSend.address)
 
       await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
-
       const totalDepositedAmount = {}
-      for (const {amount, tokenAddress, userAddress} of deposits) {
+      for (const { amount, tokenAddress, userAddress } of deposits) {
         const token = await ERC20.at(tokenAddress)
         assert.equal(
           (await token.balanceOf(userAddress)).toString(),
@@ -158,25 +205,9 @@ contract("GnosisSafe", function(accounts) {
           "Balance setup failed: trader Safes still holds funds"
         )
 
-        if (typeof totalDepositedAmount[tokenAddress] === "undefined")
-          totalDepositedAmount[tokenAddress] = new BN(amount)
-        else 
-          totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
+        if (typeof totalDepositedAmount[tokenAddress] === "undefined") totalDepositedAmount[tokenAddress] = new BN(amount)
+        else totalDepositedAmount[tokenAddress] = totalDepositedAmount[tokenAddress].add(new BN(amount))
       }
-
-      for (const [tokenAddress, totalAmountForToken] of Object.entries(totalDepositedAmount)) {
-        const token = await ERC20.at(tokenAddress)
-        assert.equal(
-          (await token.balanceOf(masterSafe.address)).toString(),
-          "0",
-          "Balance setup failed: master Safe still holds funds"
-        )
-        assert.equal(
-          (await token.balanceOf(exchange.address)).toString(),
-          totalAmountForToken.toString(),
-          "Balance setup failed: the exchange does not hold all tokens"
-        )
-      }        
 
       const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
@@ -191,7 +222,7 @@ contract("GnosisSafe", function(accounts) {
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
-      for (const {amount, tokenAddress, userAddress} of withdrawals) {
+      for (const { amount, tokenAddress, userAddress } of withdrawals) {
         const pendingWithdrawal = await exchange.getPendingWithdraw(userAddress, tokenAddress)
         assert.equal(pendingWithdrawal[0].toString(), amount.toString(), "Withdrawal was not registered on the exchange")
 
@@ -243,12 +274,7 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-      const withdrawalTransaction = await getWithdraw(
-        masterSafe.address, 
-        withdrawals, 
-        web3, 
-        artifacts
-      )
+      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
         lw,
@@ -276,12 +302,7 @@ contract("GnosisSafe", function(accounts) {
           "Withdrawing failed: trader Safes do not hold the correct amount of funds"
         )
 
-      const transferFundsToMasterTransaction = await getTransferFundsToMaster(
-        masterSafe.address,
-        withdrawals,
-        web3,
-        artifacts
-      )
+      const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
         lw,
@@ -310,7 +331,6 @@ contract("GnosisSafe", function(accounts) {
         )
     })
 
-
     it("Withdraw full amount, two steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
       const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
@@ -334,7 +354,12 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
 
-      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMaster(
+        masterSafe.address,
+        withdrawals,
+        web3,
+        artifacts
+      )
       await execTransaction(
         masterSafe,
         lw,

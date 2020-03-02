@@ -9,6 +9,11 @@ const rl = readline.createInterface({
   output: process.stdout,
 })
 
+const linkPrefix = {
+  rinkeby: "rinkeby.",
+  mainnet: "",
+}
+
 const promptUser = function(message) {
   return new Promise(resolve => rl.question(message, answer => resolve(answer)))
 }
@@ -42,14 +47,14 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const account = lightWallet.accounts[0]
   console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
   const sigs = signTransaction(lightWallet, [account], transactionHash)
-  // TODO - this should be somehow less... something
+
   const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
     to: transactionData.to,
     value: transactionData.value,
     data: transactionData.data,
     operation: transactionData.operation,
-    safeTxGas: 0, // magic later
+    safeTxGas: 0, // TODO: magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero
     gasToken: ADDRESS_0,
@@ -60,17 +65,13 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
     signature: sigs,
   }
   await axios.post(endpoint, postData)
-  // TODO - make this one line
-  let linkPrefix = ""
-  if (network == "rinkeby") {
-    linkPrefix = "rinkeby."
-  } 
+
   console.log(
-    `Transaction awaiting execution in the interface https://${linkPrefix}gnosis-safe.io/safes/${masterSafe.address}/transactions`
+    `Transaction awaiting execution in the interface https://${linkPrefix[network]}gnosis-safe.io/safes/${masterSafe.address}/transactions`
   )
 }
 
 module.exports = {
   signAndSend,
-  promptUser
+  promptUser,
 }
