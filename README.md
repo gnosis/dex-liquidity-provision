@@ -3,7 +3,8 @@
 We want to employ different liquidity strategies when the Dfusion exchange is launched.
 This repo is responsible for testing and execution.
 
-More details on the process and implementation can be found in the file `design.md`.
+The code is this repository is *work in progress*: it will be subject to significant changes and has known rough edges that break some functionalities.
+Do not use unless you fully understand the code!
 
 ## How to use
 
@@ -23,3 +24,5 @@ Run test:
 ```
 npx truffle test
 ```
+
+Use scripts as described it `scripts/README.md`.
