@@ -1,5 +1,9 @@
 ## Script Usage:
 
+## Disclaimer:
+
+Using own risk!
+
 ### Prerequisites
 
 Contracts must be compiled and, if working on any non-local network, deployment addresses must be injected into built contracts.
@@ -22,7 +26,10 @@ export MASTER_SAFE=<master safe>
 
 ### Confirming multisig orders with Metamask
 
-Note that metamask underestimates the gas consumption. Just add a 4 at the beginning of the gas limit.
+These script require to set up a "Master Safe" created through the interface (here)[https://rinkeby.gnosis-safe.io] with an owner key under your control. This Master Safe should have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface and this implies that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
+In order to have a save setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. Otherwise, everyone can steal the funds from your account!
+
+For the signing process, note that the metamask underestimates the gas consumption. Just make sure that the gas limit of your transaction is sufficient. Since there is no proper way to estimate gas, setting the gas limit to a value higher than 4_000_000 is a practical, yet insecure way.
 
 ### Deploy Safes
 
@@ -82,9 +89,15 @@ truffle exec scripts/withdraw.js --transferBackToMaster --masterSafe=$MASTER_SAF
 
 ### Full Cycle Test
 
-To begin, you must have an existing "Master Safe" created through the interface (here)[https://rinkeby.gnosis-safe.io] for convienience, add an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account, who will be responsible for submitting the transaction from the terminal and ensure the safe requires at least two transactions. Note that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
+To begin, you must have an existing "Master Safe" created through the interface (here)[https://rinkeby.gnosis-safe.io] for convienience, add an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account.
 
-Bracket Trader Safe: `0xb2162C8868AB135604270c92ed1faFA47b2BB50B`
+Then, export the address like this:
+
+```
+export MASTER_SAFE=0xb2162C8868AB135604270c92ed1faFA47b2BB50B
+```
+
+Set all the other env variables.
 
 2. Create subsafes via
 
