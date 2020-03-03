@@ -661,6 +661,7 @@ module.exports = {
   checkSufficiencyOfBalance,
   getRequestWithdraw,
   getWithdraw,
+  fetchTokenInfo,
   max128,
   maxU32,
   maxUINT,
