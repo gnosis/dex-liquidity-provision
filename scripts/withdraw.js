@@ -45,9 +45,9 @@ const argv = require("yargs")
   )
   .check(function(argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferBackToMaster) {
-      throw new Error("Argument error: one of --request, --withdraw, --transferBackToMaster must be given")
+      throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferBackToMaster must be given")
     } else if (argv.requestWithdraw && (argv.transferBackToMaster || argv.withdraw)) {
-      throw new Error("Argument error: --request cannot be used with any of --withdraw, --transferBackToMaster")
+      throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferBackToMaster")
     }
     return true
   })
