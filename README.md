@@ -25,4 +25,4 @@ Run test:
 npx truffle test
 ```
 
-Use scripts as described it `scripts/README.md`.
+Use scripts as described in `scripts/README.md`.
