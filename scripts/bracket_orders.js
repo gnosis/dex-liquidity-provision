@@ -60,7 +60,7 @@ const getDexagPrice = async function (tokenBought, tokenSold) {
     const requestResult = await axios.get(url)
     price = requestResult.data.price
   } catch (error) {
-    console.log("Warning: unable to compare the given price with that of dex.ag. The server returns:")
+    console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
     console.log(">", error.response.data.error)
   }
   return price
@@ -72,6 +72,13 @@ const isPriceReasonable = async function (exchange, targetTokenId, stableTokenId
   const targetToken = tokenInfo[targetTokenId]
   const stableToken = tokenInfo[stableTokenId]
   const dexagPrice = await getDexagPrice(targetToken.symbol, stableToken.symbol)
+  if (dexagPrice === undefined) {
+    console.log("Warning: could not perform price check against dex.ag.")
+    const answer = await promptUser("Continue anyway? [yN] ")
+    if (answer != "y" && answer.toLowerCase() != "yes") {
+      return false
+    }
+  }
   if (Math.abs(dexagPrice - price) >= thresholdPercent / 100) {
     console.log("Warning: the chosen price differs by more than", thresholdPercent, "percent from the price found on dex.ag.")
     console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
