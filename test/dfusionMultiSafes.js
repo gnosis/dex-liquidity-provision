@@ -89,7 +89,7 @@ contract("GnosisSafe", function(accounts) {
     const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
     assert.equal(batchTransaction.to, multiSend.address)
 
-    await execTransaction(masterSafe, lw, batchTransaction.to, batchTransaction.value, batchTransaction.data, batchTransaction.operation)
+    await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
@@ -127,7 +127,7 @@ contract("GnosisSafe", function(accounts) {
     )
     assert.equal(batchTransaction.to, multiSend.address)
 
-    await execTransaction(masterSafe, lw, batchTransaction.to, batchTransaction.value, batchTransaction.data, batchTransaction.operation)
+    await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
@@ -172,7 +172,7 @@ contract("GnosisSafe", function(accounts) {
       web3,
       artifacts
     )
-    await execTransaction(masterSafe, lw, transaction.to, transaction.value, transaction.data, transaction.operation)
+    await execTransaction(masterSafe, lw, transaction)
 
     // Correctness assertions
     for (const slaveAddress of slaveSafes) {
@@ -192,7 +192,7 @@ contract("GnosisSafe", function(accounts) {
       const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
       assert.equal(batchTransaction.to, multiSend.address)
 
-      await execTransaction(masterSafe, lw, batchTransaction.to, batchTransaction.value, batchTransaction.data, batchTransaction.operation)
+      await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
       const totalDepositedAmount = {}
@@ -226,10 +226,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        requestWithdrawalTransaction.to,
-        requestWithdrawalTransaction.value,
-        requestWithdrawalTransaction.data,
-        requestWithdrawalTransaction.operation, // This is DELEGATECALL
+        requestWithdrawalTransaction,
         "request withdrawal for all slaves"
       )
       await waitForNSeconds(301)
@@ -299,10 +296,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        withdrawalTransaction.to,
-        withdrawalTransaction.value,
-        withdrawalTransaction.data,
-        withdrawalTransaction.operation,
+        withdrawalTransaction,
         "withdraw for all slaves"
       )
 
@@ -335,10 +329,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        transferFundsToMasterTransaction.to,
-        transferFundsToMasterTransaction.value,
-        transferFundsToMasterTransaction.data,
-        transferFundsToMasterTransaction.operation,
+        transferFundsToMasterTransaction,
         "transfer funds to master for all slaves"
       )
 
@@ -392,10 +383,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        withdrawAndTransferFundsToMasterTransaction.to,
-        withdrawAndTransferFundsToMasterTransaction.value,
-        withdrawAndTransferFundsToMasterTransaction.data,
-        withdrawAndTransferFundsToMasterTransaction.operation,
+        withdrawAndTransferFundsToMasterTransaction,
         "withdraw and transfer back for all slaves"
       )
 

@@ -33,14 +33,36 @@ function toETH(value) {
   return new BN(value * GWEI).mul(new BN(GWEI))
 }
 
-const execTransaction = async function(safe, lightWallet, to, value, data, operation) {
+const execTransaction = async function(safe, lightWallet, transaction) {
   const nonce = await safe.nonce()
-  const transactionHash = await safe.getTransactionHash(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, nonce)
+  const transactionHash = await safe.getTransactionHash(
+    transaction.to,
+    transaction.value,
+    transaction.data,
+    transaction.operation,
+    0,
+    0,
+    0,
+    ADDRESS_0,
+    ADDRESS_0,
+    nonce
+  )
   const sigs = signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
-  await safe.execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
+  await safe.execTransaction(
+    transaction.to,
+    transaction.value,
+    transaction.data,
+    transaction.operation,
+    0,
+    0,
+    0,
+    ADDRESS_0,
+    ADDRESS_0,
+    sigs
+  )
 }
 
-const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, value, data, operation = 0) {
+const execTransactionData = async function(gnosisSafeMasterCopy, owner, transaction) {
   const sigs =
     "0x" +
     "000000000000000000000000" +
@@ -48,7 +70,18 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, to, valu
     "0000000000000000000000000000000000000000000000000000000000000000" +
     "01"
   return await gnosisSafeMasterCopy.contract.methods
-    .execTransaction(to, value, data, operation, 0, 0, 0, ADDRESS_0, ADDRESS_0, sigs)
+    .execTransaction(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      0,
+      0,
+      0,
+      ADDRESS_0,
+      ADDRESS_0,
+      sigs
+    )
     .encodeABI()
 }
 

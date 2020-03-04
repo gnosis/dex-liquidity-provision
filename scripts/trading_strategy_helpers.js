@@ -154,10 +154,7 @@ const getExecTransactionTransaction = async function(masterAddress, traderAddres
   const execData = await execTransactionData(
     gnosisSafeMasterCopy,
     masterAddress,
-    transaction.to,
-    transaction.value,
-    transaction.data,
-    transaction.operation
+    transaction
   )
   const execTransactionTransaction = {
     operation: CALL,
