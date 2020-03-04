@@ -126,8 +126,6 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
  */
 const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
   const MultiSend = artifacts.require("MultiSend")
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
   const multiSend = await MultiSend.deployed()
   const transactionData = await encodeMultiSend(multiSend, transactions, web3)
   const bundledTransaction = {
