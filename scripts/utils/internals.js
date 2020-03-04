@@ -243,6 +243,7 @@ module.exports = {
   deploySafe,
   encodeMultiSend,
   createLightwallet,
+  signTransaction,
   getBundledTransaction,
   getExecTransactionTransaction,
   CALL,
