@@ -184,6 +184,7 @@ contract("GnosisSafe", function(accounts) {
       const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
       assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
+
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
     }
