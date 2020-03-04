@@ -1,5 +1,5 @@
 const { buildOrderTransaction } = require("./utils/trading_strategy_helpers")
-const { signAndSend, promptUser } = require("./sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {

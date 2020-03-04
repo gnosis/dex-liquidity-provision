@@ -2,13 +2,13 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const BN = require("bn.js")
 
-const { signAndSend, promptUser } = require("./utils/trading_strategy_helpers")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const {
   getRequestWithdraw,
   getWithdraw,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
-} = require("./trading_strategy_helpers")
+} = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")
   .option("masterSafe", {

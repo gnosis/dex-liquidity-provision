@@ -6,7 +6,7 @@ const {
   buildOrderTransactionData,
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
-const { signAndSend } = require("./sign_and_send")
+const { signAndSend } = require("./utils/sign_and_send")
 const { toETH } = require("./utils/internals")
 const assert = require("assert")
 

@@ -1,5 +1,5 @@
 const axios = require("axios")
-const { ADDRESS_0 } = require("./utils/trading_strategy_helpers")
+const { ADDRESS_0 } = require("./trading_strategy_helpers")
 const { signTransaction, createLightwallet } = require("../utils/internals")
 
 const readline = require("readline")

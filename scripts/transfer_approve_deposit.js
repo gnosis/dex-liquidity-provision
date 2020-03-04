@@ -1,4 +1,4 @@
-const { signAndSend, promptUser } = require("./sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { transferApproveDeposit } = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")

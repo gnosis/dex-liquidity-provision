@@ -1,7 +1,7 @@
 const Contract = require("@truffle/contract")
 
-const { signAndSend, promptUser } = require("./utils/trading_strategy_helpers")
-const { CALL } = require("./trading_strategy_helpers")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { CALL } = require("./utils/internals")
 
 const argv = require("yargs")
   .option("masterSafe", {
