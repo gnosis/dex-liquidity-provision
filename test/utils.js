@@ -3,6 +3,25 @@ const lightwallet = require("eth-lightwallet")
 const BN = require("bn.js")
 const assert = require("assert")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
+const CALL = 0
+const DELEGATECALL = 1
+
+/**
+ * @typedef Transaction
+ *  * Example:
+ *  {
+ *    operation: CALL,
+ *    to: "0x0000..000",
+ *    value: "10",
+ *    data: "0x00",
+ *  }
+ * @type {object}
+ * @property {int} operation Either CALL or DELEGATECALL
+ * @property {EthereumAddress} to Ethereum address receiving the transaction
+ * @property {string} value Amount of ETH transferred
+ * @property {string} data Data sent along with the transaction
+ */
+
 
 const jsonrpc = "2.0"
 const id = 0
@@ -62,29 +81,6 @@ const execTransaction = async function(safe, lightWallet, transaction) {
   )
 }
 
-const execTransactionData = async function(gnosisSafeMasterCopy, owner, transaction) {
-  const sigs =
-    "0x" +
-    "000000000000000000000000" +
-    owner.replace("0x", "") +
-    "0000000000000000000000000000000000000000000000000000000000000000" +
-    "01"
-  return await gnosisSafeMasterCopy.contract.methods
-    .execTransaction(
-      transaction.to,
-      transaction.value,
-      transaction.data,
-      transaction.operation,
-      0,
-      0,
-      0,
-      ADDRESS_0,
-      ADDRESS_0,
-      sigs
-    )
-    .encodeABI()
-}
-
 const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold, artifacts = artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
 
@@ -99,24 +95,6 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     GnosisSafe,
     null
   )
-}
-
-const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
-  return await multiSend.contract.methods
-    .multiSend(
-      `0x${txs
-        .map(tx =>
-          [
-            web3.eth.abi.encodeParameter("uint8", tx.operation).slice(-2),
-            web3.eth.abi.encodeParameter("address", tx.to).slice(-40),
-            web3.eth.abi.encodeParameter("uint256", tx.value).slice(-64),
-            web3.eth.abi.encodeParameter("uint256", web3.utils.hexToBytes(tx.data).length).slice(-64),
-            tx.data.replace(/^0x/, ""),
-          ].join("")
-        )
-        .join("")}`
-    )
-    .encodeABI()
 }
 
 // Need some small adjustments to default implementation for web3js 1.x
@@ -169,6 +147,90 @@ function signTransaction(lw, signers, transactionHash) {
   return signatureBytes
 }
 
+const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
+  return await multiSend.contract.methods
+    .multiSend(
+      `0x${txs
+        .map(tx =>
+          [
+            web3.eth.abi.encodeParameter("uint8", tx.operation).slice(-2),
+            web3.eth.abi.encodeParameter("address", tx.to).slice(-40),
+            web3.eth.abi.encodeParameter("uint256", tx.value).slice(-64),
+            web3.eth.abi.encodeParameter("uint256", web3.utils.hexToBytes(tx.data).length).slice(-64),
+            tx.data.replace(/^0x/, ""),
+          ].join("")
+        )
+        .join("")}`
+    )
+    .encodeABI()
+}
+
+/**
+ * Given a collection of transactions, creates a single transaction that bundles all of them
+ * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
+ * @return {Transaction} Multisend transaction bundling all input transactions
+ */
+const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
+  const MultiSend = artifacts.require("MultiSend")
+  const multiSend = await MultiSend.deployed()
+  const transactionData = await encodeMultiSend(multiSend, transactions, web3)
+  const bundledTransaction = {
+    operation: DELEGATECALL,
+    to: multiSend.address,
+    value: 0,
+    data: transactionData,
+  }
+  return bundledTransaction
+}
+
+const execTransactionData = async function(gnosisSafeMasterCopy, owner, transaction) {
+  const sigs =
+    "0x" +
+    "000000000000000000000000" +
+    owner.replace("0x", "") +
+    "0000000000000000000000000000000000000000000000000000000000000000" +
+    "01"
+  return await gnosisSafeMasterCopy.contract.methods
+    .execTransaction(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      0,
+      0,
+      0,
+      ADDRESS_0,
+      ADDRESS_0,
+      sigs
+    )
+    .encodeABI()
+}
+
+/**
+ * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
+ * @param {EthereumAddress} masterAddress Address of a controlled Safe
+ * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
+ * @param {Transaction} transaction The transaction to be executed by execTransaction
+ * @return {Transaction} Transaction calling execTransaction; should be executed by master
+ */
+const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+
+  const execData = await execTransactionData(
+    gnosisSafeMasterCopy,
+    masterAddress,
+    transaction
+  )
+  const execTransactionTransaction = {
+    operation: CALL,
+    to: traderAddress,
+    value: 0,
+    data: execData,
+  }
+  return execTransactionTransaction
+}
+
 function logGasUsage(subject, transactionOrReceipt) {
   const receipt = transactionOrReceipt.receipt || transactionOrReceipt
   console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
@@ -178,9 +240,10 @@ module.exports = {
   waitForNSeconds,
   toETH,
   execTransaction,
-  execTransactionData,
   deploySafe,
   encodeMultiSend,
   createLightwallet,
-  signTransaction,
+  getBundledTransaction,
+  getExecTransactionTransaction,
+  CALL
 }

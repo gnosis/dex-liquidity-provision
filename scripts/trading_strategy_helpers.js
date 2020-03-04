@@ -3,11 +3,9 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 
 const assert = require("assert")
 const BN = require("bn.js")
-const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
+const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("../test/utils")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
-const CALL = 0
-const DELEGATECALL = 1
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
 const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
@@ -25,22 +23,6 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * This particular type is that of a JS object representing the Smart contract ABI.
  * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
  * @typedef SmartContract
- */
-
-/**
- * @typedef Transaction
- *  * Example:
- *  {
- *    operation: CALL,
- *    to: "0x0000..000",
- *    value: "10",
- *    data: "0x00",
- *  }
- * @type {object}
- * @property {int} operation Either CALL or DELEGATECALL
- * @property {EthereumAddress} to Ethereum address receiving the transaction
- * @property {string} value Amount of ETH transferred
- * @property {string} data Data sent along with the transaction
  */
 
 /**
@@ -117,50 +99,6 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
     log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
   }
   return tokenObjects
-}
-
-/**
- * Given a collection of transactions, creates a single transaction that bundles all of them
- * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
- * @return {Transaction} Multisend transaction bundling all input transactions
- */
-const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
-  const MultiSend = artifacts.require("MultiSend")
-  const multiSend = await MultiSend.deployed()
-  const transactionData = await encodeMultiSend(multiSend, transactions, web3)
-  const bundledTransaction = {
-    operation: DELEGATECALL,
-    to: multiSend.address,
-    value: 0,
-    data: transactionData,
-  }
-  return bundledTransaction
-}
-
-/**
- * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
- * TODO: we can probably merge this function with execTransactionData.
- * @param {EthereumAddress} masterAddress Address of a controlled Safe
- * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
- * @param {Transaction} transaction The transaction to be executed by execTransaction
- * @return {Transaction} Transaction calling execTransaction; should be executed by master
- */
-const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
-  const GnosisSafe = artifacts.require("GnosisSafe")
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-
-  const execData = await execTransactionData(
-    gnosisSafeMasterCopy,
-    masterAddress,
-    transaction
-  )
-  const execTransactionTransaction = {
-    operation: CALL,
-    to: traderAddress,
-    value: 0,
-    data: execData,
-  }
-  return execTransactionTransaction
 }
 
 /**
@@ -623,7 +561,5 @@ module.exports = {
   max128,
   maxU32,
   maxUINT,
-  DELEGATECALL,
-  CALL,
   ADDRESS_0,
 }
