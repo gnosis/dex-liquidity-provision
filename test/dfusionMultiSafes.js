@@ -154,13 +154,10 @@ contract("GnosisSafe", function(accounts) {
 
   it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
-    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
     const targetPrice = 100
-    // add "stableToken" to exchange
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
@@ -193,13 +190,10 @@ contract("GnosisSafe", function(accounts) {
   })
   it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
-    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
     const targetPrice = 1 / 100
-    // add "stableToken" to exchange
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
@@ -253,13 +247,10 @@ contract("GnosisSafe", function(accounts) {
   })
   it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
-    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
     const targetPrice = 100
-    // add "stableToken" to exchange
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
