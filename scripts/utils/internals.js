@@ -245,5 +245,6 @@ module.exports = {
   createLightwallet,
   getBundledTransaction,
   getExecTransactionTransaction,
-  CALL
+  CALL,
+  ADDRESS_0,
 }
