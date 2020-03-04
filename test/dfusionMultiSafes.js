@@ -152,7 +152,7 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it.only("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
+  it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
@@ -191,7 +191,7 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
     }
   })
-  it.only("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
+  it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
@@ -223,42 +223,35 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
       // Check buy order prices
-      console.log(index)
-      console.log(
-        buyOrder.priceDenominator
-          .mul(new BN(1000))
-          .div(buyOrder.priceNumerator)
-          .toNumber()
+
+      // the multiplicator is used to reduce rounding errors in the following calculations
+      const multiplicator = 10000000
+      assert.isBelow(
+        Math.abs(
+          buyOrder.priceDenominator
+            .mul(new BN(multiplicator))
+            .div(buyOrder.priceNumerator)
+            .toNumber() -
+            multiplicator * (minimalPrice + stepSize * index)
+        ) / multiplicator,
+        0.001
       )
-      console.log(1000 * (minimalPrice + stepSize * index))
-      // assert.isBelow(
-      //   Math.abs(buyOrder.priceNumerator.div(buyOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * index)),
-      //   0.001
-      // )
       assert(buyOrder.priceNumerator.eq(max128))
       // Check sell order prices
-      console.log(index)
-      console.log(
-        sellOrder.priceNumerator
-          .mul(new BN(1000))
-          .div(sellOrder.priceDenominator)
-          .toNumber()
+      assert.isBelow(
+        Math.abs(
+          sellOrder.priceNumerator
+            .mul(new BN(multiplicator))
+            .div(sellOrder.priceDenominator)
+            .toNumber() -
+            multiplicator * (minimalPrice + stepSize * (index + 1))
+        ) / multiplicator,
+        0.001
       )
-      console.log(1000 * (minimalPrice + stepSize * (index + 1)))
-      // assert.isBelow(
-      //   Math.abs(
-      //     sellOrder.priceNumerator
-      //       .mul(new BN(1000))
-      //       .div(sellOrder.priceDenominator)
-      //       .toNumber() -
-      //       1000 * (minimalPrice + stepSize * (index + 1))
-      //   ),
-      //   1
-      // )
       assert(sellOrder.priceDenominator.eq(max128))
     }
   })
-  it.only("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
+  it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
     const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)

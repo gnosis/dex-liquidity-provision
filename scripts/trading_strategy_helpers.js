@@ -102,8 +102,7 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 const formatAmount = function(amount, token) {
   if (amount < 1) {
     amount = amount * 10 ** token.decimals
-    console.log(amount)
-    return new BN(amount)
+    return new BN(amount.toString())
   }
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
@@ -324,9 +323,7 @@ const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
   // Sell x ETH for max256 DAI
   // x = max256 / 102
   // priceFormatted = 102000000000000000000
-  console.log("before formatting", price)
   const priceFormatted = formatAmount(price, targetToken)
-  console.log("after formatting", priceFormatted.toNumber())
 
   let sellAmount
   let buyAmount
