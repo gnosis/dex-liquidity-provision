@@ -100,6 +100,11 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  */
 
 const formatAmount = function(amount, token) {
+  if (amount < 1) {
+    amount = amount * 10 ** token.decimals
+    console.log(amount)
+    return new BN(amount)
+  }
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
 
@@ -272,29 +277,8 @@ const buildOrderTransactionData = async function(
     const lowerLimit = lowestLimit + safeIndex * stepSize
     const upperLimit = lowestLimit + (safeIndex + 1) * stepSize
 
-    // Sell targetToken for stableToken at targetTokenPrice = upperLimit
-    // Sell 1 ETH at for 102 DAI (unlimited)
-    // Sell x ETH for max256 DAI
-    // x = max256 / 102
-    const sellPrice = formatAmount(upperLimit, targetToken)
-    // sellPrice = 102000000000000000000
-    const upperSellAmount = max128
-      .div(sellPrice)
-      .mul(toETH(1))
-      .toString()
-    const upperBuyAmount = max128.toString()
-
-    // Buy ETH at 101 for DAI (unlimited)
-    // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
-    // Sell 101 DAI for 1 ETH
-    // Sell max256 DAI for x ETH
-    // x = max256 / 101
-    const buyPrice = formatAmount(lowerLimit, targetToken)
-    const lowerSellAmount = max128.toString()
-    const lowerBuyAmount = max128
-      .div(buyPrice)
-      .mul(toETH(1))
-      .toString()
+    const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+    const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
     log(`Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
     log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
@@ -333,6 +317,34 @@ const buildOrderTransactionData = async function(
   return await getBundledTransaction(transactions, web3, artifacts)
 }
 
+const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
+  // Sell targetToken for stableToken at price with unlimited orders
+  // Example:
+  // Sell 1 ETH at for 102 DAI (unlimited)
+  // Sell x ETH for max256 DAI
+  // x = max256 / 102
+  // priceFormatted = 102000000000000000000
+  console.log("before formatting", price)
+  const priceFormatted = formatAmount(price, targetToken)
+  console.log("after formatting", priceFormatted.toNumber())
+
+  let sellAmount
+  let buyAmount
+  if (priceFormatted.gt(toETH(1))) {
+    sellAmount = max128
+      .div(priceFormatted)
+      .mul(toETH(1))
+      .toString()
+    buyAmount = max128.toString()
+  } else {
+    buyAmount = max128
+      .mul(priceFormatted)
+      .div(toETH(1))
+      .toString()
+    sellAmount = max128.toString()
+  }
+  return [sellAmount, buyAmount]
+}
 const checkSufficiencyOfBalance = async function(token, owner, amount) {
   const depositor_balance = await token.balanceOf.call(owner)
   return depositor_balance.gte(amount)

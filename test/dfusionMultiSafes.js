@@ -152,10 +152,10 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("Places bracket orders on behalf of a fleet of safes", async () => {
+  it.only("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 20, artifacts)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
     // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
@@ -180,17 +180,127 @@ contract("GnosisSafe", function(accounts) {
       const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
-      assert(buyOrder.priceDenominator.eq(max128))
-      assert(sellOrder.priceNumerator.eq(max128))
+
       // Checks that bracket orders are profitable for liquidity provider
       const initialAmount = new BN(10).pow(new BN(18))
       const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
       const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
       assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
-      // ToDo: Checks order prices
 
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
+    }
+  })
+  it.only("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    // Number of brackets is determined by fleet size
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+    const targetToken = 0 // ETH
+    const stableToken = 1 // DAI
+    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
+    const targetPrice = 1 / 100
+    // add "stableToken" to exchange
+    await prepareTokenRegistration(accounts[0])
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+
+    const transactionData = await buildOrderTransactionData(
+      masterSafe.address,
+      slaveSafes,
+      targetToken,
+      stableToken,
+      targetPrice,
+      web3,
+      artifacts
+    )
+    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
+
+    const rangePercentage = 0.2
+    const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
+    const minimalPrice = targetPrice * (1 - rangePercentage)
+    // Correctness assertions
+    for (const [index, slaveAddress] of slaveSafes.entries()) {
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      assert.equal(auctionElements.length, 2)
+      const [buyOrder, sellOrder] = auctionElements
+      // Check buy order prices
+      console.log(index)
+      console.log(
+        buyOrder.priceDenominator
+          .mul(new BN(1000))
+          .div(buyOrder.priceNumerator)
+          .toNumber()
+      )
+      console.log(1000 * (minimalPrice + stepSize * index))
+      // assert.isBelow(
+      //   Math.abs(buyOrder.priceNumerator.div(buyOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * index)),
+      //   0.001
+      // )
+      assert(buyOrder.priceNumerator.eq(max128))
+      // Check sell order prices
+      console.log(index)
+      console.log(
+        sellOrder.priceNumerator
+          .mul(new BN(1000))
+          .div(sellOrder.priceDenominator)
+          .toNumber()
+      )
+      console.log(1000 * (minimalPrice + stepSize * (index + 1)))
+      // assert.isBelow(
+      //   Math.abs(
+      //     sellOrder.priceNumerator
+      //       .mul(new BN(1000))
+      //       .div(sellOrder.priceDenominator)
+      //       .toNumber() -
+      //       1000 * (minimalPrice + stepSize * (index + 1))
+      //   ),
+      //   1
+      // )
+      assert(sellOrder.priceDenominator.eq(max128))
+    }
+  })
+  it.only("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    // Number of brackets is determined by fleet size
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+    const targetToken = 0 // ETH
+    const stableToken = 1 // DAI
+    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
+    const targetPrice = 100
+    // add "stableToken" to exchange
+    await prepareTokenRegistration(accounts[0])
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+
+    const transactionData = await buildOrderTransactionData(
+      masterSafe.address,
+      slaveSafes,
+      targetToken,
+      stableToken,
+      targetPrice,
+      web3,
+      artifacts
+    )
+    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
+
+    const rangePercentage = 0.2
+    const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
+    const minimalPrice = targetPrice * (1 - rangePercentage)
+    // Correctness assertions
+    for (const [index, slaveAddress] of slaveSafes.entries()) {
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      assert.equal(auctionElements.length, 2)
+      const [buyOrder, sellOrder] = auctionElements
+      // Check buy order prices
+      assert.isBelow(
+        Math.abs(buyOrder.priceDenominator.div(buyOrder.priceNumerator).toNumber() - (minimalPrice + stepSize * index)),
+        1
+      )
+      assert(buyOrder.priceDenominator.eq(max128))
+      // Check sell order prices
+      assert.isBelow(
+        Math.abs(sellOrder.priceNumerator.div(sellOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * (index + 1))),
+        1
+      )
+      assert(sellOrder.priceNumerator.eq(max128))
     }
   })
 
