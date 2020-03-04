@@ -72,16 +72,14 @@ const isPriceReasonable = async function (exchange, targetTokenId, stableTokenId
   const targetToken = tokenInfo[targetTokenId]
   const stableToken = tokenInfo[stableTokenId]
   const dexagPrice = await getDexagPrice(targetToken.symbol, stableToken.symbol)
+  // TODO add unit test checking whether getDexagPrice works as expected
   if (dexagPrice === undefined) {
     console.log("Warning: could not perform price check against dex.ag.")
     const answer = await promptUser("Continue anyway? [yN] ")
     if (answer != "y" && answer.toLowerCase() != "yes") {
       return false
     }
-  }
-
-  // TODO add unit test checking whether getDexagPrice works as expected
-  if (Math.abs(dexagPrice - price) >= acceptedPriceDeviationInPercentage / 100) {
+  } else if (Math.abs(dexagPrice - price) >= acceptedPriceDeviationInPercentage / 100) {
     console.log("Warning: the chosen price differs by more than", acceptedPriceDeviationInPercentage, "percent from the price found on dex.ag.")
     console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
     console.log("         dex.ag price:", dexagPrice, targetToken.symbol, "bought for 1", stableToken.symbol)
