@@ -7,7 +7,6 @@ const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const MultiSend = artifacts.require("MultiSend")
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
@@ -30,7 +29,6 @@ contract("GnosisSafe", function(accounts) {
   let proxyFactory
   let testToken
   let exchange
-  let multiSend
 
   beforeEach(async function() {
     // Create lightwallet
@@ -39,7 +37,6 @@ contract("GnosisSafe", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    multiSend = await MultiSend.deployed()
     testToken = await TestToken.new(18)
 
     BatchExchange.setProvider(web3.currentProvider)
@@ -87,7 +84,6 @@ contract("GnosisSafe", function(accounts) {
     }))
 
     const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
-    assert.equal(batchTransaction.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
@@ -125,7 +121,6 @@ contract("GnosisSafe", function(accounts) {
       artifacts,
       web3
     )
-    assert.equal(batchTransaction.to, multiSend.address)
 
     await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
@@ -190,7 +185,6 @@ contract("GnosisSafe", function(accounts) {
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
       const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
-      assert.equal(batchTransaction.to, multiSend.address)
 
       await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
