@@ -410,6 +410,8 @@ const getGenericFundMovementTransaction = async function(
  */
 const transferApproveDeposit = async function(masterSafeAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const ERC20 = artifacts.require("ERC20Detailed")
 
   const MultiSend = artifacts.require("MultiSend")
   const multiSend = await MultiSend.deployed()
@@ -417,15 +419,16 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
   // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
   // TODO - make deposit list easier so that we dont' have to query the token every time.
   for (const deposit of depositList) {
-    // const slaveSafe = await GnosisSafe.at(deposit.userAddress)
-    // const slaveOwners = await slaveSafe.getOwners()
-    // assert.equal(slaveOwners[0], fleetOwner.address, "All depositors must be owned by master safe")
-    // No need to assert exchange has token since deposits and withdraws are not limited to registered tokens.
-    // assert(await exchange.hasToken(deposit.tokenAddress), "Requested deposit token not listed on the exchange")
+    const slaveSafe = await GnosisSafe.at(deposit.userAddress)
+    const slaveOwners = await slaveSafe.getOwners()
+    assert.equal(slaveOwners[0], masterSafeAddress, "All depositors must be owned by master safe")
+    const depositToken = await ERC20.at(deposit.tokenAddress)
+    const tokenSymbol = await depositToken.symbol.call()
+    const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
     log(
       `Safe ${deposit.userAddress} receiving (from ${masterSafeAddress.slice(0, 6)}...${masterSafeAddress.slice(
         -2
-      )}) and depositing ${deposit.unitAmount} into BatchExchange`
+      )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
     )
 
     transactions = transactions.concat(

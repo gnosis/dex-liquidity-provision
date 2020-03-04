@@ -11,6 +11,10 @@ const { toETH } = require("../test/utils")
 const assert = require("assert")
 
 const argv = require("yargs")
+  .option("masterSafe", {
+    type: "string",
+    describe: "Address of Gnosis Safe owning slaveSafes",
+  })
   .option("fleetSize", {
     type: "int",
     default: 20,
