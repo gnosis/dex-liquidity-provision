@@ -1,6 +1,6 @@
 const axios = require("axios")
-const { DELEGATECALL, ADDRESS_0 } = require("./utils/trading_strategy_helpers")
-const { signTransaction, createLightwallet } = require("../test/utils")
+const { ADDRESS_0 } = require("./utils/trading_strategy_helpers")
+const { signTransaction, createLightwallet } = require("../utils/internals")
 
 const readline = require("readline")
 
@@ -27,10 +27,6 @@ const promptUser = function(message) {
 const signAndSend = async function(masterSafe, transactionData, web3, network) {
   const nonce = await masterSafe.nonce()
   console.log("Aquiring Transaction Hash")
-  if (transactionData.operation === undefined)
-    transactionData.operation = DELEGATECALL
-  if (transactionData.value === undefined)
-    transactionData.value = "0"
   const transactionHash = await masterSafe.getTransactionHash(
     transactionData.to,
     transactionData.value,
