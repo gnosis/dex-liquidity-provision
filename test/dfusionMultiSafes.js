@@ -25,6 +25,27 @@ const {
 } = require("../scripts/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
 
+const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exchange) {
+  const rangePercentage = 0.2
+  const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
+  const minimalPrice = targetPrice * (1 - rangePercentage)
+  // Correctness assertions
+  for (const [index, slaveAddress] of slaveSafes.entries()) {
+    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+    assert.equal(auctionElements.length, 2)
+    const [buyOrder, sellOrder] = auctionElements
+    // Check buy order prices
+    assert.isBelow(
+      Math.abs(buyOrder.priceDenominator.div(buyOrder.priceNumerator).toNumber() - (minimalPrice + stepSize * index)),
+      1
+    )
+    // Check sell order prices
+    assert.isBelow(
+      Math.abs(sellOrder.priceNumerator.div(sellOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * (index + 1))),
+      1
+    )
+  }
+}
 contract("GnosisSafe", function(accounts) {
   let lw
   let gnosisSafeMasterCopy
@@ -214,40 +235,12 @@ contract("GnosisSafe", function(accounts) {
     )
     await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
 
-    const rangePercentage = 0.2
-    const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
-    const minimalPrice = targetPrice * (1 - rangePercentage)
-    // Correctness assertions
-    for (const [index, slaveAddress] of slaveSafes.entries()) {
+    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
+    // Check that unlimited orders are being used
+    for (const slaveAddress of slaveSafes) {
       const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
-      assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
-      // Check buy order prices
-
-      // the multiplicator is used to reduce rounding errors in the following calculations
-      const multiplicator = 10000000
-      assert.isBelow(
-        Math.abs(
-          buyOrder.priceDenominator
-            .mul(new BN(multiplicator))
-            .div(buyOrder.priceNumerator)
-            .toNumber() -
-            multiplicator * (minimalPrice + stepSize * index)
-        ) / multiplicator,
-        0.001
-      )
       assert(buyOrder.priceNumerator.eq(max128))
-      // Check sell order prices
-      assert.isBelow(
-        Math.abs(
-          sellOrder.priceNumerator
-            .mul(new BN(multiplicator))
-            .div(sellOrder.priceDenominator)
-            .toNumber() -
-            multiplicator * (minimalPrice + stepSize * (index + 1))
-        ) / multiplicator,
-        0.001
-      )
       assert(sellOrder.priceDenominator.eq(max128))
     }
   })
@@ -274,25 +267,13 @@ contract("GnosisSafe", function(accounts) {
     )
     await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
 
-    const rangePercentage = 0.2
-    const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
-    const minimalPrice = targetPrice * (1 - rangePercentage)
-    // Correctness assertions
-    for (const [index, slaveAddress] of slaveSafes.entries()) {
+    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
+    // Check that unlimited orders are being used
+    for (const slaveAddress of slaveSafes) {
       const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
-      // Check buy order prices
-      assert.isBelow(
-        Math.abs(buyOrder.priceDenominator.div(buyOrder.priceNumerator).toNumber() - (minimalPrice + stepSize * index)),
-        1
-      )
       assert(buyOrder.priceDenominator.eq(max128))
-      // Check sell order prices
-      assert.isBelow(
-        Math.abs(sellOrder.priceNumerator.div(sellOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * (index + 1))),
-        1
-      )
       assert(sellOrder.priceNumerator.eq(max128))
     }
   })
