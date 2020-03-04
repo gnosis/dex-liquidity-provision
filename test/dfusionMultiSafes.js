@@ -176,7 +176,13 @@ contract("GnosisSafe", function(accounts) {
       const [buyOrder, sellOrder] = auctionElements
       assert(buyOrder.priceDenominator.eq(max128))
       assert(sellOrder.priceNumerator.eq(max128))
-      // TODO - assert on the ratio of buy-sell prices.
+      // Checks that bracket orders are profitable for liquidity provider
+      const initialAmount = new BN(10).pow(new BN(18))
+      const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
+      const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
+      assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
+      // ToDo: Checks order prices
+
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
     }
