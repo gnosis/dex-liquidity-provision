@@ -79,6 +79,8 @@ const isPriceReasonable = async function (exchange, targetTokenId, stableTokenId
       return false
     }
   }
+
+  // TODO add unit test checking whether getDexagPrice works as expected
   if (Math.abs(dexagPrice - price) >= thresholdPercent / 100) {
     console.log("Warning: the chosen price differs by more than", thresholdPercent, "percent from the price found on dex.ag.")
     console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
