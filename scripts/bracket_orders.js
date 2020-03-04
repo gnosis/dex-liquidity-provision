@@ -1,4 +1,4 @@
-const { buildOrderTransactionData } = require("./trading_strategy_helpers")
+const { buildOrderTransactionData } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./sign_and_send")
 
 const argv = require("yargs")

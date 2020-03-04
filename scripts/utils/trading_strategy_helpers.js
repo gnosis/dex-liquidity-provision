@@ -3,7 +3,7 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 
 const assert = require("assert")
 const BN = require("bn.js")
-const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("../test/utils")
+const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1

@@ -2,7 +2,7 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const BN = require("bn.js")
 
-const { signAndSend, promptUser } = require("./sign_and_send")
+const { signAndSend, promptUser } = require("./utils/trading_strategy_helpers")
 const {
   getRequestWithdraw,
   getWithdraw,

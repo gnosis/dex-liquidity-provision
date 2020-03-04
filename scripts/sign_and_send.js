@@ -1,5 +1,5 @@
 const axios = require("axios")
-const { DELEGATECALL, ADDRESS_0 } = require("./trading_strategy_helpers")
+const { DELEGATECALL, ADDRESS_0 } = require("./utils/trading_strategy_helpers")
 const { signTransaction, createLightwallet } = require("../test/utils")
 
 const readline = require("readline")

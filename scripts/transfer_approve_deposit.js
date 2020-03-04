@@ -1,5 +1,5 @@
 const { signAndSend, promptUser } = require("./sign_and_send")
-const { transferApproveDeposit } = require("./trading_strategy_helpers")
+const { transferApproveDeposit } = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")
   .option("masterSafe", {

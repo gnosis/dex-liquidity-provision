@@ -21,8 +21,8 @@ const {
   getWithdrawAndTransferFundsToMaster,
   max128,
   maxU32,
-} = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
+} = require("../scripts/utils/trading_strategy_helpers")
+const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("../scripts/utils/internals")
 
 contract("GnosisSafe", function(accounts) {
   let lw
