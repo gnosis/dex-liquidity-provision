@@ -4,53 +4,48 @@
 
 const assert = require("assert")
 
-const {
-  fromUserToMachineReadable,
-  fromMachineToUserReadable,
-  bnMaxUint,
-  bnOne,
-} = require("../scripts/utils/printing_tools")
+const { fromUserToMachineReadable, fromMachineToUserReadable, bnMaxUint, bnOne } = require("../scripts/utils/printing_tools")
 
 const goodTwoWayPairs = [
   {
     user: "1.1",
     machine: "1100",
-    decimals: 3
+    decimals: 3,
   },
   {
     user: "0.01",
     machine: "100",
-    decimals: 4
+    decimals: 4,
   },
   {
     user: "1",
     machine: "100",
-    decimals: 2
+    decimals: 2,
   },
   {
     user: "104",
     machine: "104",
-    decimals: 0
+    decimals: 0,
   },
   {
     user: "0.002901",
     machine: "2901000000000000",
-    decimals: 18
+    decimals: 18,
   },
   {
     user: "1.002901",
     machine: "1002901000000000000",
-    decimals: 18
+    decimals: 18,
   },
   {
     user: "0." + bnMaxUint.toString().padStart(255, "0"),
     machine: bnMaxUint.toString(),
-    decimals: 255
+    decimals: 255,
   },
   {
     user: bnMaxUint.toString(),
     machine: bnMaxUint.toString(),
-    decimals: 0
+    decimals: 0,
   },
   {
     user: bnMaxUint.toString().slice(0, -18) + "." + bnMaxUint.toString().slice(-18),
@@ -60,29 +55,37 @@ const goodTwoWayPairs = [
   {
     user: "0",
     machine: "0",
-    decimals: 0
+    decimals: 0,
   },
   {
     user: "0",
     machine: "0",
-    decimals: 18
+    decimals: 18,
   },
   {
     user: "0",
     machine: "0",
-    decimals: 255
-  }
+    decimals: 255,
+  },
 ]
 
-const invalidDecimals = function (decimals) { return "Invalid number of decimals for ERC20 token: " + decimals.toString() }
-const tooLargeNumber = function () { return "Number larger than ERC20 token maximum amount (uint256)" }
+const invalidDecimals = function(decimals) {
+  return "Invalid number of decimals for ERC20 token: " + decimals.toString()
+}
+const tooLargeNumber = function() {
+  return "Number larger than ERC20 token maximum amount (uint256)"
+}
 
 describe("fromUserToMachineReadable", () => {
-  const invalidNumber = function (amount) { return "Failed to parse decimal representation of " + amount }
-  const tooManyDecimals = function () { return "Too many decimals for the token in input string" }
+  const invalidNumber = function(amount) {
+    return "Failed to parse decimal representation of " + amount
+  }
+  const tooManyDecimals = function() {
+    return "Too many decimals for the token in input string"
+  }
 
-  const testGoodEntries = function (entries) {
-    for (const {user, machine, decimals} of entries) {
+  const testGoodEntries = function(entries) {
+    for (const { user, machine, decimals } of entries) {
       assert.equal(
         fromUserToMachineReadable(user, decimals),
         machine,
@@ -90,8 +93,8 @@ describe("fromUserToMachineReadable", () => {
       )
     }
   }
-  const testBadEntries = function (entries) {
-    for (const {user, decimals, error} of entries) {
+  const testBadEntries = function(entries) {
+    for (const { user, decimals, error } of entries) {
       let errorMessage
       switch (error) {
         case "invalidDecimals":
@@ -110,7 +113,9 @@ describe("fromUserToMachineReadable", () => {
           throw Error("Invalid error to test")
       }
       assert.throws(
-        function () { return fromUserToMachineReadable(user, decimals) },
+        function() {
+          return fromUserToMachineReadable(user, decimals)
+        },
         Error(errorMessage),
         "Fail for user string " + user + " with " + decimals + " decimals"
       )
@@ -124,37 +129,37 @@ describe("fromUserToMachineReadable", () => {
       {
         user: "0.0",
         machine: "0",
-        decimals: 1
+        decimals: 1,
       },
       {
         user: "0.0",
         machine: "0",
-        decimals: 2
+        decimals: 2,
       },
       {
         user: "0.210",
         machine: "2100",
-        decimals: 4
+        decimals: 4,
       },
       {
         user: "00.1",
         machine: "10",
-        decimals: 2
+        decimals: 2,
       },
       {
         user: "00.010",
         machine: "100",
-        decimals: 4
+        decimals: 4,
       },
       {
         user: "00100.00",
         machine: "10000",
-        decimals: 2
+        decimals: 2,
       },
       {
         user: "000000",
         machine: "0",
-        decimals: 0
+        decimals: 0,
       },
     ]
     testGoodEntries(strangeEntries)
@@ -247,12 +252,26 @@ describe("fromUserToMachineReadable", () => {
         error: "tooLargeNumber",
       },
       {
-        user: "0." + bnMaxUint.add(bnOne).toString().padStart(255, "0"),
+        user:
+          "0." +
+          bnMaxUint
+            .add(bnOne)
+            .toString()
+            .padStart(255, "0"),
         decimals: 255,
         error: "tooLargeNumber",
       },
       {
-        user: bnMaxUint.add(bnOne).toString().slice(0, -18) + "." + bnMaxUint.add(bnOne).toString().slice(-18),
+        user:
+          bnMaxUint
+            .add(bnOne)
+            .toString()
+            .slice(0, -18) +
+          "." +
+          bnMaxUint
+            .add(bnOne)
+            .toString()
+            .slice(-18),
         decimals: 18,
         error: "tooLargeNumber",
       },
@@ -262,10 +281,12 @@ describe("fromUserToMachineReadable", () => {
 })
 
 describe("fromMachineToUserReadable", () => {
-  const invalidInteger = function (amount) { return "Failed to parse unit amount " + amount + "as integer" }
+  const invalidInteger = function(amount) {
+    return "Failed to parse unit amount " + amount + "as integer"
+  }
 
-  const testGoodEntries = function (entries) {
-    for (const {user, machine, decimals} of entries) {
+  const testGoodEntries = function(entries) {
+    for (const { user, machine, decimals } of entries) {
       assert.equal(
         fromMachineToUserReadable(machine, decimals),
         user,
@@ -273,8 +294,8 @@ describe("fromMachineToUserReadable", () => {
       )
     }
   }
-  const testBadEntries = function (entries) {
-    for (const {machine, decimals, error} of entries) {
+  const testBadEntries = function(entries) {
+    for (const { machine, decimals, error } of entries) {
       let errorMessage
       switch (error) {
         case "invalidDecimals":
@@ -290,7 +311,9 @@ describe("fromMachineToUserReadable", () => {
           throw Error("Invalid error to test")
       }
       assert.throws(
-        function () { return fromMachineToUserReadable(machine, decimals) },
+        function() {
+          return fromMachineToUserReadable(machine, decimals)
+        },
         Error(errorMessage),
         "Fail for machine string " + machine + " with " + decimals + " decimals"
       )
@@ -304,32 +327,32 @@ describe("fromMachineToUserReadable", () => {
       {
         machine: "000000",
         user: "0",
-        decimals: 0
+        decimals: 0,
       },
       {
         machine: "000000",
         user: "0",
-        decimals: 18
+        decimals: 18,
       },
       {
         machine: "000000",
         user: "0",
-        decimals: 255
+        decimals: 255,
       },
       {
         machine: "00000012",
         user: "12",
-        decimals: 0
+        decimals: 0,
       },
       {
         machine: "00000012",
         user: "0." + "".padEnd(16, "0") + "12",
-        decimals: 18
+        decimals: 18,
       },
       {
         machine: "00000012",
         user: "0." + "".padEnd(253, "0") + "12",
-        decimals: 255
+        decimals: 255,
       },
     ]
     testGoodEntries(strangeEntries)
