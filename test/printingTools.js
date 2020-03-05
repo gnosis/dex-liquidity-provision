@@ -1,3 +1,7 @@
+// This test can be run directly using mocha:
+// $ npx mocha test/printingTools.js
+// Using truffle test works but it's much slower, since it needs to compile contracts and deploy them to the blockchain.
+
 const BN = require("bn.js")
 const assert = require("assert")
 
@@ -44,31 +48,28 @@ const goodPairs = [
   },
 ]
 
+describe("fromUserToMachineReadable", () => {
+  it("works as expected with reasonable input", () => {
+    for (const {user, machine, digits} of goodPairs) {
+      assert.equal(
+        fromUserToMachineReadable(user, digits),
+        machine,
+        "Fail for user string " + user
+      )
+    }
+  })
+})
 
-contract.only("PrintingTools", function() {
-  describe("fromUserToMachineReadable", () => {
+describe("fromMachineToUserReadable", () => {
+  it("works as expected with reasonable input", () => {
     it("works as expected with reasonable input", () => {
       for (const {user, machine, digits} of goodPairs) {
         assert.equal(
-          fromUserToMachineReadable(user, digits),
-          machine,
-          "Fail for user string " + user
+          fromMachineToUserReadable(machine, digits),
+          user,
+          "Fail for unit amount " + machine
         )
       }
-    })
-  })
-
-  describe("fromMachineToUserReadable", () => {
-    it("works as expected with reasonable input", () => {
-      it("works as expected with reasonable input", () => {
-        for (const {user, machine, digits} of goodPairs) {
-          assert.equal(
-            fromMachineToUserReadable(machine, digits),
-            user,
-            "Fail for unit amount " + machine
-          )
-        }
-      })
     })
   })
 })
