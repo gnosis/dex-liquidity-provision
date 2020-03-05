@@ -17,7 +17,8 @@ const fromUserToMachineReadable = function (amount, digits) {
   const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
   const match = re.exec(amount)
   if (match == null) throw Error("Failed to parse decimal representation of " + amount)
-  const decimalString = (match[3] || "0").padEnd(digits, "0")
+  const decimalString = (match[3] || "").padEnd(digits, "0")
+  if (decimalString.length != digits) throw Error("Too many decimals for the token in input string")
   const integerPart = new BN(match[1])
   const decimalPart = new BN(decimalString)
   const representation = integerPart.mul(bnTen.pow(new BN(digits))).add(decimalPart)
