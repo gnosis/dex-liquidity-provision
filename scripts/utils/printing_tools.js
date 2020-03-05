@@ -50,5 +50,6 @@ const fromMachineToUserReadable = function (amount, decimals) {
 module.exports = {
   fromUserToMachineReadable,
   fromMachineToUserReadable,
-  bnMaxUint
+  bnMaxUint,
+  bnOne,
 }
