@@ -5,7 +5,7 @@
 const assert = require("assert")
 const BN = require("bn.js")
 
-const { fromUserToMachineReadable, fromMachineToUserReadable, bnMaxUint, bnOne } = require("../scripts/utils/printing_tools")
+const { toErc20Units, fromErc20Units, bnMaxUint, bnOne } = require("../scripts/utils/printing_tools")
 
 const goodTwoWayPairs = [
   {
@@ -108,7 +108,7 @@ describe("fromUserToMachineReadable", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
-        fromUserToMachineReadable(user, decimals).toString(),
+        toErc20Units(user, decimals).toString(),
         machine,
         "Fail for user string " + user + " with " + decimals + " decimals"
       )
@@ -135,7 +135,7 @@ describe("fromUserToMachineReadable", () => {
       }
       assert.throws(
         function() {
-          return fromUserToMachineReadable(user, decimals)
+          return toErc20Units(user, decimals)
         },
         Error(errorMessage),
         "Fail for user string " + user + " with " + decimals + " decimals"
@@ -305,7 +305,7 @@ describe("fromMachineToUserReadable", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
-        fromMachineToUserReadable(new BN(machine), decimals),
+        fromErc20Units(new BN(machine), decimals),
         user,
         "Fail for machine string " + machine + " with " + decimals + " decimals"
       )
@@ -326,7 +326,7 @@ describe("fromMachineToUserReadable", () => {
       }
       assert.throws(
         function() {
-          return fromMachineToUserReadable(new BN(machine), decimals)
+          return fromErc20Units(new BN(machine), decimals)
         },
         Error(errorMessage),
         "Fail for machine string " + machine + " with " + decimals + " decimals"
