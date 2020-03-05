@@ -273,4 +273,39 @@ describe("fromMachineToUserReadable", () => {
   it("works as expected with reasonable input", () => {
     testGoodEntries(goodTwoWayPairs)
   })
+  it("works as expected with atypical but correct input", () => {
+    const strangeEntries = [
+      {
+        machine: "000000",
+        user: "0",
+        decimals: 0
+      },
+      {
+        machine: "000000",
+        user: "0",
+        decimals: 18
+      },
+      {
+        machine: "000000",
+        user: "0",
+        decimals: 255
+      },
+      {
+        machine: "00000012",
+        user: "12",
+        decimals: 0
+      },
+      {
+        machine: "00000012",
+        user: "0." + "".padEnd(16, "0") + "12",
+        decimals: 18
+      },
+      {
+        machine: "00000012",
+        user: "0." + "".padEnd(253, "0") + "12",
+        decimals: 255
+      },
+    ]
+    testGoodEntries(strangeEntries)
+  })
 })

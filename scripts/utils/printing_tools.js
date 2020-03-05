@@ -38,11 +38,12 @@ const fromMachineToUserReadable = function (amount, decimals) {
   if (re.exec(amount) == null) throw Error("Failed to parse unit amount " + amount + "as integer")
   const bnAmount = new BN(amount)
   if (bnAmount.gt(bnMaxUint)) throw Error("Amount is too large to fit a uint256")
-  if (decimals == 0) return amount
+  if (decimals == 0) return amount.replace(/^0+/, "") || "0" // remove leading zeros, if nothing left then output zero
   const paddedAmount = amount.padStart(decimals + 1, "0")
   let decimalPart = paddedAmount.slice(-decimals) // rightmost "decimals" characters of the string
-  const integerPart = paddedAmount.slice(0, -decimals) // remaining characters
+  let integerPart = paddedAmount.slice(0, -decimals) // remaining characters
   decimalPart = decimalPart.replace(/0+$/, "") // remove trailig zeros
+  integerPart = integerPart.replace(/^0+/, "") || "0"// remove leading zeros
   if (decimalPart == "") return integerPart
   return integerPart + "." + decimalPart
 }
