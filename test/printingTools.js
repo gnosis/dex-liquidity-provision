@@ -86,7 +86,7 @@ describe("fromUserToMachineReadable", () => {
       assert.equal(
         fromUserToMachineReadable(user, decimals),
         machine,
-        "Fail for user string " + user
+        "Fail for user string " + user + " with " + decimals + " decimals"
       )
     }
   }
@@ -111,8 +111,8 @@ describe("fromUserToMachineReadable", () => {
       }
       assert.throws(
         function () { return fromUserToMachineReadable(user, decimals) },
-        Error,
-        errorMessage
+        Error(errorMessage),
+        "Fail for user string " + user + " with " + decimals + " decimals"
       )
     }
   }
@@ -262,12 +262,14 @@ describe("fromUserToMachineReadable", () => {
 })
 
 describe("fromMachineToUserReadable", () => {
+  const invalidInteger = function (amount) { return "Failed to parse unit amount " + amount + "as integer" }
+
   const testGoodEntries = function (entries) {
     for (const {user, machine, decimals} of entries) {
       assert.equal(
         fromMachineToUserReadable(machine, decimals),
         user,
-        "Fail for user string " + user
+        "Fail for machine string " + machine + " with " + decimals + " decimals"
       )
     }
   }
