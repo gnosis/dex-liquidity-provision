@@ -8,9 +8,10 @@ const assert = require("assert")
 const {
   fromUserToMachineReadable,
   fromMachineToUserReadable,
+  bnMaxUint
 } = require("../scripts/utils/printing_tools")
 
-const goodPairs = [
+const goodTwoWayPairs = [
   {
     user: "1.1",
     machine: "1100",
@@ -40,6 +41,31 @@ const goodPairs = [
     user: "1.002901",
     machine: "1002901000000000000",
     digits: 18
+  },
+  {
+    user: "0." + bnMaxUint.toString().padStart(255, "0"),
+    machine: bnMaxUint.toString(),
+    digits: 255
+  },
+  {
+    user: bnMaxUint.toString(),
+    machine: bnMaxUint.toString(),
+    digits: 0
+  },
+  {
+    user: "0",
+    machine: "0",
+    digits: 0
+  },
+  {
+    user: "0",
+    machine: "0",
+    digits: 18
+  },
+  {
+    user: "0",
+    machine: "0",
+    digits: 255
   }
 ]
 
@@ -54,7 +80,7 @@ describe("fromUserToMachineReadable", () => {
     }
   }
   it("works as expected with reasonable input", () => {
-    testGoodEntries(goodPairs)
+    testGoodEntries(goodTwoWayPairs)
   })
 })
 
@@ -69,6 +95,6 @@ describe("fromMachineToUserReadable", () => {
     }
   }
   it("works as expected with reasonable input", () => {
-    testGoodEntries(goodPairs)
+    testGoodEntries(goodTwoWayPairs)
   })
 })

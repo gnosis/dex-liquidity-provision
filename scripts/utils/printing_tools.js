@@ -13,7 +13,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  * @return {string} decimal representation of the number of token units corresponding to the input amount
  */
 const fromUserToMachineReadable = function (amount, digits) {
-  if (digits < 0 || digits > 256) throw Error("Invalid number of digits for ERC20 token: " + digits.toString())
+  if (digits < 0 || digits >= 256) throw Error("Invalid number of digits for ERC20 token: " + digits.toString()) // ERC20 digits is stored in a uint8
   const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
   const match = re.exec(amount)
   if (match == null) throw Error("Failed to parse decimal representation of " + amount)
@@ -33,7 +33,7 @@ const fromUserToMachineReadable = function (amount, digits) {
  * @return {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
  */
 const fromMachineToUserReadable = function (amount, digits) {
-  if (digits < 0 || digits > 256) throw Error("Invalid number of digits for ERC20 token: " + digits.toString())
+  if (digits < 0 || digits >= 256) throw Error("Invalid number of digits for ERC20 token: " + digits.toString()) // ERC20 digits is stored in a uint8
   const re = /^\d+$/ // a sequence of at least one digit
   if (re.exec(amount) == null) throw Error("Failed to parse unit amount " + amount + "as integer")
   const bnAmount = new BN(amount)
@@ -50,4 +50,5 @@ const fromMachineToUserReadable = function (amount, digits) {
 module.exports = {
   fromUserToMachineReadable,
   fromMachineToUserReadable,
+  bnMaxUint
 }
