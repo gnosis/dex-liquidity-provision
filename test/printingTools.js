@@ -119,6 +119,46 @@ describe("fromUserToMachineReadable", () => {
   it("works as expected with reasonable input", () => {
     testGoodEntries(goodTwoWayPairs)
   })
+  it("works as expected with atypical but correct input", () => {
+    const strangeEntries = [
+      {
+        user: "0.0",
+        machine: "0",
+        decimals: 1
+      },
+      {
+        user: "0.0",
+        machine: "0",
+        decimals: 2
+      },
+      {
+        user: "0.210",
+        machine: "2100",
+        decimals: 4
+      },
+      {
+        user: "00.1",
+        machine: "10",
+        decimals: 2
+      },
+      {
+        user: "00.010",
+        machine: "100",
+        decimals: 4
+      },
+      {
+        user: "00100.00",
+        machine: "10000",
+        decimals: 2
+      },
+      {
+        user: "000000",
+        machine: "0",
+        decimals: 0
+      },
+    ]
+    testGoodEntries(strangeEntries)
+  })
   it("fails with bad input", () => {
     const badEntries = [
       {
