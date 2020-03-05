@@ -273,6 +273,29 @@ describe("fromMachineToUserReadable", () => {
       )
     }
   }
+  const testBadEntries = function (entries) {
+    for (const {machine, decimals, error} of entries) {
+      let errorMessage
+      switch (error) {
+        case "invalidDecimals":
+          errorMessage = invalidDecimals(decimals)
+          break
+        case "invalidInteger":
+          errorMessage = invalidInteger(machine)
+          break
+        case "tooLargeNumber":
+          errorMessage = tooLargeNumber()
+          break
+        default:
+          throw Error("Invalid error to test")
+      }
+      assert.throws(
+        function () { return fromMachineToUserReadable(machine, decimals) },
+        Error(errorMessage),
+        "Fail for machine string " + machine + " with " + decimals + " decimals"
+      )
+    }
+  }
   it("works as expected with reasonable input", () => {
     testGoodEntries(goodTwoWayPairs)
   })
@@ -310,5 +333,75 @@ describe("fromMachineToUserReadable", () => {
       },
     ]
     testGoodEntries(strangeEntries)
+  })
+  it("fails with bad input", () => {
+    const badEntries = [
+      {
+        user: "0",
+        decimals: -1,
+        error: "invalidDecimals",
+      },
+      {
+        user: "0",
+        decimals: 256,
+        error: "invalidDecimals",
+      },
+      {
+        user: "0",
+        decimals: 1000,
+        error: "invalidDecimals",
+      },
+      {
+        machine: "0.1",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: "0.",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: ".0",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: "-0",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: "-10",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: "0x10",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: "0b101",
+        decimals: 18,
+        error: "invalidInteger",
+      },
+      {
+        machine: bnMaxUint.add(bnOne).toString(),
+        decimals: 0,
+        error: "tooLargeNumber",
+      },
+      {
+        machine: bnMaxUint.add(bnOne).toString(),
+        decimals: 18,
+        error: "tooLargeNumber",
+      },
+      {
+        machine: bnMaxUint.add(bnOne).toString(),
+        decimals: 255,
+        error: "tooLargeNumber",
+      },
+    ]
+    testBadEntries(badEntries)
   })
 })
