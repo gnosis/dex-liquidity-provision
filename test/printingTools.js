@@ -44,25 +44,31 @@ const goodPairs = [
 ]
 
 describe("fromUserToMachineReadable", () => {
-  it("works as expected with reasonable input", () => {
-    for (const {user, machine, digits} of goodPairs) {
+  const testGoodEntries = function (entries) {
+    for (const {user, machine, digits} of entries) {
       assert.equal(
         fromUserToMachineReadable(user, digits),
         machine,
         "Fail for user string " + user
       )
     }
+  }
+  it("works as expected with reasonable input", () => {
+    testGoodEntries(goodPairs)
   })
 })
 
 describe("fromMachineToUserReadable", () => {
-  it("works as expected with reasonable input", () => {
-    for (const {user, machine, digits} of goodPairs) {
+  const testGoodEntries = function (entries) {
+    for (const {user, machine, digits} of entries) {
       assert.equal(
         fromMachineToUserReadable(machine, digits),
         user,
-        "Fail for unit amount " + machine
+        "Fail for user string " + user
       )
     }
+  }
+  it("works as expected with reasonable input", () => {
+    testGoodEntries(goodPairs)
   })
 })
