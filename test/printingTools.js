@@ -82,6 +82,11 @@ const goodTwoWayPairs = [
     machine: "".padEnd(30, "1"),
     decimals: 0,
   },
+  {
+    user: "222.222222222222222002",
+    machine: "222222222222222222002",
+    decimals: 18,
+  },
 ]
 
 const invalidDecimals = function(decimals) {
