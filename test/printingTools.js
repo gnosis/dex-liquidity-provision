@@ -40,12 +40,7 @@ const goodPairs = [
     user: "1.002901",
     machine: "1002901000000000000",
     digits: 18
-  },
-  {
-    user: "1.0029010",
-    machine: "1002901000000000000",
-    digits: 18
-  },
+  }
 ]
 
 describe("fromUserToMachineReadable", () => {
@@ -62,14 +57,12 @@ describe("fromUserToMachineReadable", () => {
 
 describe("fromMachineToUserReadable", () => {
   it("works as expected with reasonable input", () => {
-    it("works as expected with reasonable input", () => {
-      for (const {user, machine, digits} of goodPairs) {
-        assert.equal(
-          fromMachineToUserReadable(machine, digits),
-          user,
-          "Fail for unit amount " + machine
-        )
-      }
-    })
+    for (const {user, machine, digits} of goodPairs) {
+      assert.equal(
+        fromMachineToUserReadable(machine, digits),
+        user,
+        "Fail for unit amount " + machine
+      )
+    }
   })
 })
