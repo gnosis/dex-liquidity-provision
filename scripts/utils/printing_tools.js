@@ -22,7 +22,7 @@ const fromUserToMachineReadable = function (amount, decimals) {
   const integerPart = new BN(match[1])
   const decimalPart = new BN(decimalString)
   const representation = integerPart.mul(bnTen.pow(new BN(decimals))).add(decimalPart)
-  if (representation.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount")
+  if (representation.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   return representation.toString()
 }
 
@@ -37,7 +37,7 @@ const fromMachineToUserReadable = function (amount, decimals) {
   const re = /^\d+$/ // a sequence of at least one digit
   if (re.exec(amount) == null) throw Error("Failed to parse unit amount " + amount + "as integer")
   const bnAmount = new BN(amount)
-  if (bnAmount.gt(bnMaxUint)) throw Error("Amount is too large to fit a uint256")
+  if (bnAmount.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   if (decimals == 0) return amount.replace(/^0+/, "") || "0" // remove leading zeros, if nothing left then output zero
   const paddedAmount = amount.padStart(decimals + 1, "0")
   let decimalPart = paddedAmount.slice(-decimals) // rightmost "decimals" characters of the string

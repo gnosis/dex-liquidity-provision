@@ -74,11 +74,12 @@ const goodTwoWayPairs = [
   }
 ]
 
+const invalidDecimals = function (decimals) { return "Invalid number of decimals for ERC20 token: " + decimals.toString() }
+const tooLargeNumber = function () { return "Number larger than ERC20 token maximum amount (uint256)" }
+
 describe("fromUserToMachineReadable", () => {
-  const invalidDecimals = function (decimals) { return "Invalid number of decimals for ERC20 token: " + decimals.toString() }
   const invalidNumber = function (amount) { return "Failed to parse decimal representation of " + amount }
   const tooManyDecimals = function () { return "Too many decimals for the token in input string" }
-  const tooLargeNumber = function () { return "Number larger than ERC20 token maximum amount" }
 
   const testGoodEntries = function (entries) {
     for (const {user, machine, decimals} of entries) {
