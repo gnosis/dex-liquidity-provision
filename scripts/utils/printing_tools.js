@@ -10,7 +10,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  * If the decimal representation has more decimals than the maximum amount possible, then the extra decimals are truncated.
  * @param {string} amount User-friendly representation for the amount of some ERC20 token
  * @param {integer} decimals Maximum number of decimals of the token
- * @return {string} decimal representation of the number of token units corresponding to the input amount
+ * @return {BN} number of token units corresponding to the input amount
  */
 const fromUserToMachineReadable = function (amount, decimals) {
   if (decimals < 0 || decimals >= 256) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
@@ -23,27 +23,23 @@ const fromUserToMachineReadable = function (amount, decimals) {
   const decimalPart = new BN(decimalString)
   const representation = integerPart.mul(bnTen.pow(new BN(decimals))).add(decimalPart)
   if (representation.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
-  return representation.toString()
+  return representation
 }
 
 /**
  * A generalized version of "fromWei" for tokens with an arbitrary amount of decimals.
- * @param {string} amount Decimal representation of the (integer) number of token units 
+ * @param {BN} amount Decimal representation of the (integer) number of token units 
  * @param {integer} decimals Maximum number of decimals of the token
  * @return {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
  */
 const fromMachineToUserReadable = function (amount, decimals) {
   if (decimals < 0 || decimals >= 256) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
-  const re = /^\d+$/ // a sequence of at least one digit
-  if (re.exec(amount) == null) throw Error("Failed to parse unit amount " + amount + "as integer")
-  const bnAmount = new BN(amount)
-  if (bnAmount.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
-  if (decimals == 0) return amount.replace(/^0+/, "") || "0" // remove leading zeros, if nothing left then output zero
-  const paddedAmount = amount.padStart(decimals + 1, "0")
+  if (amount.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
+  if (decimals == 0) return amount.toString()
+  const paddedAmount = amount.toString().padStart(decimals + 1, "0")
   let decimalPart = paddedAmount.slice(-decimals) // rightmost "decimals" characters of the string
-  let integerPart = paddedAmount.slice(0, -decimals) // remaining characters
+  const integerPart = paddedAmount.slice(0, -decimals) // remaining characters
   decimalPart = decimalPart.replace(/0+$/, "") // remove trailig zeros
-  integerPart = integerPart.replace(/^0+/, "") || "0"// remove leading zeros
   if (decimalPart == "") return integerPart
   return integerPart + "." + decimalPart
 }

@@ -3,6 +3,7 @@
 // Using truffle test works but it's much slower, since it needs to compile contracts and deploy them to the blockchain.
 
 const assert = require("assert")
+const BN = require("bn.js")
 
 const { fromUserToMachineReadable, fromMachineToUserReadable, bnMaxUint, bnOne } = require("../scripts/utils/printing_tools")
 
@@ -107,7 +108,7 @@ describe("fromUserToMachineReadable", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
-        fromUserToMachineReadable(user, decimals),
+        fromUserToMachineReadable(user, decimals).toString(),
         machine,
         "Fail for user string " + user + " with " + decimals + " decimals"
       )
@@ -301,14 +302,10 @@ describe("fromUserToMachineReadable", () => {
 })
 
 describe("fromMachineToUserReadable", () => {
-  const invalidInteger = function(amount) {
-    return "Failed to parse unit amount " + amount + "as integer"
-  }
-
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
-        fromMachineToUserReadable(machine, decimals),
+        fromMachineToUserReadable(new BN(machine), decimals),
         user,
         "Fail for machine string " + machine + " with " + decimals + " decimals"
       )
@@ -321,9 +318,6 @@ describe("fromMachineToUserReadable", () => {
         case "invalidDecimals":
           errorMessage = invalidDecimals(decimals)
           break
-        case "invalidInteger":
-          errorMessage = invalidInteger(machine)
-          break
         case "tooLargeNumber":
           errorMessage = tooLargeNumber()
           break
@@ -332,7 +326,7 @@ describe("fromMachineToUserReadable", () => {
       }
       assert.throws(
         function() {
-          return fromMachineToUserReadable(machine, decimals)
+          return fromMachineToUserReadable(new BN(machine), decimals)
         },
         Error(errorMessage),
         "Fail for machine string " + machine + " with " + decimals + " decimals"
@@ -393,41 +387,6 @@ describe("fromMachineToUserReadable", () => {
         user: "0",
         decimals: 1000,
         error: "invalidDecimals",
-      },
-      {
-        machine: "0.1",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: "0.",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: ".0",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: "-0",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: "-10",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: "0x10",
-        decimals: 18,
-        error: "invalidInteger",
-      },
-      {
-        machine: "0b101",
-        decimals: 18,
-        error: "invalidInteger",
       },
       {
         machine: bnMaxUint.add(bnOne).toString(),
