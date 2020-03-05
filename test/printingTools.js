@@ -15,65 +15,65 @@ const goodTwoWayPairs = [
   {
     user: "1.1",
     machine: "1100",
-    digits: 3
+    decimals: 3
   },
   {
     user: "0.01",
     machine: "100",
-    digits: 4
+    decimals: 4
   },
   {
     user: "1",
     machine: "100",
-    digits: 2
+    decimals: 2
   },
   {
     user: "104",
     machine: "104",
-    digits: 0
+    decimals: 0
   },
   {
     user: "0.002901",
     machine: "2901000000000000",
-    digits: 18
+    decimals: 18
   },
   {
     user: "1.002901",
     machine: "1002901000000000000",
-    digits: 18
+    decimals: 18
   },
   {
     user: "0." + bnMaxUint.toString().padStart(255, "0"),
     machine: bnMaxUint.toString(),
-    digits: 255
+    decimals: 255
   },
   {
     user: bnMaxUint.toString(),
     machine: bnMaxUint.toString(),
-    digits: 0
+    decimals: 0
   },
   {
     user: "0",
     machine: "0",
-    digits: 0
+    decimals: 0
   },
   {
     user: "0",
     machine: "0",
-    digits: 18
+    decimals: 18
   },
   {
     user: "0",
     machine: "0",
-    digits: 255
+    decimals: 255
   }
 ]
 
 describe("fromUserToMachineReadable", () => {
   const testGoodEntries = function (entries) {
-    for (const {user, machine, digits} of entries) {
+    for (const {user, machine, decimals} of entries) {
       assert.equal(
-        fromUserToMachineReadable(user, digits),
+        fromUserToMachineReadable(user, decimals),
         machine,
         "Fail for user string " + user
       )
@@ -86,9 +86,9 @@ describe("fromUserToMachineReadable", () => {
 
 describe("fromMachineToUserReadable", () => {
   const testGoodEntries = function (entries) {
-    for (const {user, machine, digits} of entries) {
+    for (const {user, machine, decimals} of entries) {
       assert.equal(
-        fromMachineToUserReadable(machine, digits),
+        fromMachineToUserReadable(machine, decimals),
         user,
         "Fail for user string " + user
       )
