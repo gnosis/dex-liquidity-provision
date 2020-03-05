@@ -67,6 +67,21 @@ const goodTwoWayPairs = [
     machine: "0",
     decimals: 255,
   },
+  {
+    user: "11." + "".padEnd(30, "1"),
+    machine: "".padEnd(32, "1"),
+    decimals: 30,
+  },
+  {
+    user: "0.0" + "".padEnd(29, "1"),
+    machine: "".padEnd(29, "1"),
+    decimals: 30,
+  },
+  {
+    user: "".padEnd(30, "1"),
+    machine: "".padEnd(30, "1"),
+    decimals: 0,
+  },
 ]
 
 const invalidDecimals = function(decimals) {
