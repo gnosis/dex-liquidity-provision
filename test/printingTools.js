@@ -2,7 +2,6 @@
 // $ npx mocha test/printingTools.js
 // Using truffle test works but it's much slower, since it needs to compile contracts and deploy them to the blockchain.
 
-const BN = require("bn.js")
 const assert = require("assert")
 
 const {
