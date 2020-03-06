@@ -96,15 +96,14 @@ const invalidDecimals = function(decimals) {
 const tooLargeNumber = function() {
   return "Number larger than ERC20 token maximum amount (uint256)"
 }
+const invalidNumber = function(amount) {
+  return "Failed to parse decimal representation of " + amount
+}
+const tooManyDecimals = function() {
+  return "Too many decimals for the token in input string"
+}
 
-describe("fromUserToMachineReadable", () => {
-  const invalidNumber = function(amount) {
-    return "Failed to parse decimal representation of " + amount
-  }
-  const tooManyDecimals = function() {
-    return "Too many decimals for the token in input string"
-  }
-
+describe("toErc20Units", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
@@ -301,7 +300,7 @@ describe("fromUserToMachineReadable", () => {
   })
 })
 
-describe("fromMachineToUserReadable", () => {
+describe("fromErc20Units", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
       assert.equal(
