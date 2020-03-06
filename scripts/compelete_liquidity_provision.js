@@ -2,8 +2,8 @@ const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 const Contract = require("@truffle/contract")
 const {
   getBundledTransaction,
-  buildTransferApproveDepositTransactionData,
-  buildOrderTransactionData,
+  buildTransferApproveDepositTransaction,
+  buildOrderTransaction,
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
 const { signAndSend } = require("./utils/sign_and_send")
@@ -77,7 +77,7 @@ module.exports = async callback => {
     const slaves = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
 
     console.log("3. Building orders and deposits")
-    const orderTransaction = await buildOrderTransactionData(
+    const orderTransaction = await buildOrderTransaction(
       masterSafe.address,
       slaves,
       argv.targetToken,
@@ -88,7 +88,7 @@ module.exports = async callback => {
       true,
       argv.priceRangePercentage
     )
-    const bundledFundingTransaction = await buildTransferApproveDepositTransactionData(
+    const bundledFundingTransaction = await buildTransferApproveDepositTransaction(
       masterSafe.address,
       slaves,
       stableToken.address,
