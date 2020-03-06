@@ -3,11 +3,9 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 
 const assert = require("assert")
 const BN = require("bn.js")
-const { deploySafe, encodeMultiSend, execTransactionData, toETH } = require("../test/utils")
+const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
-const CALL = 0
-const DELEGATECALL = 1
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
 const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
@@ -25,22 +23,6 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * This particular type is that of a JS object representing the Smart contract ABI.
  * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
  * @typedef SmartContract
- */
-
-/**
- * @typedef Transaction
- *  * Example:
- *  {
- *    operation: CALL,
- *    to: "0x0000..000",
- *    value: "10",
- *    data: "0x00",
- *  }
- * @type {object}
- * @property {int} operation Either CALL or DELEGATECALL
- * @property {EthereumAddress} to Ethereum address receiving the transaction
- * @property {string} value Amount of ETH transferred
- * @property {string} data Data sent along with the transaction
  */
 
 /**
@@ -87,18 +69,6 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
  */
 
-/**
- * Example:
- * {
- *   to: 0xAE9e5E0f8c28264ef9808D9F10f28D9DaE09f089,
- *   data: 0x8d80ff0a...00808d9f10f
- * }
- * @typedef BatchedTransactionData
- * @type {object}
- * @property {EthereumAddress} to EthereumAddress of a MultiSend contract to be sent to
- * @property {string} data Hex string representing encoded batched transaction data
- */
-
 const formatAmount = function(amount, token) {
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
 }
@@ -129,55 +99,6 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
     log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
   }
   return tokenObjects
-}
-
-/**
- * Given a collection of transactions, creates a single transaction that bundles all of them
- * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
- * @return {Transaction} Multisend transaction bundling all input transactions
- */
-const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
-  const MultiSend = artifacts.require("MultiSend")
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
-  const multiSend = await MultiSend.deployed()
-  const transactionData = await encodeMultiSend(multiSend, transactions, web3)
-  const bundledTransaction = {
-    operation: DELEGATECALL,
-    to: multiSend.address,
-    value: 0,
-    data: transactionData,
-  }
-  return bundledTransaction
-}
-
-/**
- * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
- * TODO: we can probably merge this function with execTransactionData.
- * @param {EthereumAddress} masterAddress Address of a controlled Safe
- * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
- * @param {Transaction} transaction The transaction to be executed by execTransaction
- * @return {Transaction} Transaction calling execTransaction; should be executed by master
- */
-const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
-  const GnosisSafe = artifacts.require("GnosisSafe")
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-
-  const execData = await execTransactionData(
-    gnosisSafeMasterCopy,
-    masterAddress,
-    transaction.to,
-    transaction.value,
-    transaction.data,
-    transaction.operation
-  )
-  const execTransactionTransaction = {
-    operation: CALL,
-    to: traderAddress,
-    value: 0,
-    data: execData,
-  }
-  return execTransactionTransaction
 }
 
 /**
@@ -215,9 +136,9 @@ const deployFleetOfSafes = async function(fleetOwner, fleetSize, artifacts, debu
  * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
  * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
  * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
- * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const buildOrderTransactionData = async function(
+const buildOrderTransaction = async function(
   fleetOwnerAddress,
   subSafeAddresses,
   targetTokenId,
@@ -232,13 +153,10 @@ const buildOrderTransactionData = async function(
 ) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const GnosisSafe = artifacts.require("GnosisSafe")
-  const MultiSend = artifacts.require("MultiSend")
 
   await BatchExchange.setProvider(web3.currentProvider)
   await BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
-  const multiSend = await MultiSend.deployed()
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   log("Batch Exchange", exchange.address)
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
@@ -308,26 +226,22 @@ const buildOrderTransactionData = async function(
     const orderData = await exchange.contract.methods
       .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
       .encodeABI()
-    const multiSendData = await encodeMultiSend(
-      multiSend,
-      [{ operation: CALL, to: exchange.address, value: 0, data: orderData }],
-      web3
-    )
-
-    const execData = await execTransactionData(
-      gnosisSafeMasterCopy,
-      fleetOwnerAddress,
-      multiSend.address,
-      0,
-      multiSendData,
-      DELEGATECALL
-    )
-    transactions.push({
+    const orderTransaction = {
       operation: CALL,
-      to: traderAddress,
+      to: exchange.address,
       value: 0,
-      data: execData,
-    })
+      data: orderData
+    }
+
+    transactions.push(
+      await getExecTransactionTransaction(
+        fleetOwnerAddress,
+        traderAddress,
+        orderTransaction,
+        web3,
+        artifacts
+      )
+    )
   }
   log("Transaction bundle size", transactions.length)
   return await getBundledTransaction(transactions, web3, artifacts)
@@ -401,20 +315,18 @@ const getGenericFundMovementTransaction = async function(
 }
 
 /**
- * Batches together a collection of transfer-related transaction data.
- * Particularily, the resulting transaction data is that of transfering all sufficient funds from fleetOwner
+ * Batches together a collection of transfer-related transaction information.
+ * Particularily, the resulting transaction is that of transfering all sufficient funds from fleetOwner
  * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe.
  * @param {string} fleetOwner Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Deposits[]} depositList List of {@link EthereumAddress} for the subsafes acting as Trader Accounts
- * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
 const transferApproveDeposit = async function(masterSafeAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ERC20 = artifacts.require("ERC20Detailed")
 
-  const MultiSend = artifacts.require("MultiSend")
-  const multiSend = await MultiSend.deployed()
   let transactions = []
   // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
   // TODO - make deposit list easier so that we dont' have to query the token every time.
@@ -442,17 +354,12 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
       )
     )
   }
-  // Get data to execute all fund/approve/deposit transactions at once
-  const finalData = await encodeMultiSend(multiSend, transactions, web3)
-  return {
-    to: multiSend.address,
-    data: finalData,
-  }
+  return await getBundledTransaction(transactions, web3, artifacts)
 }
 
 /**
- * Batches together a collection of transfer-related transaction data.
- * Particularly, the resulting transaction data is that of transfering all sufficient funds from fleetOwner
+ * Batches together a collection of transfer-related transaction information.
+ * Particularly, the resulting transaction is that of transfering all sufficient funds from fleetOwner
  * to its subSafes, then approving and depositing those same tokens into BatchExchange on behalf of each subSafe. * Batches together a collection of order placements on BatchExchange
  * on behalf of a fleet of safes owned by a single "Master Safe"
  * @param {integer} fleetSize Size of the fleet
@@ -461,9 +368,9 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
  * @param {Address} targetTokenAddress second token to be traded in bracket strategy
  * @param {number} investmentStableToken Amount of stable tokens to be invested (in total)
  * @param {number} investmentStableToken Amoutn of target tokens to be invested (in total)
- * @return {BatchedTransactionData} all the relevant transaction data to be used when submitting to the Gnosis Safe Multi-Sig
+ * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const buildTransferApproveDepositTransactionData = async function(
+const buildTransferApproveDepositTransaction = async function(
   masterSafeAddress,
   slaves,
   stableTokenAddress,
@@ -476,10 +383,10 @@ const buildTransferApproveDepositTransactionData = async function(
   const fleetSize = slaves.length
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
 
-  let fundingTransactionData = []
+  let fundingTransaction = []
   const FleetSizeDiv2 = fleetSize / 2
   for (const i of Array(FleetSizeDiv2).keys()) {
-    fundingTransactionData = fundingTransactionData.concat(
+    fundingTransaction = fundingTransaction.concat(
       await calculateTransactionForTransferApproveDeposit(
         masterSafeAddress,
         stableTokenAddress,
@@ -489,7 +396,7 @@ const buildTransferApproveDepositTransactionData = async function(
         web3
       )
     )
-    fundingTransactionData = fundingTransactionData.concat(
+    fundingTransaction = fundingTransaction.concat(
       await calculateTransactionForTransferApproveDeposit(
         masterSafeAddress,
         targetTokenAddress,
@@ -500,7 +407,7 @@ const buildTransferApproveDepositTransactionData = async function(
       )
     )
   }
-  return await getBundledTransaction(fundingTransactionData, web3, artifacts)
+  return await getBundledTransaction(fundingTransaction, web3, artifacts)
 }
 
 /**
@@ -509,7 +416,7 @@ const buildTransferApproveDepositTransactionData = async function(
  * @param {BN} amount Amount to be deposited
  * @param {EthereumAddress} tokenAddress for the funds to be deposited
  * @param {EthereumAddress} userAddress The address of the user/contract owning the funds in the Exchange
- * @return {BatchedTransactionData} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+ * @return {Transaction} Information describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
 const calculateTransactionForTransferApproveDeposit = async (
   masterSafeAddress,
@@ -521,16 +428,12 @@ const calculateTransactionForTransferApproveDeposit = async (
 ) => {
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-  const MultiSend = artifacts.require("MultiSend")
-  const multiSend = await MultiSend.deployed()
 
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
   const depositToken = await ERC20.at(tokenAddress)
   const tokenDecimals = (await depositToken.decimals.call()).toNumber()
-  const GnosisSafe = artifacts.require("GnosisSafe")
-  const gnosisSafeMasterCopy = await GnosisSafe.deployed()
   const transactions = []
 
   // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
@@ -547,30 +450,24 @@ const calculateTransactionForTransferApproveDeposit = async (
   const approveData = await depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
   // Get data to deposit funds from slave to exchange
   const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
-  // Get data for approve and deposit multisend on slave
-  const multiSendData = await encodeMultiSend(
-    multiSend,
+  // Get transaction for approve and deposit multisend on slave
+  const traderBundledTransaction = await getBundledTransaction(
     [
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
     ],
-    web3
+    web3,
+    artifacts
   )
-  // Get data to execute approve/deposit multisend via slave
-  const execData = await execTransactionData(
-    gnosisSafeMasterCopy,
+  // Get transaction executing approve/deposit multisend via slave
+  const execTransactionTransaction = await getExecTransactionTransaction(
     masterSafeAddress,
-    multiSend.address,
-    0,
-    multiSendData,
-    DELEGATECALL
+    userAddress,
+    traderBundledTransaction,
+    web3,
+    artifacts
   )
-  transactions.push({
-    operation: CALL,
-    to: userAddress,
-    value: 0,
-    data: execData,
-  })
+  transactions.push(execTransactionTransaction)
   return transactions
 }
 /**
@@ -644,7 +541,7 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, limi
  * Batches together a collection of transfers from each trader safe to the master safer
  * @param {EthereumAddress} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @return {string} Data describing the multisend transaction that has to be sent from the master address to transfer back all funds
+ * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back the funds stored in the exchange
  */
 const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
   const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
@@ -654,13 +551,13 @@ const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdr
 
 module.exports = {
   deployFleetOfSafes,
-  buildOrderTransactionData,
+  buildOrderTransaction,
   getBundledTransaction,
   transferApproveDeposit,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
   calculateTransactionForTransferApproveDeposit,
-  buildTransferApproveDepositTransactionData,
+  buildTransferApproveDepositTransaction,
   checkSufficiencyOfBalance,
   getRequestWithdraw,
   getWithdraw,
@@ -668,7 +565,5 @@ module.exports = {
   max128,
   maxU32,
   maxUINT,
-  DELEGATECALL,
-  CALL,
   ADDRESS_0,
 }

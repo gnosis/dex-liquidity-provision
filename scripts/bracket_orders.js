@@ -1,8 +1,8 @@
 const axios = require("axios")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrderTransactionData, fetchTokenInfo } = require("./trading_strategy_helpers")
-const { signAndSend, promptUser } = require("./sign_and_send")
+const { buildOrderTransaction, fetchTokenInfo } = require("./utils/trading_strategy_helpers")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -106,7 +106,7 @@ module.exports = async callback => {
 
     if (priceIsOk) {
       console.log("Preparing order transaction data")
-      const transactionData = await buildOrderTransactionData(
+      const transaction = await buildOrderTransaction(
         argv.masterSafe,
         argv.slaves,
         argv.targetToken,
@@ -122,7 +122,7 @@ module.exports = async callback => {
 
       const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
       if (answer == "y" || answer.toLowerCase() == "yes") {
-        await signAndSend(masterSafe, transactionData, web3, argv.network)
+        await signAndSend(masterSafe, transaction, web3, argv.network)
       }
     }
 
