@@ -1,13 +1,8 @@
-<<<<<<< HEAD
-const { buildOrderTransaction } = require("./utils/trading_strategy_helpers")
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
-=======
 const axios = require("axios")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrderTransactionData, fetchTokenInfo } = require("./trading_strategy_helpers")
-const { signAndSend, promptUser } = require("./sign_and_send")
->>>>>>> master
+const { buildOrderTransactionData, fetchTokenInfo } = require("./utils/trading_strategy_helpers")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
   .option("targetToken", {
