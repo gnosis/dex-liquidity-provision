@@ -3,6 +3,7 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 
 const assert = require("assert")
 const BN = require("bn.js")
+const fs = require("fs")
 const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
@@ -357,6 +358,17 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
   return await getBundledTransaction(transactions, web3, artifacts)
 }
 
+const formatDepositString = function (depositsAsJsonString) {
+  let result
+  result = depositsAsJsonString.replace(/{"/g, "{\n    \"")
+  result = result.replace(/,"/g, ",\n    \"")
+  result = result.replace(/{/g, "\n  {")
+  result = result.replace(/},/g, "\n  },")
+  result = result.replace(/"}/g, "\"\n  }")
+  result = result.replace(/]/g, "\n]")
+  return result
+}
+
 /**
  * Batches together a collection of transfer-related transaction information.
  * Particularly, the resulting transaction is that of transfering all sufficient funds from fleetOwner
@@ -367,7 +379,8 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
  * @param {Address} stableTokenAddress one token to be traded in bracket strategy
  * @param {Address} targetTokenAddress second token to be traded in bracket strategy
  * @param {number} investmentStableToken Amount of stable tokens to be invested (in total)
- * @param {number} investmentStableToken Amoutn of target tokens to be invested (in total)
+ * @param {number} investmentStableToken Amount of target tokens to be invested (in total)
+ * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
  * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
 const buildTransferApproveDepositTransaction = async function(
@@ -378,34 +391,61 @@ const buildTransferApproveDepositTransaction = async function(
   targetTokenAddress,
   investmentTargetToken,
   artifacts,
-  web3
+  web3,
+  storeDepositsAsFile = false
 ) {
   const fleetSize = slaves.length
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
+  const deposits = []
 
   let fundingTransaction = []
   const FleetSizeDiv2 = fleetSize / 2
   for (const i of Array(FleetSizeDiv2).keys()) {
+    const deposit = 
+    {
+      amount: investmentStableToken.div(new BN(FleetSizeDiv2)).toString(),
+      tokenAddress: stableTokenAddress,
+      userAddress: slaves[i]
+    }
+    deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
       await calculateTransactionForTransferApproveDeposit(
         masterSafeAddress,
-        stableTokenAddress,
-        slaves[i],
-        investmentStableToken.div(new BN(FleetSizeDiv2)),
+        deposit.tokenAddress,
+        deposit.userAddress,
+        deposit.amount,
         artifacts,
         web3
       )
     )
+  }
+  for (const i of Array(FleetSizeDiv2).keys()) {  
+    const deposit = 
+    {
+      amount: investmentTargetToken.div(new BN(FleetSizeDiv2)).toString(),
+      tokenAddress: targetTokenAddress,
+      userAddress: slaves[FleetSizeDiv2 + i]
+    }
+    deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
       await calculateTransactionForTransferApproveDeposit(
         masterSafeAddress,
-        targetTokenAddress,
-        slaves[FleetSizeDiv2 + i],
-        investmentTargetToken.div(new BN(FleetSizeDiv2)),
+        deposit.tokenAddress,
+        deposit.userAddress,
+        deposit.amount,
         artifacts,
         web3
       )
     )
+  }
+  if (storeDepositsAsFile) {
+    const depositsAsJsonString = formatDepositString(JSON.stringify(deposits))
+    fs.writeFile("./automaticallyGeneratedDeposits.js", depositsAsJsonString, function(err) {
+      if (err) {
+        console.log("Warning: deposits could not be stored as a file.")
+        console.log(err)
+      }
+    })
   }
   return await getBundledTransaction(fundingTransaction, web3, artifacts)
 }
