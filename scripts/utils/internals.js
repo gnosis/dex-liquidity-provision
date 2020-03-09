@@ -87,7 +87,6 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
     .encodeABI()
   const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
-  console.log(transaction)
   return await getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
 }
 
