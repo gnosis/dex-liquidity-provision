@@ -22,7 +22,6 @@ const DELEGATECALL = 1
  * @property {string} data Data sent along with the transaction
  */
 
-
 const jsonrpc = "2.0"
 const id = 0
 const send = function(method, params, web3Provider) {
@@ -87,14 +86,9 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
   const initData = await gnosisSafeMasterCopy.contract.methods
     .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
     .encodeABI()
-  return await getParamFromTxEvent(
-    await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData),
-    "ProxyCreation",
-    "proxy",
-    proxyFactory.address,
-    GnosisSafe,
-    null
-  )
+  const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
+  console.log(transaction)
+  return await getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
 }
 
 // Need some small adjustments to default implementation for web3js 1.x
@@ -217,11 +211,7 @@ const getExecTransactionTransaction = async function(masterAddress, traderAddres
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
-  const execData = await execTransactionData(
-    gnosisSafeMasterCopy,
-    masterAddress,
-    transaction
-  )
+  const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
   const execTransactionTransaction = {
     operation: CALL,
     to: traderAddress,
