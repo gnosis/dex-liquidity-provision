@@ -74,6 +74,7 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} subsafes `)
     const slaves = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
+    console.log("Following bracket-traders have been deployed", slaves.join())
 
     console.log("3. Building orders and deposits")
     const orderTransaction = await buildOrderTransaction(
