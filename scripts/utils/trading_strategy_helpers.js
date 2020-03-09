@@ -358,6 +358,17 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
   return await getBundledTransaction(transactions, web3, artifacts)
 }
 
+const formatDepositString = function (depositsAsJsonString) {
+  let result
+  result = depositsAsJsonString.replace(/{"/g, "{\n    \"")
+  result = result.replace(/,"/g, ",\n    \"")
+  result = result.replace(/{/g, "\n  {")
+  result = result.replace(/},/g, "\n  },")
+  result = result.replace(/"}/g, "\"\n  }")
+  result = result.replace(/]/g, "\n]")
+  return result
+}
+
 /**
  * Batches together a collection of transfer-related transaction information.
  * Particularly, the resulting transaction is that of transfering all sufficient funds from fleetOwner
@@ -428,13 +439,7 @@ const buildTransferApproveDepositTransaction = async function(
     )
   }
   if (storeDepositsAsFile) {
-    let depositsAsJsonString = JSON.stringify(deposits)
-    depositsAsJsonString = depositsAsJsonString.replace(/{"/g, "{\n    \"")
-    depositsAsJsonString = depositsAsJsonString.replace(/,"/g, ",\n    \"")
-    depositsAsJsonString = depositsAsJsonString.replace(/{/g, "\n  {")
-    depositsAsJsonString = depositsAsJsonString.replace(/},/g, "\n  },")
-    depositsAsJsonString = depositsAsJsonString.replace(/"}/g, "\"\n  }")
-    depositsAsJsonString = depositsAsJsonString.replace(/]/g, "\n]")
+    const depositsAsJsonString = formatDepositString(JSON.stringify(deposits))
     fs.writeFile("./automaticallyGeneratedDeposits.js", depositsAsJsonString, function(err) {
       if (err) {
         console.log("Warning: deposits could not be stored as a file.")
