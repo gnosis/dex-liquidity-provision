@@ -1,12 +1,11 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 const Contract = require("@truffle/contract")
 const {
-  getBundledTransaction,
   buildTransferApproveDepositTransaction,
   buildOrderTransaction,
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
-const { signAndSend } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { toETH } = require("./utils/internals")
 const assert = require("assert")
 
@@ -75,6 +74,7 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} subsafes `)
     const slaves = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
+    console.log("Following bracket-traders have been deployed", slaves.join())
 
     console.log("3. Building orders and deposits")
     const orderTransaction = await buildOrderTransaction(
@@ -100,9 +100,16 @@ module.exports = async callback => {
       true
     )
 
-    console.log("4. Sending out transaction")
-    const transaction = await getBundledTransaction([bundledFundingTransaction, orderTransaction], web3, artifacts)
-    await signAndSend(masterSafe, transaction, web3, argv.network)
+    console.log("4. Sending out orders")
+    await signAndSend(masterSafe, orderTransaction, web3, argv.network)
+
+    console.log("5. Sending out funds")
+    const answer = await promptUser(
+      "Are you sure you that the order placement was correct, did you check the telegram bot? [yN] "
+    )
+    if (answer == "y" || answer.toLowerCase() == "yes") {
+      await signAndSend(masterSafe, bundledFundingTransaction, web3, argv.network)
+    }
 
     callback()
   } catch (error) {
