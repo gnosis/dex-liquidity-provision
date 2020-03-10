@@ -5,7 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
 const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
-const { shortenedAddress } = require("./utils/printing_tools.js")
+const { shortenedAddress } = require("./printing_tools")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
@@ -73,6 +73,19 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
 const formatAmount = function(amount, token) {
   return new BN(10).pow(new BN(token.decimals)).muln(amount)
+}
+
+/**
+ * Checks that the first input address is the only owner of the first input address
+ * @param {Address} masterAddress address that should be the only owner
+ * @param {Address} ownedAddress address that is owned
+ * @return {bool} whether ownedAddress is indeed owned only by masterAddress
+ */
+const isOnlyOwner = async function (masterAddress, ownedAddress, artifacts) {
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const owned = await GnosisSafe.at(ownedAddress)
+  const ownerAddresses = await owned.getOwners()
+  return (ownerAddresses.length == 1) && (ownerAddresses[0] == masterAddress)
 }
 
 /**
@@ -154,7 +167,6 @@ const buildOrderTransaction = async function(
   expiry = maxU32
 ) {
   const log = debug ? (...a) => console.log(...a) : () => {}
-  const GnosisSafe = artifacts.require("GnosisSafe")
 
   await BatchExchange.setProvider(web3.currentProvider)
   await BatchExchange.setNetwork(web3.network_id)
@@ -183,10 +195,7 @@ const buildOrderTransaction = async function(
   )
   for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
     const bracketAddress = bracketAddresses[bracketIndex]
-    const bracket = await GnosisSafe.at(bracketAddress)
-    const bracketOwner = await bracket.getOwners()
-    assert.equal(bracketOwner[0], masterAddress, "All depositors must be owned by master safe")
-    assert.equal(bracketOwner.length, 1, "Can only submit transactions on behalf of singly owned safes")
+    assert(await isOnlyOwner(masterAddress, bracketAddress, artifacts), "each bracket should be owned only by the master Safe")
 
     const lowerLimit = lowestLimit + bracketIndex * stepSize
     const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
@@ -325,16 +334,13 @@ const getGenericFundMovementTransaction = async function(
  */
 const transferApproveDeposit = async function(masterAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
-  const GnosisSafe = artifacts.require("GnosisSafe")
   const ERC20 = artifacts.require("ERC20Detailed")
 
   let transactions = []
   // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
   // TODO - make deposit list easier so that we dont' have to query the token every time.
   for (const deposit of depositList) {
-    const bracket = await GnosisSafe.at(deposit.bracketAddress)
-    const bracketOwner = await bracket.getOwners()
-    assert.equal(bracketOwner[0], masterAddress, "All depositors must be owned by master safe")
+    assert(await isOnlyOwner(masterAddress, deposit.bracketAddress, artifacts), "All depositors must be owned only by the master Safe")
     const depositToken = await ERC20.at(deposit.tokenAddress)
     const tokenSymbol = await depositToken.symbol.call()
     const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
@@ -599,6 +605,7 @@ module.exports = {
   getRequestWithdraw,
   getWithdraw,
   fetchTokenInfo,
+  isOnlyOwner,
   max128,
   maxU32,
   maxUINT,

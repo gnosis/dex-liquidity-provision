@@ -18,6 +18,7 @@ const {
   getWithdraw,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
+  isOnlyOwner,
   max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")
@@ -61,12 +62,8 @@ contract("GnosisSafe", function(accounts) {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
     assert.equal(fleet.length, 10)
-    for (const bracketAddress of fleet) {
-      const bracket = await GnosisSafe.at(bracketAddress)
-      const bracketOwners = await bracket.getOwners()
-      assert.equal(bracketOwners.length, 1, `Bracket has unexpected number of owners ${bracketOwners.length}`)
-      assert.equal(bracketOwners[0], masterSafe.address, "Expected bracket to have master safe as owner")
-    }
+    for (const bracketAddress of fleet)
+      assert(await isOnlyOwner(masterSafe.address, bracketAddress, artifacts))
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
