@@ -88,7 +88,7 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     .encodeABI()
   const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
   // waiting two second to make sure infura can catch up
-  await sleep(2000)
+  await sleep(1000)
   return await getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
 }
 
