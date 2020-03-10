@@ -6,3 +6,5 @@ __pycache__
 
 build
 node_modules
+
+automaticallyGeneratedDeposits.js

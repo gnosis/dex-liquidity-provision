@@ -1,4 +1,4 @@
-const { deployFleetOfSafes } = require("./trading_strategy_helpers")
+const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")
   .option("masterSafe", {

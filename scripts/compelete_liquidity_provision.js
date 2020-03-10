@@ -1,13 +1,12 @@
-const { deployFleetOfSafes } = require("./trading_strategy_helpers")
+const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 const Contract = require("@truffle/contract")
 const {
-  getBundledTransaction,
-  buildTransferApproveDepositTransactionData,
-  buildOrderTransactionData,
+  buildTransferApproveDepositTransaction,
+  buildOrderTransaction,
   checkSufficiencyOfBalance,
-} = require("./trading_strategy_helpers")
-const { signAndSend } = require("./sign_and_send")
-const { toETH } = require("../test/utils")
+} = require("./utils/trading_strategy_helpers")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { toETH } = require("./utils/internals")
 const assert = require("assert")
 
 const argv = require("yargs")
@@ -75,9 +74,10 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} subsafes `)
     const slaves = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
+    console.log("Following bracket-traders have been deployed", slaves.join())
 
     console.log("3. Building orders and deposits")
-    const orderTransactionData = await buildOrderTransactionData(
+    const orderTransaction = await buildOrderTransaction(
       masterSafe.address,
       slaves,
       argv.targetToken,
@@ -88,7 +88,7 @@ module.exports = async callback => {
       true,
       argv.priceRangePercentage
     )
-    const bundledFundingTransactionData = await buildTransferApproveDepositTransactionData(
+    const bundledFundingTransaction = await buildTransferApproveDepositTransaction(
       masterSafe.address,
       slaves,
       stableToken.address,
@@ -96,12 +96,20 @@ module.exports = async callback => {
       targetToken.address,
       investmentTargetToken,
       artifacts,
-      web3
+      web3,
+      true
     )
 
-    console.log("4. Sending out transaction")
-    const transactionData = await getBundledTransaction([bundledFundingTransactionData, orderTransactionData], web3, artifacts)
-    await signAndSend(masterSafe, transactionData, web3, argv.network)
+    console.log("4. Sending out orders")
+    await signAndSend(masterSafe, orderTransaction, web3, argv.network)
+
+    console.log("5. Sending out funds")
+    const answer = await promptUser(
+      "Are you sure you that the order placement was correct, did you check the telegram bot? [yN] "
+    )
+    if (answer == "y" || answer.toLowerCase() == "yes") {
+      await signAndSend(masterSafe, bundledFundingTransaction, web3, argv.network)
+    }
 
     callback()
   } catch (error) {

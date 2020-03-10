@@ -7,23 +7,21 @@ const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const MultiSend = artifacts.require("MultiSend")
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
   deployFleetOfSafes,
-  buildOrderTransactionData,
+  buildOrderTransaction,
   transferApproveDeposit,
   getRequestWithdraw,
-  buildTransferApproveDepositTransactionData,
+  buildTransferApproveDepositTransaction,
   getWithdraw,
   getTransferFundsToMaster,
   getWithdrawAndTransferFundsToMaster,
   max128,
   maxU32,
-  DELEGATECALL,
-} = require("../scripts/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("./utils.js")
+} = require("../scripts/utils/trading_strategy_helpers")
+const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("../scripts/utils/internals")
 
 const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exchange) {
   const rangePercentage = 0.2
@@ -52,7 +50,6 @@ contract("GnosisSafe", function(accounts) {
   let proxyFactory
   let testToken
   let exchange
-  let multiSend
 
   beforeEach(async function() {
     // Create lightwallet
@@ -61,7 +58,6 @@ contract("GnosisSafe", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    multiSend = await MultiSend.deployed()
     testToken = await TestToken.new(18)
 
     BatchExchange.setProvider(web3.currentProvider)
@@ -108,10 +104,9 @@ contract("GnosisSafe", function(accounts) {
       userAddress: slaveAddress,
     }))
 
-    const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
-    assert.equal(batchedTransactions.to, multiSend.address)
+    const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
 
-    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+    await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
@@ -137,7 +132,7 @@ contract("GnosisSafe", function(accounts) {
     await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(slaveSafes.length)))
     await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
 
-    const batchedTransactions = await buildTransferApproveDepositTransactionData(
+    const batchTransaction = await buildTransferApproveDepositTransaction(
       masterSafe.address,
       slaveSafes,
       stableToken.address,
@@ -147,9 +142,8 @@ contract("GnosisSafe", function(accounts) {
       artifacts,
       web3
     )
-    assert.equal(batchedTransactions.to, multiSend.address)
 
-    await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+    await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
@@ -182,7 +176,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transactionData = await buildOrderTransactionData(
+    const transaction = await buildOrderTransaction(
       masterSafe.address,
       slaveSafes,
       targetToken,
@@ -191,7 +185,7 @@ contract("GnosisSafe", function(accounts) {
       web3,
       artifacts
     )
-    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
+    await execTransaction(masterSafe, lw, transaction)
 
     // Correctness assertions
     for (const slaveAddress of slaveSafes) {
@@ -272,10 +266,9 @@ contract("GnosisSafe", function(accounts) {
 
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
-      const batchedTransactions = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
-      assert.equal(batchedTransactions.to, multiSend.address)
+      const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
 
-      await execTransaction(masterSafe, lw, multiSend.address, 0, batchedTransactions.data, DELEGATECALL)
+      await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
       const totalDepositedAmount = {}
@@ -309,10 +302,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        requestWithdrawalTransaction.to,
-        requestWithdrawalTransaction.value,
-        requestWithdrawalTransaction.data,
-        requestWithdrawalTransaction.operation, // This is DELEGATECALL
+        requestWithdrawalTransaction,
         "request withdrawal for all slaves"
       )
       await waitForNSeconds(301)
@@ -382,10 +372,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        withdrawalTransaction.to,
-        withdrawalTransaction.value,
-        withdrawalTransaction.data,
-        withdrawalTransaction.operation,
+        withdrawalTransaction,
         "withdraw for all slaves"
       )
 
@@ -418,10 +405,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        transferFundsToMasterTransaction.to,
-        transferFundsToMasterTransaction.value,
-        transferFundsToMasterTransaction.data,
-        transferFundsToMasterTransaction.operation,
+        transferFundsToMasterTransaction,
         "transfer funds to master for all slaves"
       )
 
@@ -475,10 +459,7 @@ contract("GnosisSafe", function(accounts) {
       await execTransaction(
         masterSafe,
         lw,
-        withdrawAndTransferFundsToMasterTransaction.to,
-        withdrawAndTransferFundsToMasterTransaction.value,
-        withdrawAndTransferFundsToMasterTransaction.data,
-        withdrawAndTransferFundsToMasterTransaction.operation,
+        withdrawAndTransferFundsToMasterTransaction,
         "withdraw and transfer back for all slaves"
       )
 
