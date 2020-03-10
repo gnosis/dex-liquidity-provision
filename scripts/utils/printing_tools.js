@@ -12,7 +12,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  * @param {integer} decimals Maximum number of decimals of the token
  * @return {BN} number of token units corresponding to the input amount
  */
-const toErc20Units = function (amount, decimals) {
+const toErc20Units = function(amount, decimals) {
   if (decimals < 0 || decimals >= 256) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
   const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
   const match = re.exec(amount)
@@ -28,11 +28,11 @@ const toErc20Units = function (amount, decimals) {
 
 /**
  * A generalized version of "fromWei" for tokens with an arbitrary amount of decimals.
- * @param {BN} amount Decimal representation of the (integer) number of token units 
+ * @param {BN} amount Decimal representation of the (integer) number of token units
  * @param {integer} decimals Maximum number of decimals of the token
  * @return {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
  */
-const fromErc20Units = function (amount, decimals) {
+const fromErc20Units = function(amount, decimals) {
   if (decimals < 0 || decimals >= 256) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
   if (amount.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   if (decimals == 0) return amount.toString()

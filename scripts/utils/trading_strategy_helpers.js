@@ -5,7 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
 const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
-
+const { toErc20Units } = require("./printing_tools")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -55,28 +55,6 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @property {EthereumAddress} tokenAddress {@link EthereumAddress} of token to be deposited
  * @property {EthereumAddress} userAddress address of user depositing
  */
-
-/**
- * @typedef Withdrawal
- *  * Example:
- * {
- *   amount: "100",
- *   userAddress: "0x0000000000000000000000000000000000000000",
- *   tokenAddress: "0x0000000000000000000000000000000000000000",
- * }
- * @type {object}
- * @property {integer} amount Integer denoting amount to be deposited
- * @property {EthereumAddress} userAddress Ethereum address of the trader performing the withdrawal
- * @property {EthereumAddress} tokenAddresses List of tokens that the traded wishes to withdraw
- */
-
-const formatAmount = function(amount, token) {
-  if (amount < 1) {
-    amount = amount * 10 ** token.decimals
-    return new BN(amount.toString())
-  }
-  return new BN(10).pow(new BN(token.decimals)).muln(amount)
-}
 
 /**
  * Queries EVM for ERC20 token details by address
@@ -214,18 +192,10 @@ const buildOrderTransaction = async function(
       operation: CALL,
       to: exchange.address,
       value: 0,
-      data: orderData
+      data: orderData,
     }
 
-    transactions.push(
-      await getExecTransactionTransaction(
-        fleetOwnerAddress,
-        traderAddress,
-        orderTransaction,
-        web3,
-        artifacts
-      )
-    )
+    transactions.push(await getExecTransactionTransaction(fleetOwnerAddress, traderAddress, orderTransaction, web3, artifacts))
   }
   log("Transaction bundle size", transactions.length)
   return await getBundledTransaction(transactions, web3, artifacts)
@@ -238,7 +208,8 @@ const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
   // Sell x ETH for max256 DAI
   // x = max256 / 102
   // priceFormatted = 102000000000000000000
-  const priceFormatted = formatAmount(price, targetToken)
+  price = Math.round(price, 18)
+  const priceFormatted = toErc20Units(price, targetToken.decimals)
 
   let sellAmount
   let buyAmount
@@ -367,13 +338,13 @@ const transferApproveDeposit = async function(masterSafeAddress, depositList, we
   return await getBundledTransaction(transactions, web3, artifacts)
 }
 
-const formatDepositString = function (depositsAsJsonString) {
+const formatDepositString = function(depositsAsJsonString) {
   let result
-  result = depositsAsJsonString.replace(/{"/g, "{\n    \"")
-  result = result.replace(/,"/g, ",\n    \"")
+  result = depositsAsJsonString.replace(/{"/g, '{\n    "')
+  result = result.replace(/,"/g, ',\n    "')
   result = result.replace(/{/g, "\n  {")
   result = result.replace(/},/g, "\n  },")
-  result = result.replace(/"}/g, "\"\n  }")
+  result = result.replace(/"}/g, '"\n  }')
   result = result.replace(/]/g, "\n]")
   return result
 }
@@ -410,11 +381,10 @@ const buildTransferApproveDepositTransaction = async function(
   let fundingTransaction = []
   const FleetSizeDiv2 = fleetSize / 2
   for (const i of Array(FleetSizeDiv2).keys()) {
-    const deposit = 
-    {
+    const deposit = {
       amount: investmentStableToken.div(new BN(FleetSizeDiv2)).toString(),
       tokenAddress: stableTokenAddress,
-      userAddress: slaves[i]
+      userAddress: slaves[i],
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
@@ -428,12 +398,11 @@ const buildTransferApproveDepositTransaction = async function(
       )
     )
   }
-  for (const i of Array(FleetSizeDiv2).keys()) {  
-    const deposit = 
-    {
+  for (const i of Array(FleetSizeDiv2).keys()) {
+    const deposit = {
       amount: investmentTargetToken.div(new BN(FleetSizeDiv2)).toString(),
       tokenAddress: targetTokenAddress,
-      userAddress: slaves[FleetSizeDiv2 + i]
+      userAddress: slaves[FleetSizeDiv2 + i],
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(

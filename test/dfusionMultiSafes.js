@@ -8,7 +8,7 @@ const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-
+const { DELEGATECALL } = require("../scripts/utils/internals")
 const {
   deployFleetOfSafes,
   buildOrderTransaction,
@@ -199,7 +199,6 @@ contract("GnosisSafe", function(accounts) {
       const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
       assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
     }
@@ -213,7 +212,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transactionData = await buildOrderTransactionData(
+    const transaction = await buildOrderTransaction(
       masterSafe.address,
       slaveSafes,
       targetToken,
@@ -222,7 +221,7 @@ contract("GnosisSafe", function(accounts) {
       web3,
       artifacts
     )
-    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
+    await execTransaction(masterSafe, lw, transaction)
 
     await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
     // Check that unlimited orders are being used
@@ -242,7 +241,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transactionData = await buildOrderTransactionData(
+    const transaction = await buildOrderTransaction(
       masterSafe.address,
       slaveSafes,
       targetToken,
@@ -251,7 +250,7 @@ contract("GnosisSafe", function(accounts) {
       web3,
       artifacts
     )
-    await execTransaction(masterSafe, lw, transactionData.to, 0, transactionData.data, DELEGATECALL)
+    await execTransaction(masterSafe, lw, transaction)
 
     await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
     // Check that unlimited orders are being used
@@ -299,12 +298,7 @@ contract("GnosisSafe", function(accounts) {
       }
 
       const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
-      await execTransaction(
-        masterSafe,
-        lw,
-        requestWithdrawalTransaction,
-        "request withdrawal for all slaves"
-      )
+      await execTransaction(masterSafe, lw, requestWithdrawalTransaction, "request withdrawal for all slaves")
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
@@ -369,12 +363,7 @@ contract("GnosisSafe", function(accounts) {
       })
       const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
-      await execTransaction(
-        masterSafe,
-        lw,
-        withdrawalTransaction,
-        "withdraw for all slaves"
-      )
+      await execTransaction(masterSafe, lw, withdrawalTransaction, "withdraw for all slaves")
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
@@ -402,12 +391,7 @@ contract("GnosisSafe", function(accounts) {
         artifacts
       )
 
-      await execTransaction(
-        masterSafe,
-        lw,
-        transferFundsToMasterTransaction,
-        "transfer funds to master for all slaves"
-      )
+      await execTransaction(masterSafe, lw, transferFundsToMasterTransaction, "transfer funds to master for all slaves")
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
