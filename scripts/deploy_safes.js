@@ -3,7 +3,7 @@ const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 const argv = require("yargs")
   .option("masterSafe", {
     type: "int",
-    describe: "Address of Gnosis Safe owning slaveSafesoken whose target price is to be specified (i.e. ETH)",
+    describe: "Address of Gnosis Safe that is going to own the new fleet",
   })
   .option("fleetSize", {
     type: "int",
@@ -18,9 +18,9 @@ const argv = require("yargs")
 module.exports = async callback => {
   try {
     console.log("Master Safe:", argv.masterSafe)
-    console.log(`Deploying ${argv.fleetSize} subsafes `)
-    const slaves = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts, true)
-    console.log("Slave Addresses", slaves.join())
+    console.log(`Deploying a fleet of Safes of size ${argv.fleetSize}`)
+    const fleet = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts, true)
+    console.log(" Addresses", fleet.join())
     callback()
   } catch (error) {
     callback(error)

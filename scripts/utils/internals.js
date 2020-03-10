@@ -202,18 +202,18 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, transact
 /**
  * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
  * @param {EthereumAddress} masterAddress Address of a controlled Safe
- * @param {EthereumAddress} traderAddress Address of a Safe, owned only by master, target of execTransaction
+ * @param {EthereumAddress} bracketAddress Address of a Safe, owned only by master, target of execTransaction
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
  */
-const getExecTransactionTransaction = async function(masterAddress, traderAddress, transaction, web3, artifacts) {
+const getExecTransactionTransaction = async function(masterAddress, bracketAddress, transaction, web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
   const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
   const execTransactionTransaction = {
     operation: CALL,
-    to: traderAddress,
+    to: bracketAddress,
     value: 0,
     data: execData,
   }

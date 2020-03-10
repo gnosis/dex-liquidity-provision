@@ -22,7 +22,7 @@ const argv = require("yargs")
   .option("allTokens", {
     type: "boolean",
     default: false,
-    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each trader.",
+    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket.",
   })
   .option("requestWithdraw", {
     type: "boolean",
@@ -37,7 +37,7 @@ const argv = require("yargs")
   .option("transferBackToMaster", {
     type: "boolean",
     default: false,
-    describe: "transfer back funds from traders to master. Funds must be present in the trader wallets",
+    describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   })
   .demand(["masterSafe", "withdrawalFile"])
   .help(
@@ -92,9 +92,9 @@ module.exports = async callback => {
       // get full amount to withdraw from the blockchain
       withdrawals = await Promise.all(
         withdrawals.map(async withdrawal => ({
-          userAddress: withdrawal.userAddress,
+          bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
-          amount: await getAmount(withdrawal.userAddress, withdrawal.tokenAddress, exchange),
+          amount: await getAmount(withdrawal.bracketAddress, withdrawal.tokenAddress, exchange),
         }))
       )
     }
@@ -123,20 +123,20 @@ module.exports = async callback => {
 
       if (argv.requestWithdraw)
         console.log(
-          `Requesting withdrawal of ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.userAddress}`
+          `Requesting withdrawal of ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
         )
       else if (argv.withdraw && !argv.transferBackToMaster)
-        console.log(`Withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.userAddress}`)
+        console.log(`Withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
       else if (!argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Transferring ${unitAmount} ${tokenSymbol} from Safe ${
-            withdrawal.userAddress
+            withdrawal.bracketAddress
           } into master Safe ${masterSafe.address.slice(0, 6)}...${masterSafe.address.slice(-2)}`
         )
       else if (argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Safe ${
-            withdrawal.userAddress
+            withdrawal.bracketAddress
           } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${masterSafe.address.slice(
             0,
             6

@@ -12,12 +12,12 @@ const assert = require("assert")
 const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes",
+    describe: "Address of Gnosis Safe owning every bracket",
   })
   .option("fleetSize", {
     type: "int",
     default: 20,
-    describe: "Even number of (sub)safes to be deployed",
+    describe: "Even number of brackets to be deployed",
   })
   .option("targetToken", {
     type: "int",
@@ -73,13 +73,13 @@ module.exports = async callback => {
     }
 
     console.log(`2. Deploying ${argv.fleetSize} subsafes `)
-    const slaves = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
-    console.log("Following bracket-traders have been deployed", slaves.join())
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
+    console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 
     console.log("3. Building orders and deposits")
     const orderTransaction = await buildOrderTransaction(
       masterSafe.address,
-      slaves,
+      bracketAddresses,
       argv.targetToken,
       argv.stableToken,
       argv.targetPrice,
@@ -90,7 +90,7 @@ module.exports = async callback => {
     )
     const bundledFundingTransaction = await buildTransferApproveDepositTransaction(
       masterSafe.address,
-      slaves,
+      bracketAddresses,
       stableToken.address,
       investmentStableToken,
       targetToken.address,

@@ -61,26 +61,26 @@ contract("GnosisSafe", function(accounts) {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
     assert.equal(fleet.length, 10)
-    for (const slaveAddress of fleet) {
-      const slaveSafe = await GnosisSafe.at(slaveAddress)
-      const slaveOwners = await slaveSafe.getOwners()
-      assert.equal(slaveOwners.length, 1, `Slave has unexpected number of owners ${slaveOwners.length}`)
-      assert.equal(slaveOwners[0], masterSafe.address, "Expected Slave to have master safe as owner")
+    for (const bracketAddress of fleet) {
+      const bracket = await GnosisSafe.at(bracketAddress)
+      const bracketOwners = await bracket.getOwners()
+      assert.equal(bracketOwners.length, 1, `Bracket has unexpected number of owners ${bracketOwners.length}`)
+      assert.equal(bracketOwners[0], masterSafe.address, "Expected bracket to have master safe as owner")
     }
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
     const depositAmount = 1000
-    await testToken.mint(accounts[0], depositAmount * slaveSafes.length)
-    await testToken.transfer(masterSafe.address, depositAmount * slaveSafes.length)
+    await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
+    await testToken.transfer(masterSafe.address, depositAmount * bracketAddresses.length)
     // Note that we are have NOT registered the tokens on the exchange but can deposit them nontheless.
 
-    const deposits = slaveSafes.map(slaveAddress => ({
+    const deposits = bracketAddresses.map(bracketAddress => ({
       amount: depositAmount.toString(),
       tokenAddress: testToken.address,
-      userAddress: slaveAddress,
+      bracketAddress: bracketAddress,
     }))
 
     const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
@@ -89,31 +89,31 @@ contract("GnosisSafe", function(accounts) {
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
-    for (const slaveAddress of slaveSafes) {
-      const slaveExchangeBalance = (await exchange.getBalance(slaveAddress, testToken.address)).toNumber()
-      assert.equal(slaveExchangeBalance, depositAmount)
-      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
-      // This should always output 0 as the slaves should never directly hold funds
-      assert.equal(slavePersonalTokenBalance, 0)
+    for (const bracketAddress of bracketAddresses) {
+      const bracketExchangeBalance = (await exchange.getBalance(bracketAddress, testToken.address)).toNumber()
+      assert.equal(bracketExchangeBalance, depositAmount)
+      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+      // This should always output 0 as the brackets should never directly hold funds
+      assert.equal(bracketPersonalTokenBalance, 0)
     }
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const fleetSize = 2
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
     const depositAmountStableToken = new BN(1000)
     const stableToken = await TestToken.new(18)
-    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(slaveSafes.length)))
-    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(slaveSafes.length)))
+    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
+    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
     const depositAmountTargetToken = new BN(2000)
     const targetToken = await TestToken.new(18)
-    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(slaveSafes.length)))
-    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(slaveSafes.length)))
+    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
+    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
     const batchTransaction = await buildTransferApproveDepositTransaction(
       masterSafe.address,
-      slaveSafes,
+      bracketAddresses,
       stableToken.address,
       depositAmountStableToken,
       targetToken.address,
@@ -126,30 +126,30 @@ contract("GnosisSafe", function(accounts) {
     // Close auction for deposits to be refelcted in exchange balance
     await waitForNSeconds(301)
 
-    for (const slaveAddress of slaveSafes.slice(0, fleetSize / 2)) {
-      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
-      assert.equal(slaveExchangeBalance, depositAmountStableToken)
-      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
-      assert.equal(slaveExchangeBalance, 0)
-      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
-      // This should always output 0 as the slaves should never directly hold funds
-      assert.equal(slavePersonalTokenBalance, 0)
+    for (const bracketAddress of bracketAddresses.slice(0, fleetSize / 2)) {
+      let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
+      assert.equal(bracketExchangeBalance, depositAmountStableToken)
+      bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
+      assert.equal(bracketExchangeBalance, 0)
+      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+      // This should always output 0 as the brackets should never directly hold funds
+      assert.equal(bracketPersonalTokenBalance, 0)
     }
-    for (const slaveAddress of slaveSafes.slice(fleetSize / 2 + 1, fleetSize / 2)) {
-      let slaveExchangeBalance = (await exchange.getBalance(slaveAddress, targetToken.address)).toNumber()
-      assert.equal(slaveExchangeBalance, depositAmountTargetToken)
-      slaveExchangeBalance = (await exchange.getBalance(slaveAddress, stableToken.address)).toNumber()
-      assert.equal(slaveExchangeBalance, 0)
-      const slavePersonalTokenBalance = (await testToken.balanceOf(slaveAddress)).toNumber()
-      // This should always output 0 as the slaves should never directly hold funds
-      assert.equal(slavePersonalTokenBalance, 0)
+    for (const bracketAddress of bracketAddresses.slice(fleetSize / 2 + 1, fleetSize / 2)) {
+      let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
+      assert.equal(bracketExchangeBalance, depositAmountTargetToken)
+      bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
+      assert.equal(bracketExchangeBalance, 0)
+      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+      // This should always output 0 as the brackets should never directly hold funds
+      assert.equal(bracketPersonalTokenBalance, 0)
     }
   })
 
   it("Places bracket orders on behalf of a fleet of safes", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     // Number of brackets is determined by fleet size
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 20, artifacts)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 20, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
     // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
@@ -160,7 +160,7 @@ contract("GnosisSafe", function(accounts) {
 
     const transaction = await buildOrderTransaction(
       masterSafe.address,
-      slaveSafes,
+      bracketAddresses,
       targetToken,
       stableToken,
       targetPrice,
@@ -170,8 +170,8 @@ contract("GnosisSafe", function(accounts) {
     await execTransaction(masterSafe, lw, transaction)
 
     // Correctness assertions
-    for (const slaveAddress of slaveSafes) {
-      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+    for (const bracketAddress of bracketAddresses) {
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
       assert(buyOrder.priceDenominator.eq(max128))
@@ -189,17 +189,17 @@ contract("GnosisSafe", function(accounts) {
   })
 
   describe("Test withdrawals", async function() {
-    const setupAndRequestWithdraw = async function(masterSafe, slaveSafes, deposits, withdrawals) {
+    const setupAndRequestWithdraw = async function(masterSafe, bracketAddresses, deposits, withdrawals) {
       const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
 
       await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
       const totalDepositedAmount = {}
-      for (const { amount, tokenAddress, userAddress } of deposits) {
+      for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const token = await ERC20.at(tokenAddress)
         assert.equal(
-          (await token.balanceOf(userAddress)).toString(),
+          (await token.balanceOf(bracketAddress)).toString(),
           "0",
           "Balance setup failed: trader Safes still holds funds"
         )
@@ -227,18 +227,18 @@ contract("GnosisSafe", function(accounts) {
         masterSafe,
         lw,
         requestWithdrawalTransaction,
-        "request withdrawal for all slaves"
+        "request withdrawal for all brackets"
       )
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
-      for (const { amount, tokenAddress, userAddress } of withdrawals) {
-        const pendingWithdrawal = await exchange.getPendingWithdraw(userAddress, tokenAddress)
+      for (const { amount, tokenAddress, bracketAddress } of withdrawals) {
+        const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenAddress)
         assert.equal(pendingWithdrawal[0].toString(), amount.toString(), "Withdrawal was not registered on the exchange")
 
         const token = await ERC20.at(tokenAddress)
         assert.equal(
-          (await token.balanceOf(userAddress)).toString(),
+          (await token.balanceOf(bracketAddress)).toString(),
           "0",
           "Unexpected behavior in requestWithdraw: trader Safes holds funds"
         )
@@ -263,26 +263,26 @@ contract("GnosisSafe", function(accounts) {
 
     it("Withdraw full amount, three steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-      const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
       const depositAmount = toETH(200)
-      const fullTokenAmount = depositAmount * slaveSafes.length
+      const fullTokenAmount = depositAmount * bracketAddresses.length
 
       await testToken.mint(accounts[0], fullTokenAmount.toString())
       await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
 
-      const deposits = slaveSafes.map(slaveAddress => ({
+      const deposits = bracketAddresses.map(bracketAddress => ({
         amount: depositAmount,
         tokenAddress: testToken.address,
-        userAddress: slaveAddress,
+        bracketAddress: bracketAddress,
       }))
       // build withdrawal lists mirroring deposits
       const withdrawals = deposits.map(deposit => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
-        userAddress: deposit.userAddress,
+        bracketAddress: deposit.bracketAddress,
       }))
 
-      await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
+      await setupAndRequestWithdraw(masterSafe, bracketAddresses, deposits, withdrawals)
 
       // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
       // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
@@ -297,7 +297,7 @@ contract("GnosisSafe", function(accounts) {
         masterSafe,
         lw,
         withdrawalTransaction,
-        "withdraw for all slaves"
+        "withdraw for all brackets"
       )
 
       assert.equal(
@@ -310,7 +310,7 @@ contract("GnosisSafe", function(accounts) {
         "0",
         "Withdrawing failed: the exchange still holds all tokens"
       )
-      for (const trader of slaveSafes)
+      for (const trader of bracketAddresses)
         assert.equal(
           (await testToken.balanceOf(trader)).toString(),
           depositAmount.toString(),
@@ -330,7 +330,7 @@ contract("GnosisSafe", function(accounts) {
         masterSafe,
         lw,
         transferFundsToMasterTransaction,
-        "transfer funds to master for all slaves"
+        "transfer funds to master for all brackets"
       )
 
       assert.equal(
@@ -343,7 +343,7 @@ contract("GnosisSafe", function(accounts) {
         "0",
         "Unexpected behavior when retrieving funds: the exchange holds funds"
       )
-      for (const trader of slaveSafes)
+      for (const trader of bracketAddresses)
         assert.equal(
           (await testToken.balanceOf(trader)).toString(),
           "0",
@@ -353,26 +353,26 @@ contract("GnosisSafe", function(accounts) {
 
     it("Withdraw full amount, two steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-      const slaveSafes = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
       const depositAmount = toETH(200)
-      const fullTokenAmount = depositAmount * slaveSafes.length
+      const fullTokenAmount = depositAmount * bracketAddresses.length
 
       await testToken.mint(accounts[0], fullTokenAmount.toString())
       await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
 
-      const deposits = slaveSafes.map(slaveAddress => ({
+      const deposits = bracketAddresses.map(bracketAddress => ({
         amount: depositAmount,
         tokenAddress: testToken.address,
-        userAddress: slaveAddress,
+        bracketAddress: bracketAddress,
       }))
       // build withdrawal lists mirroring deposits
       const withdrawals = deposits.map(deposit => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
-        userAddress: deposit.userAddress,
+        bracketAddress: deposit.bracketAddress,
       }))
 
-      await setupAndRequestWithdraw(masterSafe, slaveSafes, deposits, withdrawals)
+      await setupAndRequestWithdraw(masterSafe, bracketAddresses, deposits, withdrawals)
 
       const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMaster(
         masterSafe.address,
@@ -384,7 +384,7 @@ contract("GnosisSafe", function(accounts) {
         masterSafe,
         lw,
         withdrawAndTransferFundsToMasterTransaction,
-        "withdraw and transfer back for all slaves"
+        "withdraw and transfer back for all brackets"
       )
 
       assert.equal(
@@ -397,7 +397,7 @@ contract("GnosisSafe", function(accounts) {
         "0",
         "Unexpected behavior when retrieving funds: the exchange holds funds"
       )
-      for (const trader of slaveSafes)
+      for (const trader of bracketAddresses)
         assert.equal(
           (await testToken.balanceOf(trader)).toString(),
           "0",

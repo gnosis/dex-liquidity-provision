@@ -18,9 +18,9 @@ const argv = require("yargs")
   })
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes",
+    describe: "Address of Gnosis Safe owning all brackets",
   })
-  .option("slaves", {
+  .option("brackets", {
     type: "string",
     describe: "Trader account addresses to place orders on behalf of.",
     coerce: str => {
@@ -42,7 +42,7 @@ const argv = require("yargs")
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
   })
-  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "slaves"])
+  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "brackets"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -108,7 +108,7 @@ module.exports = async callback => {
       console.log("Preparing order transaction data")
       const transaction = await buildOrderTransaction(
         argv.masterSafe,
-        argv.slaves,
+        argv.brackets,
         argv.targetToken,
         argv.stableToken,
         argv.targetPrice,

@@ -2,11 +2,11 @@
     {
         "amount": "100000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636"
+        "bracketAddress": "0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636"
     },
     {
         "amount": "100000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0xfA4a18c2218945bC018BF94D093BCa66c88D3c40"
+        "bracketAddress": "0xfA4a18c2218945bC018BF94D093BCa66c88D3c40"
     }
 ]

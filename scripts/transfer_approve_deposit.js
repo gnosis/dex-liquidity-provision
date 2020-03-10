@@ -4,7 +4,7 @@ const { transferApproveDeposit } = require("./utils/trading_strategy_helpers")
 const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes",
+    describe: "Address of Gnosis Safe owning the brackets",
   })
   .option("depositFile", {
     type: "string",
