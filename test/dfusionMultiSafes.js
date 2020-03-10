@@ -26,6 +26,10 @@ const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exc
   const rangePercentage = 0.2
   const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
   const minimalPrice = targetPrice * (1 - rangePercentage)
+  let multiplicator = new BN("10")
+  if (targetPrice < 10) {
+    multiplicator = new BN("10000000")
+  }
   // Correctness assertions
   for (const [index, slaveAddress] of slaveSafes.entries()) {
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
@@ -33,13 +37,25 @@ const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exc
     const [buyOrder, sellOrder] = auctionElements
     // Check buy order prices
     assert.isBelow(
-      Math.abs(buyOrder.priceDenominator.div(buyOrder.priceNumerator).toNumber() - (minimalPrice + stepSize * index)),
-      1
+      Math.abs(
+        buyOrder.priceDenominator
+          .mul(multiplicator)
+          .div(buyOrder.priceNumerator)
+          .toNumber() -
+          (minimalPrice + stepSize * index) * multiplicator.toNumber()
+      ),
+      2
     )
     // Check sell order prices
     assert.isBelow(
-      Math.abs(sellOrder.priceNumerator.div(sellOrder.priceDenominator).toNumber() - (minimalPrice + stepSize * (index + 1))),
-      1
+      Math.abs(
+        sellOrder.priceNumerator
+          .mul(multiplicator)
+          .div(sellOrder.priceDenominator)
+          .toNumber() -
+          multiplicator.toNumber() * (minimalPrice + stepSize * (index + 1))
+      ),
+      2
     )
   }
 }

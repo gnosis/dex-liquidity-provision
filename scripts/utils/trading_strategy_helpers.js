@@ -174,6 +174,8 @@ const buildOrderTransaction = async function(
     const upperLimit = lowestLimit + (safeIndex + 1) * stepSize
 
     const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+    // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
+    // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
     const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
     log(`Safe ${safeIndex} - ${traderAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
@@ -208,15 +210,14 @@ const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
   // Sell x ETH for max256 DAI
   // x = max256 / 102
   // priceFormatted = 102000000000000000000
-  price = Math.round(price, 18)
+  price = price.toFixed(18)
   const priceFormatted = toErc20Units(price, targetToken.decimals)
-
   let sellAmount
   let buyAmount
   if (priceFormatted.gt(toETH(1))) {
     sellAmount = max128
-      .div(priceFormatted)
       .mul(toETH(1))
+      .div(priceFormatted)
       .toString()
     buyAmount = max128.toString()
   } else {
