@@ -5,6 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
 const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
+const { shortenedAddress } = require("./utils/printing_tools.js")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
@@ -338,9 +339,7 @@ const transferApproveDeposit = async function(masterAddress, depositList, web3, 
     const tokenSymbol = await depositToken.symbol.call()
     const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
     log(
-      `Safe ${deposit.bracketAddress} receiving (from ${masterAddress.slice(0, 6)}...${masterAddress.slice(
-        -2
-      )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+      `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
     )
 
     transactions = transactions.concat(

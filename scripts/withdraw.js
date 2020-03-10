@@ -3,6 +3,7 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 const BN = require("bn.js")
 
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { shortenedAddress } = require("./utils/printing_tools.js")
 const {
   getRequestWithdraw,
   getWithdraw,
@@ -131,16 +132,13 @@ module.exports = async callback => {
         console.log(
           `Transferring ${unitAmount} ${tokenSymbol} from Safe ${
             withdrawal.bracketAddress
-          } into master Safe ${masterSafe.address.slice(0, 6)}...${masterSafe.address.slice(-2)}`
+          } into master Safe ${shortenedAddress(masterSafe.address)}`
         )
       else if (argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Safe ${
             withdrawal.bracketAddress
-          } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${masterSafe.address.slice(
-            0,
-            6
-          )}...${masterSafe.address.slice(-2)})`
+          } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(masterSafe.address)})`
         )
       else {
         throw new Error("No operation specified")

@@ -44,9 +44,19 @@ const fromErc20Units = function (amount, decimals) {
   return integerPart + "." + decimalPart
 }
 
+/**
+ * Prints a shortened version of an address.
+ * @param {Address} address Ethereum address to shorten (e.g. 0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1)
+ * @return {string} shortened address (e.g. 0x90F8...C1)
+ */
+const shortenedAddress = function (address) {
+  return address.slice(0, 6) + "..." + address.slice(-2)
+}
+
 module.exports = {
   toErc20Units,
   fromErc20Units,
+  shortenedAddress,
   bnMaxUint,
   bnOne,
 }
