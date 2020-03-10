@@ -8,7 +8,6 @@ const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { DELEGATECALL } = require("../scripts/utils/internals")
 const {
   deployFleetOfSafes,
   buildOrderTransaction,
