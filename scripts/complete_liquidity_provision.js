@@ -1,8 +1,8 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
 const Contract = require("@truffle/contract")
 const {
-  buildTransferApproveDepositTransaction,
-  buildOrderTransaction,
+  buildTransferApproveDepositFromOrders,
+  buildOrders,
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
@@ -77,7 +77,7 @@ module.exports = async callback => {
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 
     console.log("3. Building orders and deposits")
-    const orderTransaction = await buildOrderTransaction(
+    const orderTransaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
       argv.targetToken,
@@ -88,7 +88,7 @@ module.exports = async callback => {
       true,
       argv.priceRangePercentage
     )
-    const bundledFundingTransaction = await buildTransferApproveDepositTransaction(
+    const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
       stableToken.address,

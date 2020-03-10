@@ -163,7 +163,7 @@ const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
  * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
  * @return {Transaction} Multisend transaction bundling all input transactions
  */
-const getBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
+const buildBundledTransaction = async function(transactions, web3 = web3, artifacts = artifacts) {
   const MultiSend = artifacts.require("MultiSend")
   const multiSend = await MultiSend.deployed()
   const transactionData = await encodeMultiSend(multiSend, transactions, web3)
@@ -206,18 +206,18 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, transact
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
  */
-const getExecTransactionTransaction = async function(masterAddress, bracketAddress, transaction, web3, artifacts) {
+const buildExecTransaction = async function(masterAddress, bracketAddress, transaction, web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 
   const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
-  const execTransactionTransaction = {
+  const execTransaction = {
     operation: CALL,
     to: bracketAddress,
     value: 0,
     data: execData,
   }
-  return execTransactionTransaction
+  return execTransaction
 }
 
 function logGasUsage(subject, transactionOrReceipt) {
@@ -233,8 +233,8 @@ module.exports = {
   encodeMultiSend,
   createLightwallet,
   signTransaction,
-  getBundledTransaction,
-  getExecTransactionTransaction,
+  buildBundledTransaction,
+  buildExecTransaction,
   CALL,
   ADDRESS_0,
 }

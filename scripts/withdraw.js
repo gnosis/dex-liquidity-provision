@@ -5,10 +5,10 @@ const BN = require("bn.js")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { shortenedAddress } = require("./utils/printing_tools.js")
 const {
-  getRequestWithdraw,
-  getWithdraw,
-  getTransferFundsToMaster,
-  getWithdrawAndTransferFundsToMaster,
+  buildRequestWithdraw,
+  buildWithdraw,
+  buildTransferFundsToMaster,
+  buildWithdrawAndTransferFundsToMaster,
 } = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")
@@ -102,13 +102,13 @@ module.exports = async callback => {
 
     console.log("Started building withdraw transaction.")
     let transaction
-    if (argv.requestWithdraw) transaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+    if (argv.requestWithdraw) transaction = await buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (argv.withdraw && !argv.transferBackToMaster)
-      transaction = await getWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await buildWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transaction = await getTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
+      transaction = await buildTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transaction = await getWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      transaction = await buildWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
     else {
       throw new Error("No operation specified")
     }

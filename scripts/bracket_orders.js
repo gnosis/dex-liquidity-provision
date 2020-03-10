@@ -1,7 +1,7 @@
 const axios = require("axios")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrderTransaction, fetchTokenInfo } = require("./utils/trading_strategy_helpers")
+const { buildOrders, fetchTokenInfo } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
@@ -106,7 +106,7 @@ module.exports = async callback => {
 
     if (priceIsOk) {
       console.log("Preparing order transaction data")
-      const transaction = await buildOrderTransaction(
+      const transaction = await buildOrders(
         argv.masterSafe,
         argv.brackets,
         argv.targetToken,

@@ -11,13 +11,13 @@ const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
   deployFleetOfSafes,
-  buildOrderTransaction,
-  transferApproveDeposit,
-  getRequestWithdraw,
-  buildTransferApproveDepositTransaction,
-  getWithdraw,
-  getTransferFundsToMaster,
-  getWithdrawAndTransferFundsToMaster,
+  buildOrders,
+  buildTransferApproveDeposit,
+  buildTransferApproveDepositFromOrders,
+  buildRequestWithdraw,
+  buildWithdraw,
+  buildTransferFundsToMaster,
+  buildWithdrawAndTransferFundsToMaster,
   isOnlyOwner,
   max128,
   maxU32,
@@ -80,7 +80,7 @@ contract("GnosisSafe", function(accounts) {
       bracketAddress: bracketAddress,
     }))
 
-    const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
+    const batchTransaction = await buildTransferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
 
     await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
@@ -108,7 +108,7 @@ contract("GnosisSafe", function(accounts) {
     await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
     await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
-    const batchTransaction = await buildTransferApproveDepositTransaction(
+    const batchTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
       stableToken.address,
@@ -155,7 +155,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transaction = await buildOrderTransaction(
+    const transaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
       targetToken,
@@ -187,7 +187,7 @@ contract("GnosisSafe", function(accounts) {
 
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, bracketAddresses, deposits, withdrawals) {
-      const batchTransaction = await transferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
+      const batchTransaction = await buildTransferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
 
       await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
@@ -219,7 +219,7 @@ contract("GnosisSafe", function(accounts) {
         )
       }
 
-      const requestWithdrawalTransaction = await getRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+      const requestWithdrawalTransaction = await buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
       await execTransaction(
         masterSafe,
         lw,
@@ -288,7 +288,7 @@ contract("GnosisSafe", function(accounts) {
         withdraw.amount = withdraw.amount.add(toETH(1))
         withdraw
       })
-      const withdrawalTransaction = await getWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
+      const withdrawalTransaction = await buildWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
       await execTransaction(
         masterSafe,
@@ -315,7 +315,7 @@ contract("GnosisSafe", function(accounts) {
         )
 
       // tries to transfer more funds to master than available, script should be aware of it
-      const transferFundsToMasterTransaction = await getTransferFundsToMaster(
+      const transferFundsToMasterTransaction = await buildTransferFundsToMaster(
         masterSafe.address,
         withdrawalsModified,
         true,
@@ -371,7 +371,7 @@ contract("GnosisSafe", function(accounts) {
 
       await setupAndRequestWithdraw(masterSafe, bracketAddresses, deposits, withdrawals)
 
-      const withdrawAndTransferFundsToMasterTransaction = await getWithdrawAndTransferFundsToMaster(
+      const withdrawAndTransferFundsToMasterTransaction = await buildWithdrawAndTransferFundsToMaster(
         masterSafe.address,
         withdrawals,
         web3,

@@ -4,7 +4,7 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
-const { deploySafe, getBundledTransaction, getExecTransactionTransaction, toETH, CALL } = require("./internals")
+const { deploySafe, buildBundledTransaction, buildExecTransaction, toETH, CALL } = require("./internals")
 const { shortenedAddress } = require("./printing_tools")
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
@@ -153,7 +153,7 @@ const deployFleetOfSafes = async function(masterAddress, fleetSize, artifacts, d
  * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
  * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const buildOrderTransaction = async function(
+const buildOrders = async function(
   masterAddress,
   bracketAddresses,
   targetTokenId,
@@ -244,7 +244,7 @@ const buildOrderTransaction = async function(
     }
 
     transactions.push(
-      await getExecTransactionTransaction(
+      await buildExecTransaction(
         masterAddress,
         bracketAddress,
         orderTransaction,
@@ -254,7 +254,7 @@ const buildOrderTransaction = async function(
     )
   }
   log("Transaction bundle size", transactions.length)
-  return await getBundledTransaction(transactions, web3, artifacts)
+  return await buildBundledTransaction(transactions, web3, artifacts)
 }
 
 const checkSufficiencyOfBalance = async function(token, owner, amount) {
@@ -271,7 +271,7 @@ const checkSufficiencyOfBalance = async function(token, owner, amount) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const getGenericFundMovementTransaction = async function(
+const buildGenericFundMovement = async function(
   masterAddress,
   withdrawals,
   functionName,
@@ -312,16 +312,16 @@ const getGenericFundMovementTransaction = async function(
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransactionTransaction = await getExecTransactionTransaction(
+    const execTransaction = await buildExecTransaction(
       masterAddress,
       withdrawal.bracketAddress,
       transactionToExecute,
       web3,
       artifacts
     )
-    masterTransactions.push(execTransactionTransaction)
+    masterTransactions.push(execTransaction)
   }
-  return getBundledTransaction(masterTransactions, web3, artifacts)
+  return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -332,7 +332,7 @@ const getGenericFundMovementTransaction = async function(
  * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
  * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const transferApproveDeposit = async function(masterAddress, depositList, web3, artifacts, debug = false) {
+const buildTransferApproveDeposit = async function(masterAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
@@ -349,7 +349,7 @@ const transferApproveDeposit = async function(masterAddress, depositList, web3, 
     )
 
     transactions = transactions.concat(
-      await calculateTransactionForTransferApproveDeposit(
+      await buildBracketTransactionForTransferApproveDeposit(
         masterAddress,
         deposit.tokenAddress,
         deposit.bracketAddress,
@@ -359,7 +359,7 @@ const transferApproveDeposit = async function(masterAddress, depositList, web3, 
       )
     )
   }
-  return await getBundledTransaction(transactions, web3, artifacts)
+  return await buildBundledTransaction(transactions, web3, artifacts)
 }
 
 const formatDepositString = function (depositsAsJsonString) {
@@ -386,7 +386,7 @@ const formatDepositString = function (depositsAsJsonString) {
  * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
  * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const buildTransferApproveDepositTransaction = async function(
+const buildTransferApproveDepositFromOrders = async function(
   masterAddress,
   bracketAddresses,
   stableTokenAddress,
@@ -412,7 +412,7 @@ const buildTransferApproveDepositTransaction = async function(
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
-      await calculateTransactionForTransferApproveDeposit(
+      await buildBracketTransactionForTransferApproveDeposit(
         masterAddress,
         deposit.tokenAddress,
         deposit.bracketAddress,
@@ -431,7 +431,7 @@ const buildTransferApproveDepositTransaction = async function(
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
-      await calculateTransactionForTransferApproveDeposit(
+      await buildBracketTransactionForTransferApproveDeposit(
         masterAddress,
         deposit.tokenAddress,
         deposit.bracketAddress,
@@ -450,7 +450,7 @@ const buildTransferApproveDepositTransaction = async function(
       }
     })
   }
-  return await getBundledTransaction(fundingTransaction, web3, artifacts)
+  return await buildBundledTransaction(fundingTransaction, web3, artifacts)
 }
 
 /**
@@ -461,7 +461,7 @@ const buildTransferApproveDepositTransaction = async function(
  * @param {BN} amount Amount to be deposited
  * @return {Transaction} Information describing the multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const calculateTransactionForTransferApproveDeposit = async (
+const buildBracketTransactionForTransferApproveDeposit = async (
   masterAddress,
   tokenAddress,
   bracketAddress,
@@ -494,7 +494,7 @@ const calculateTransactionForTransferApproveDeposit = async (
   // Get data to deposit funds from bracket to exchange
   const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
   // Get transaction for approve and deposit multisend on bracket
-  const bracketBundledTransaction = await getBundledTransaction(
+  const bracketBundledTransaction = await buildBundledTransaction(
     [
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
@@ -503,14 +503,14 @@ const calculateTransactionForTransferApproveDeposit = async (
     artifacts
   )
   // Get transaction executing approve/deposit multisend via bracket
-  const execTransactionTransaction = await getExecTransactionTransaction(
+  const execTransaction = await buildExecTransaction(
     masterAddress,
     bracketAddress,
     bracketBundledTransaction,
     web3,
     artifacts
   )
-  transactions.push(execTransactionTransaction)
+  transactions.push(execTransaction)
   return transactions
 }
 /**
@@ -521,8 +521,8 @@ const calculateTransactionForTransferApproveDeposit = async (
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const getRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
+const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+  return await buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
 /**
@@ -535,8 +535,8 @@ const getRequestWithdraw = async function(masterAddress, withdrawals, web3, arti
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
-const getWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await getGenericFundMovementTransaction(masterAddress, withdrawals, "withdraw", web3, artifacts)
+const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+  return await buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
 /**
@@ -545,7 +545,7 @@ const getWithdraw = async function(masterAddress, withdrawals, web3, artifacts) 
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
-const getTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount, web3, artifacts) {
+const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount, web3, artifacts) {
   const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
   // TODO: enforce that there are no overlapping withdrawals
@@ -568,16 +568,16 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, limi
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransactionTransaction = await getExecTransactionTransaction(
+    const execTransaction = await buildExecTransaction(
       masterAddress,
       withdrawal.bracketAddress,
       transactionToExecute,
       web3,
       artifacts
     )
-    masterTransactions.push(execTransactionTransaction)
+    masterTransactions.push(execTransaction)
   }
-  return await getBundledTransaction(masterTransactions, web3, artifacts)
+  return await buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -586,24 +586,24 @@ const getTransferFundsToMaster = async function(masterAddress, withdrawals, limi
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back the funds stored in the exchange
  */
-const getWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
-  const withdrawalTransaction = await getWithdraw(masterAddress, withdrawals, web3, artifacts)
-  const transferFundsToMasterTransaction = await getTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
-  return getBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
+const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
+  const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals, web3, artifacts)
+  const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
+  return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
 
 module.exports = {
   deployFleetOfSafes,
-  buildOrderTransaction,
-  getBundledTransaction,
-  transferApproveDeposit,
-  getTransferFundsToMaster,
-  getWithdrawAndTransferFundsToMaster,
-  calculateTransactionForTransferApproveDeposit,
-  buildTransferApproveDepositTransaction,
+  buildOrders,
+  buildBundledTransaction,
+  buildTransferApproveDeposit,
+  buildTransferFundsToMaster,
+  buildWithdrawAndTransferFundsToMaster,
+  buildBracketTransactionForTransferApproveDeposit,
+  buildTransferApproveDepositFromOrders,
   checkSufficiencyOfBalance,
-  getRequestWithdraw,
-  getWithdraw,
+  buildRequestWithdraw,
+  buildWithdraw,
   fetchTokenInfo,
   isOnlyOwner,
   max128,
