@@ -332,7 +332,7 @@ const buildGenericFundMovement = async function(
  * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
  * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
  */
-const buildTransferApproveDeposit = async function(masterAddress, depositList, web3, artifacts, debug = false) {
+const buildTransferApproveDepositFromList = async function(masterAddress, depositList, web3, artifacts, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
@@ -596,7 +596,7 @@ module.exports = {
   deployFleetOfSafes,
   buildOrders,
   buildBundledTransaction,
-  buildTransferApproveDeposit,
+  buildTransferApproveDepositFromList,
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   buildBracketTransactionForTransferApproveDeposit,

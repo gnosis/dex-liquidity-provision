@@ -80,7 +80,7 @@ contract("GnosisSafe", function(accounts) {
       bracketAddress: bracketAddress,
     }))
 
-    const batchTransaction = await buildTransferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
+    const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, web3, artifacts)
 
     await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be refelcted in exchange balance
@@ -187,7 +187,7 @@ contract("GnosisSafe", function(accounts) {
 
   describe("Test withdrawals", async function() {
     const setupAndRequestWithdraw = async function(masterSafe, bracketAddresses, deposits, withdrawals) {
-      const batchTransaction = await buildTransferApproveDeposit(masterSafe.address, deposits, web3, artifacts)
+      const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, web3, artifacts)
 
       await execTransaction(masterSafe, lw, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
