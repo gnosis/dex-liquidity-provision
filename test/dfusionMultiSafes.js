@@ -109,7 +109,7 @@ contract("GnosisSafe", function(accounts) {
       const depositAmount = 1000
       await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
       await testToken.transfer(masterSafe.address, depositAmount * bracketAddresses.length)
-      // Note that we are have UNregistered the tokens on the exchange but we can deposit them nevertheless.
+      // Note that we are have NOT registered the tokens on the exchange but we can deposit them nevertheless.
 
       const deposits = bracketAddresses.map(bracketAddress => ({
         amount: depositAmount.toString(),
