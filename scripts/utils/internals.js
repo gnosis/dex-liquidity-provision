@@ -46,11 +46,6 @@ const waitForNSeconds = async function(seconds, web3Provider = web3) {
   await send("evm_mine", [], web3Provider)
 }
 
-function toETH(value) {
-  const GWEI = 1000000000
-  return new BN(value * GWEI).mul(new BN(GWEI))
-}
-
 const execTransaction = async function(safe, lightWallet, transaction) {
   const nonce = await safe.nonce()
   const transactionHash = await safe.getTransactionHash(
@@ -233,7 +228,6 @@ function logGasUsage(subject, transactionOrReceipt) {
 
 module.exports = {
   waitForNSeconds,
-  toETH,
   execTransaction,
   deploySafe,
   encodeMultiSend,
