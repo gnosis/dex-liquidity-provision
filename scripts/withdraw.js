@@ -1,9 +1,8 @@
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const BN = require("bn.js")
 
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
-const { shortenedAddress } = require("./utils/printing_tools.js")
+const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
 const {
   buildRequestWithdraw,
   buildWithdraw,
@@ -118,19 +117,18 @@ module.exports = async callback => {
       const token = await ERC20.at(withdrawal.tokenAddress)
       const tokenDecimals = (await token.decimals.call()).toNumber()
       const tokenSymbol = await token.symbol.call()
-      if (tokenDecimals != 18) throw new Error("These scripts currently only support tokens with 18 decimals.")
 
-      const unitAmount = new BN(withdrawal.amount).mul(new BN(10).pow(tokenDecimals))
+      const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 
       if (argv.requestWithdraw)
         console.log(
-          `Requesting withdrawal of ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
+          `Requesting withdrawal of ${fromErc20Units(userAmount, tokenDecimals)} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
         )
       else if (argv.withdraw && !argv.transferBackToMaster)
-        console.log(`Withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
+        console.log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
       else if (!argv.withdraw && argv.transferBackToMaster)
         console.log(
-          `Transferring ${unitAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
+          `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
             masterSafe.address
           )}`
         )
@@ -138,7 +136,7 @@ module.exports = async callback => {
         console.log(
           `Safe ${
             withdrawal.bracketAddress
-          } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
+          } withdrawing ${userAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
             masterSafe.address
           )})`
         )
