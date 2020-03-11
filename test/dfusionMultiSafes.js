@@ -12,7 +12,7 @@ const TestToken = artifacts.require("DetailedMintableToken")
 const {
   deployFleetOfSafes,
   buildOrders,
-  buildTransferApproveDeposit,
+  buildTransferApproveDepositFromList,
   buildTransferApproveDepositFromOrders,
   buildRequestWithdraw,
   buildWithdraw,
