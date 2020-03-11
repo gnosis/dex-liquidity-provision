@@ -14,7 +14,7 @@ const {
 const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning slaveSafes.",
+    describe: "Address of Gnosis Safe owning bracketSafes.",
   })
   .option("withdrawalFile", {
     type: "string",
@@ -54,16 +54,16 @@ const argv = require("yargs")
   })
   .version(false).argv
 
-const getAmount = async function(slaveAddress, tokenAddress, exchange) {
+const getAmount = async function(bracketAddress, tokenAddress, exchange) {
   let amount
   const ERC20 = artifacts.require("ERC20Detailed")
   const token = await ERC20.at(tokenAddress)
-  if (argv.requestWithdraw) amount = (await exchange.getBalance(slaveAddress, tokenAddress)).toString()
+  if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenAddress)).toString()
   else if (argv.withdraw) {
     const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
-    const pendingWithdrawal = await exchange.getPendingWithdraw(slaveAddress, tokenAddress)
+    const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenAddress)
     if (pendingWithdrawal[1].toNumber() == 0) {
-      console.log("Warning: no withdrawal was requested for address", slaveAddress, "and token", await token.name())
+      console.log("Warning: no withdrawal was requested for address", bracketAddress, "and token", await token.name())
       amount = "0"
     }
     if (amount != "0" && pendingWithdrawal[1].toNumber() >= currentBatchId) {
@@ -72,9 +72,9 @@ const getAmount = async function(slaveAddress, tokenAddress, exchange) {
     }
     amount = pendingWithdrawal[0].toString()
   } else {
-    amount = (await token.balanceOf(slaveAddress)).toString()
+    amount = (await token.balanceOf(bracketAddress)).toString()
   }
-  if (amount == "0") console.log("Warning: address", slaveAddress, "has no balance to withdraw for token", await token.name())
+  if (amount == "0") console.log("Warning: address", bracketAddress, "has no balance to withdraw for token", await token.name())
   return amount
 }
 
@@ -130,15 +130,17 @@ module.exports = async callback => {
         console.log(`Withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
       else if (!argv.withdraw && argv.transferBackToMaster)
         console.log(
-          `Transferring ${unitAmount} ${tokenSymbol} from Safe ${
-            withdrawal.bracketAddress
-          } into master Safe ${shortenedAddress(masterSafe.address)}`
+          `Transferring ${unitAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
+            masterSafe.address
+          )}`
         )
       else if (argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Safe ${
             withdrawal.bracketAddress
-          } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(masterSafe.address)})`
+          } withdrawing ${unitAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
+            masterSafe.address
+          )})`
         )
       else {
         throw new Error("No operation specified")

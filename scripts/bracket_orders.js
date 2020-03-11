@@ -10,7 +10,7 @@ const argv = require("yargs")
     describe: "Token whose target price is to be specified (i.e. ETH)",
   })
   .option("stableToken", {
-    describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
+    describe: "Stable Token for which to open orders (i.e. DAI)",
   })
   .option("targetPrice", {
     type: "float",
@@ -49,7 +49,7 @@ const argv = require("yargs")
   .version(false).argv
 
 // returns undefined if the price was not available
-const getDexagPrice = async function (tokenBought, tokenSold) {
+const getDexagPrice = async function(tokenBought, tokenSold) {
   // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
   tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
   tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
@@ -67,7 +67,7 @@ const getDexagPrice = async function (tokenBought, tokenSold) {
 }
 
 const acceptedPriceDeviationInPercentage = 2
-const isPriceReasonable = async function (exchange, targetTokenId, stableTokenId, price) {
+const isPriceReasonable = async function(exchange, targetTokenId, stableTokenId, price) {
   const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
   const targetToken = tokenInfo[targetTokenId]
   const stableToken = tokenInfo[stableTokenId]
@@ -80,7 +80,11 @@ const isPriceReasonable = async function (exchange, targetTokenId, stableTokenId
       return false
     }
   } else if (Math.abs(dexagPrice - price) >= acceptedPriceDeviationInPercentage / 100) {
-    console.log("Warning: the chosen price differs by more than", acceptedPriceDeviationInPercentage, "percent from the price found on dex.ag.")
+    console.log(
+      "Warning: the chosen price differs by more than",
+      acceptedPriceDeviationInPercentage,
+      "percent from the price found on dex.ag."
+    )
     console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
     console.log("         dex.ag price:", dexagPrice, targetToken.symbol, "bought for 1", stableToken.symbol)
     const answer = await promptUser("Continue anyway? [yN] ")
