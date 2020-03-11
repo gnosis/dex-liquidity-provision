@@ -84,6 +84,7 @@ contract("GnosisSafe", function(accounts) {
   describe("Exchange interaction test:", async function() {
     it("Adds tokens to the exchange", async () => {
       await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
       assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
     })
@@ -182,6 +183,7 @@ contract("GnosisSafe", function(accounts) {
       const stableToken = 1 // DAI
       const targetPrice = 100
       await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
@@ -218,6 +220,7 @@ contract("GnosisSafe", function(accounts) {
       const stableToken = 1 // DAI
       const targetPrice = 1 / 100
       await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
