@@ -3,11 +3,11 @@ const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
+const { prepareTokenRegistration } = require("./test-utils")
 const {
   deployFleetOfSafes,
   buildOrders,
@@ -81,15 +81,9 @@ contract("GnosisSafe", function(accounts) {
     exchange = await BatchExchange.deployed()
   })
 
-  async function prepareTokenRegistration(account) {
-    const owlToken = await TokenOWL.at(await exchange.feeToken())
-    await owlToken.setMinter(account)
-    await owlToken.mintOWL(account, toETH(10))
-    await owlToken.approve(exchange.address, toETH(10))
-  }
   describe("Exchange interaction test:", async function() {
     it("Adds tokens to the exchange", async () => {
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
       assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
     })
@@ -187,7 +181,7 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
@@ -223,7 +217,7 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 1 / 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
@@ -252,7 +246,7 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(

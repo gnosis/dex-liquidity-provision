@@ -8,8 +8,8 @@ contract DetailedMintableToken is ERC20Mintable {
     string private _symbol;
 
     // Used to access number of decimals and be able mint
-    constructor (uint8 decimals) public {
-        _symbol = "DMT";
+    constructor(string memory symbol, uint8 decimals) public {
+        _symbol = symbol;
         _decimals = decimals;
     }
 
