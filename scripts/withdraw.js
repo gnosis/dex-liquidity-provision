@@ -122,7 +122,7 @@ module.exports = async callback => {
 
       if (argv.requestWithdraw)
         console.log(
-          `Requesting withdrawal of ${fromErc20Units(userAmount, tokenDecimals)} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
+          `Requesting withdrawal of ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
         )
       else if (argv.withdraw && !argv.transferBackToMaster)
         console.log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
