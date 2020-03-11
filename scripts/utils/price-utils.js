@@ -40,8 +40,8 @@ const isPriceReasonable = async function(
       acceptedPriceDeviationInPercentage,
       "percent from the price found on dex.ag."
     )
-    console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
-    console.log("         dex.ag price:", dexagPrice, targetToken.symbol, "bought for 1", stableToken.symbol)
+    console.log("         chosen price:", price, stableToken.symbol, "bought for 1", targetToken.symbol)
+    console.log("         dex.ag price:", dexagPrice, stableToken.symbol, "bought for 1", targetToken.symbol)
     return false
   }
   return true
