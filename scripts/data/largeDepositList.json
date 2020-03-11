@@ -2,101 +2,101 @@
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x0f41B6BaF8202512e62CCc9866D27032D9DCFcD1"
+        "bracketAddress": "0x0f41B6BaF8202512e62CCc9866D27032D9DCFcD1"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x1d8A3D8d21466d36DDCa5432FD8b5d95956023B5"
+        "bracketAddress": "0x1d8A3D8d21466d36DDCa5432FD8b5d95956023B5"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x97f87462cC8738E1AFf8656A0C1D499e28d17E3b"
+        "bracketAddress": "0x97f87462cC8738E1AFf8656A0C1D499e28d17E3b"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0xF3b3609BEb25CB725377AaF06eBf50ff856F5C64"
+        "bracketAddress": "0xF3b3609BEb25CB725377AaF06eBf50ff856F5C64"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x5e95f9a4f4Ed1323Dd489bDfd10bdd718e4d4720"
+        "bracketAddress": "0x5e95f9a4f4Ed1323Dd489bDfd10bdd718e4d4720"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x194d09D906846aeF3402c5eab775bF8e6d6A9556"
+        "bracketAddress": "0x194d09D906846aeF3402c5eab775bF8e6d6A9556"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0xe635149d28302891377168964f873728175E8976"
+        "bracketAddress": "0xe635149d28302891377168964f873728175E8976"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x8beF6f835628688bDaC3Db28030769F5BCd37240"
+        "bracketAddress": "0x8beF6f835628688bDaC3Db28030769F5BCd37240"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0xFEFC78e2363dCD8f9699F9336b14B292B29cf98e"
+        "bracketAddress": "0xFEFC78e2363dCD8f9699F9336b14B292B29cf98e"
     },
     {
         "amount": "1000000000000000000000",
         "tokenAddress": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
-        "userAddress": "0x8932112aEB83C7f7AebE9c83Beb62BCe5ad83275"
+        "bracketAddress": "0x8932112aEB83C7f7AebE9c83Beb62BCe5ad83275"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x90FeeD152232eD3fe0dAe28f2BE3651e38208E60"
+        "bracketAddress": "0x90FeeD152232eD3fe0dAe28f2BE3651e38208E60"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0xE6f636BD71e42F8D4EB17F47b216E945E0C156aE"
+        "bracketAddress": "0xE6f636BD71e42F8D4EB17F47b216E945E0C156aE"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x5961D9411e6722BD299a5C36a7A5CDD3fc5Ec35E"
+        "bracketAddress": "0x5961D9411e6722BD299a5C36a7A5CDD3fc5Ec35E"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x52863CB34be1bE58B199281a6623D259BB670950"
+        "bracketAddress": "0x52863CB34be1bE58B199281a6623D259BB670950"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x88580dd3dF04Eb9418D9ECC694FBc95786189cFE"
+        "bracketAddress": "0x88580dd3dF04Eb9418D9ECC694FBc95786189cFE"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x185076bcba4aBD58F8d07C7276B7194Ec124Ea55"
+        "bracketAddress": "0x185076bcba4aBD58F8d07C7276B7194Ec124Ea55"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x3A8CE5F3186C0E116d412c80D1e56b9778182a1A"
+        "bracketAddress": "0x3A8CE5F3186C0E116d412c80D1e56b9778182a1A"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x0703B45ca5172016aF1f9fdF43f80bDc9088b542"
+        "bracketAddress": "0x0703B45ca5172016aF1f9fdF43f80bDc9088b542"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0xBd7982cE05fe5484448b775E2FD017203Cd9aE90"
+        "bracketAddress": "0xBd7982cE05fe5484448b775E2FD017203Cd9aE90"
     },
     {
         "amount": "3600000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
-        "userAddress": "0x5F1D32eFF4E25c4FD8C57d8cf3F8251eFB82bEC2"
+        "bracketAddress": "0x5F1D32eFF4E25c4FD8C57d8cf3F8251eFB82bEC2"
     }
 ]

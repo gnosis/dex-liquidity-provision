@@ -2,6 +2,7 @@ const Contract = require("@truffle/contract")
 
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { CALL } = require("./utils/internals")
+const {  toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -29,7 +30,8 @@ module.exports = async callback => {
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
-    const amountInWei = await web3.utils.toWei(argv.amount)
+    const decimals = await weth.decimals()
+    const amountInWei = toErc20Units(argv.amount, decimals)
 
     const transactionData = await weth.contract.methods.deposit().encodeABI()
     const transaction = {
@@ -40,7 +42,7 @@ module.exports = async callback => {
     }
 
     console.log(await weth.name(), "at address", weth.address)
-    console.log("Converting", await web3.utils.fromWei(transaction.value), "ETH into", await weth.symbol())
+    console.log("Converting", fromErc20Units(transaction.value, decimals), "ETH into", await weth.symbol())
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
