@@ -391,7 +391,6 @@ const buildTransferApproveDepositFromOrders = async function(
   assert(fleetSize % 2 == 0, "Fleet size must be a even number")
   const deposits = []
 
-  let fundingTransaction = []
   const fleetSizeDiv2 = fleetSize / 2
   for (const i of Array(fleetSizeDiv2).keys()) {
     const deposit = {
@@ -400,16 +399,6 @@ const buildTransferApproveDepositFromOrders = async function(
       bracketAddress: bracketAddresses[i],
     }
     deposits.push(deposit)
-    fundingTransaction = fundingTransaction.concat(
-      await buildBracketTransactionForTransferApproveDeposit(
-        masterAddress,
-        deposit.tokenAddress,
-        deposit.bracketAddress,
-        deposit.amount,
-        artifacts,
-        web3
-      )
-    )
   }
   for (const i of Array(fleetSizeDiv2).keys()) {
     const deposit = {
@@ -418,16 +407,6 @@ const buildTransferApproveDepositFromOrders = async function(
       bracketAddress: bracketAddresses[fleetSizeDiv2 + i],
     }
     deposits.push(deposit)
-    fundingTransaction = fundingTransaction.concat(
-      await buildBracketTransactionForTransferApproveDeposit(
-        masterAddress,
-        deposit.tokenAddress,
-        deposit.bracketAddress,
-        deposit.amount,
-        artifacts,
-        web3
-      )
-    )
   }
   if (storeDepositsAsFile) {
     const depositsAsJsonString = formatDepositString(JSON.stringify(deposits))
@@ -438,7 +417,7 @@ const buildTransferApproveDepositFromOrders = async function(
       }
     })
   }
-  return await buildBundledTransaction(fundingTransaction, web3, artifacts)
+  return await buildTransferApproveDepositFromList(masterAddress, deposits, web3, artifacts)
 }
 
 /**
