@@ -96,18 +96,21 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
 
   log("Fetching token data from EVM")
   const tokenObjects = {}
-  for (const id of tokenIds) {
-    const tokenAddress = await exchange.tokenIdToAddressMap(id)
-    const tokenInstance = await ERC20.at(tokenAddress)
-    const tokenInfo = {
-      id: id,
-      address: tokenAddress,
-      symbol: await tokenInstance.symbol.call(),
-      decimals: (await tokenInstance.decimals.call()).toNumber(),
-    }
-    tokenObjects[id] = tokenInfo
-    log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
-  }
+  await Promise.all(
+    tokenIds.map(async id => {
+      const tokenAddress = await exchange.tokenIdToAddressMap(id)
+      const tokenInstance = await ERC20.at(tokenAddress)
+      const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
+      const tokenInfo = {
+        id: id,
+        address: tokenAddress,
+        symbol: tokenSymbol,
+        decimals: tokenDecimals.toNumber(),
+      }
+      tokenObjects[id] = tokenInfo
+      log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
+    })
+  )
   return tokenObjects
 }
 
