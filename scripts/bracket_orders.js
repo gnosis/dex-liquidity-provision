@@ -59,7 +59,7 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
     let proceedAnyways = false
     if (!priceCheck) {
       const answer = await promptUser("Continue anyway? [yN] ")
@@ -68,7 +68,7 @@ module.exports = async callback => {
       }
     }
 
-    if (priceCheck.isOkay || proceedAnyways) {
+    if (priceCheck || proceedAnyways) {
       console.log("Preparing order transaction data")
       const transaction = await buildOrders(
         argv.masterSafe,
