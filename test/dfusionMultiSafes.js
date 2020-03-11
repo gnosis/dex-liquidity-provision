@@ -98,8 +98,7 @@ contract("GnosisSafe", function(accounts) {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
     const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
     assert.equal(fleet.length, 10)
-    for (const bracketAddress of fleet)
-      assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
+    for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
@@ -224,15 +223,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transaction = await buildOrders(
-      masterSafe.address,
-      slaveSafes,
-      targetToken,
-      stableToken,
-      targetPrice,
-      web3,
-      artifacts
-    )
+    const transaction = await buildOrders(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice, web3, artifacts)
     await execTransaction(masterSafe, lw, transaction)
 
     await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
@@ -253,15 +244,7 @@ contract("GnosisSafe", function(accounts) {
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    const transaction = await buildOrders(
-      masterSafe.address,
-      slaveSafes,
-      targetToken,
-      stableToken,
-      targetPrice,
-      web3,
-      artifacts
-    )
+    const transaction = await buildOrders(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice, web3, artifacts)
     await execTransaction(masterSafe, lw, transaction)
 
     await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
@@ -402,7 +385,6 @@ contract("GnosisSafe", function(accounts) {
         web3,
         artifacts
       )
-
 
       await execTransaction(masterSafe, lw, transferFundsToMasterTransaction, "transfer funds to master for all brackets")
 
