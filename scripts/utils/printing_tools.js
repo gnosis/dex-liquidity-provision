@@ -13,7 +13,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  * @param {(number|string|BN)} decimals Maximum number of decimals of the token
  * @return {BN} number of token units corresponding to the input amount
  */
-const toErc20Units = function (amount, decimals) {
+const toErc20Units = function(amount, decimals) {
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion
   if (bnDecimals.lt(bnZero) || bnDecimals.gte(bn256)) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
   decimals = bnDecimals.toNumber() // safe conversion to num, since 0 <= decimals < 256  const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
@@ -31,11 +31,11 @@ const toErc20Units = function (amount, decimals) {
 
 /**
  * A generalized version of "fromWei" for tokens with an arbitrary amount of decimals.
- * @param {(string|BN)} amount Decimal representation of the (integer) number of token units 
+ * @param {(string|BN)} amount Decimal representation of the (integer) number of token units
  * @param {(number|string|BN)} decimals Maximum number of decimals of the token
  * @return {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
  */
-const fromErc20Units = function (amount, decimals) {
+const fromErc20Units = function(amount, decimals) {
   amount = new BN(amount) // in case amount were a string, it converts it to BN, otherwise no effects
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion 
   if (bnDecimals.lt(bnZero) || bnDecimals.gte(bn256)) throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8

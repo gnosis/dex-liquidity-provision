@@ -5,8 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
 const { deploySafe, buildBundledTransaction, buildExecTransaction, toETH, CALL } = require("./internals")
-const { shortenedAddress } = require("./printing_tools")
-
+const { shortenedAddress, toErc20Units } = require("./printing_tools")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -70,10 +69,6 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @property {Address} bracketAddress Ethereum address of the bracket from which to withdraw
  * @property {Address} tokenAddresses List of tokens that the traded wishes to withdraw
  */
-
-const formatAmount = function(amount, token) {
-  return new BN(10).pow(new BN(token.decimals)).muln(amount)
-}
 
 /**
  * Checks that the first input address is the only owner of the first input address
@@ -200,29 +195,10 @@ const buildOrders = async function(
     const lowerLimit = lowestLimit + bracketIndex * stepSize
     const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
 
-    // Sell targetToken for stableToken at targetTokenPrice = upperLimit
-    // Sell 1 ETH at for 102 DAI (unlimited)
-    // Sell x ETH for max256 DAI
-    // x = max256 / 102
-    const sellPrice = formatAmount(upperLimit, targetToken)
-    // sellPrice = 102000000000000000000
-    const upperSellAmount = max128
-      .div(sellPrice)
-      .mul(toETH(1))
-      .toString()
-    const upperBuyAmount = max128.toString()
-
-    // Buy ETH at 101 for DAI (unlimited)
-    // Sell stableToken for targetToken in at targetTokenPrice = lowerLimit
-    // Sell 101 DAI for 1 ETH
-    // Sell max256 DAI for x ETH
-    // x = max256 / 101
-    const buyPrice = formatAmount(lowerLimit, targetToken)
-    const lowerSellAmount = max128.toString()
-    const lowerBuyAmount = max128
-      .div(buyPrice)
-      .mul(toETH(1))
-      .toString()
+    const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+    // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
+    // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
+    const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
     log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
     log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
@@ -240,23 +216,41 @@ const buildOrders = async function(
       operation: CALL,
       to: exchange.address,
       value: 0,
-      data: orderData
+      data: orderData,
     }
 
-    transactions.push(
-      await buildExecTransaction(
-        masterAddress,
-        bracketAddress,
-        orderTransaction,
-        web3,
-        artifacts
-      )
-    )
+    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, web3, artifacts))
   }
   log("Transaction bundle size", transactions.length)
   return await buildBundledTransaction(transactions, web3, artifacts)
 }
 
+const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
+  // Sell targetToken for stableToken at price with unlimited orders
+  // Example:
+  // Sell 1 ETH at for 102 DAI (unlimited)
+  // Sell x ETH for max256 DAI
+  // x = max256 / 102
+  // priceFormatted = 102000000000000000000
+  price = price.toFixed(18)
+  const priceFormatted = toErc20Units(price, targetToken.decimals)
+  let sellAmount
+  let buyAmount
+  if (priceFormatted.gt(toETH(1))) {
+    sellAmount = max128
+      .mul(toETH(1))
+      .div(priceFormatted)
+      .toString()
+    buyAmount = max128.toString()
+  } else {
+    buyAmount = max128
+      .mul(priceFormatted)
+      .div(toETH(1))
+      .toString()
+    sellAmount = max128.toString()
+  }
+  return [sellAmount, buyAmount]
+}
 const checkSufficiencyOfBalance = async function(token, owner, amount) {
   const depositor_balance = await token.balanceOf.call(owner)
   return depositor_balance.gte(amount)
@@ -362,13 +356,13 @@ const buildTransferApproveDepositFromList = async function(masterAddress, deposi
   return await buildBundledTransaction(transactions, web3, artifacts)
 }
 
-const formatDepositString = function (depositsAsJsonString) {
+const formatDepositString = function(depositsAsJsonString) {
   let result
-  result = depositsAsJsonString.replace(/{"/g, "{\n    \"")
-  result = result.replace(/,"/g, ",\n    \"")
+  result = depositsAsJsonString.replace(/{"/g, '{\n    "')
+  result = result.replace(/,"/g, ',\n    "')
   result = result.replace(/{/g, "\n  {")
   result = result.replace(/},/g, "\n  },")
-  result = result.replace(/"}/g, "\"\n  }")
+  result = result.replace(/"}/g, '"\n  }')
   result = result.replace(/]/g, "\n]")
   return result
 }
@@ -404,11 +398,10 @@ const buildTransferApproveDepositFromOrders = async function(
   let fundingTransaction = []
   const fleetSizeDiv2 = fleetSize / 2
   for (const i of Array(fleetSizeDiv2).keys()) {
-    const deposit = 
-    {
+    const deposit = {
       amount: investmentStableToken.div(new BN(fleetSizeDiv2)).toString(),
       tokenAddress: stableTokenAddress,
-      bracketAddress: bracketAddresses[i]
+      bracketAddress: bracketAddresses[i],
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(
@@ -423,11 +416,10 @@ const buildTransferApproveDepositFromOrders = async function(
     )
   }
   for (const i of Array(fleetSizeDiv2).keys()) {  
-    const deposit = 
-    {
+    const deposit = {
       amount: investmentTargetToken.div(new BN(fleetSizeDiv2)).toString(),
       tokenAddress: targetTokenAddress,
-      bracketAddress: bracketAddresses[fleetSizeDiv2 + i]
+      bracketAddress: bracketAddresses[fleetSizeDiv2 + i],
     }
     deposits.push(deposit)
     fundingTransaction = fundingTransaction.concat(

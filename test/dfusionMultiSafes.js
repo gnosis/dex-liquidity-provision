@@ -8,7 +8,6 @@ const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-
 const {
   deployFleetOfSafes,
   buildOrders,
@@ -24,6 +23,43 @@ const {
 } = require("../scripts/utils/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("../scripts/utils/internals")
 
+const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exchange) {
+  const rangePercentage = 0.2
+  const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
+  const minimalPrice = targetPrice * (1 - rangePercentage)
+  let multiplicator = new BN("10")
+  if (targetPrice < 10) {
+    multiplicator = new BN("10000000")
+  }
+  // Correctness assertions
+  for (const [index, slaveAddress] of slaveSafes.entries()) {
+    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+    assert.equal(auctionElements.length, 2)
+    const [buyOrder, sellOrder] = auctionElements
+    // Check buy order prices
+    assert.isBelow(
+      Math.abs(
+        buyOrder.priceDenominator
+          .mul(multiplicator)
+          .div(buyOrder.priceNumerator)
+          .toNumber() -
+          (minimalPrice + stepSize * index) * multiplicator.toNumber()
+      ),
+      2
+    )
+    // Check sell order prices
+    assert.isBelow(
+      Math.abs(
+        sellOrder.priceNumerator
+          .mul(multiplicator)
+          .div(sellOrder.priceDenominator)
+          .toNumber() -
+          multiplicator.toNumber() * (minimalPrice + stepSize * (index + 1))
+      ),
+      2
+    )
+  }
+}
 contract("GnosisSafe", function(accounts) {
   let lw
   let gnosisSafeMasterCopy
@@ -143,15 +179,12 @@ contract("GnosisSafe", function(accounts) {
     }
   })
 
-  it("Places bracket orders on behalf of a fleet of safes", async () => {
+  it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
     const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    // Number of brackets is determined by fleet size
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 20, artifacts)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
     const targetToken = 0 // ETH
     const stableToken = 1 // DAI
-    // const targetPrice = 270.6 // Price of ETH in USD  at 8:37 AM February 13, Berlin Germany
     const targetPrice = 100
-    // add "stableToken" to exchange
     await prepareTokenRegistration(accounts[0])
     await exchange.addToken(testToken.address, { from: accounts[0] })
 
@@ -171,17 +204,74 @@ contract("GnosisSafe", function(accounts) {
       const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
       assert.equal(auctionElements.length, 2)
       const [buyOrder, sellOrder] = auctionElements
-      assert(buyOrder.priceDenominator.eq(max128))
-      assert(sellOrder.priceNumerator.eq(max128))
+
       // Checks that bracket orders are profitable for liquidity provider
       const initialAmount = new BN(10).pow(new BN(18))
       const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
       const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
       assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
-      // ToDo: Checks order prices
 
       assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
       assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
+    }
+  })
+  it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+    const targetToken = 0 // ETH
+    const stableToken = 1 // DAI
+    const targetPrice = 1 / 100
+    await prepareTokenRegistration(accounts[0])
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+
+    const transaction = await buildOrders(
+      masterSafe.address,
+      slaveSafes,
+      targetToken,
+      stableToken,
+      targetPrice,
+      web3,
+      artifacts
+    )
+    await execTransaction(masterSafe, lw, transaction)
+
+    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
+    // Check that unlimited orders are being used
+    for (const slaveAddress of slaveSafes) {
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      const [buyOrder, sellOrder] = auctionElements
+      assert(buyOrder.priceNumerator.eq(max128))
+      assert(sellOrder.priceDenominator.eq(max128))
+    }
+  })
+  it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
+    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+    const targetToken = 0 // ETH
+    const stableToken = 1 // DAI
+    const targetPrice = 100
+    await prepareTokenRegistration(accounts[0])
+    await exchange.addToken(testToken.address, { from: accounts[0] })
+
+    const transaction = await buildOrders(
+      masterSafe.address,
+      slaveSafes,
+      targetToken,
+      stableToken,
+      targetPrice,
+      web3,
+      artifacts
+    )
+    await execTransaction(masterSafe, lw, transaction)
+
+    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
+    // Check that unlimited orders are being used
+    for (const slaveAddress of slaveSafes) {
+      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+      assert.equal(auctionElements.length, 2)
+      const [buyOrder, sellOrder] = auctionElements
+      assert(buyOrder.priceDenominator.eq(max128))
+      assert(sellOrder.priceNumerator.eq(max128))
     }
   })
 
@@ -220,12 +310,7 @@ contract("GnosisSafe", function(accounts) {
       }
 
       const requestWithdrawalTransaction = await buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
-      await execTransaction(
-        masterSafe,
-        lw,
-        requestWithdrawalTransaction,
-        "request withdrawal for all brackets"
-      )
+      await execTransaction(masterSafe, lw, requestWithdrawalTransaction, "request withdrawal for all brackets")
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
@@ -290,12 +375,7 @@ contract("GnosisSafe", function(accounts) {
       })
       const withdrawalTransaction = await buildWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
 
-      await execTransaction(
-        masterSafe,
-        lw,
-        withdrawalTransaction,
-        "withdraw for all brackets"
-      )
+      await execTransaction(masterSafe, lw, withdrawalTransaction, "withdraw for all brackets")
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
@@ -323,12 +403,8 @@ contract("GnosisSafe", function(accounts) {
         artifacts
       )
 
-      await execTransaction(
-        masterSafe,
-        lw,
-        transferFundsToMasterTransaction,
-        "transfer funds to master for all brackets"
-      )
+
+      await execTransaction(masterSafe, lw, transferFundsToMasterTransaction, "transfer funds to master for all brackets")
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
