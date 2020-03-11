@@ -5,7 +5,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
 const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")
-const { shortenedAddress, toErc20Units } = require("./printing_tools")
+const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -331,7 +331,8 @@ const buildTransferApproveDepositFromList = async function(masterAddress, deposi
     )
     const depositToken = await ERC20.at(deposit.tokenAddress)
     const tokenSymbol = await depositToken.symbol.call()
-    const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
+    const tokenDecimals = await depositToken.decimals.call()
+    const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
     log(
       `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
         masterAddress
