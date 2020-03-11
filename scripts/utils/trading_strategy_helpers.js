@@ -81,7 +81,7 @@ const formatAmount = function(amount, token) {
  * @param {Address} ownedAddress address that is owned
  * @return {bool} whether ownedAddress is indeed owned only by masterAddress
  */
-const isOnlyOwner = async function (masterAddress, ownedAddress, artifacts) {
+const isOnlySafeOwner = async function (masterAddress, ownedAddress, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const owned = await GnosisSafe.at(ownedAddress)
   const ownerAddresses = await owned.getOwners()
@@ -195,7 +195,7 @@ const buildOrders = async function(
   )
   for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
     const bracketAddress = bracketAddresses[bracketIndex]
-    assert(await isOnlyOwner(masterAddress, bracketAddress, artifacts), "each bracket should be owned only by the master Safe")
+    assert(await isOnlySafeOwner(masterAddress, bracketAddress, artifacts), "each bracket should be owned only by the master Safe")
 
     const lowerLimit = lowestLimit + bracketIndex * stepSize
     const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
@@ -340,7 +340,7 @@ const buildTransferApproveDeposit = async function(masterAddress, depositList, w
   // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
   // TODO - make deposit list easier so that we dont' have to query the token every time.
   for (const deposit of depositList) {
-    assert(await isOnlyOwner(masterAddress, deposit.bracketAddress, artifacts), "All depositors must be owned only by the master Safe")
+    assert(await isOnlySafeOwner(masterAddress, deposit.bracketAddress, artifacts), "All depositors must be owned only by the master Safe")
     const depositToken = await ERC20.at(deposit.tokenAddress)
     const tokenSymbol = await depositToken.symbol.call()
     const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
@@ -605,7 +605,7 @@ module.exports = {
   buildRequestWithdraw,
   buildWithdraw,
   fetchTokenInfo,
-  isOnlyOwner,
+  isOnlySafeOwner,
   max128,
   maxU32,
   maxUINT,

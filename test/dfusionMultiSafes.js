@@ -18,7 +18,7 @@ const {
   buildWithdraw,
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
-  isOnlyOwner,
+  isOnlySafeOwner,
   max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")
@@ -63,7 +63,7 @@ contract("GnosisSafe", function(accounts) {
     const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
     assert.equal(fleet.length, 10)
     for (const bracketAddress of fleet)
-      assert(await isOnlyOwner(masterSafe.address, bracketAddress, artifacts))
+      assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
   })
 
   it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
