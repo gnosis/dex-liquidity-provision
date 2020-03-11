@@ -74,7 +74,7 @@ contract("GnosisSafe", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    testToken = await TestToken.new(18)
+    testToken = await TestToken.new("TEST", 18)
 
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
@@ -132,11 +132,11 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 2
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
       const depositAmountStableToken = new BN(1000)
-      const stableToken = await TestToken.new(18)
+      const stableToken = await TestToken.new("TEST", 18)
       await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       const depositAmountTargetToken = new BN(2000)
-      const targetToken = await TestToken.new(18)
+      const targetToken = await TestToken.new("TEST", 18)
       await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
       await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
