@@ -76,11 +76,11 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * @param {Address} ownedAddress address that is owned
  * @return {bool} whether ownedAddress is indeed owned only by masterAddress
  */
-const isOnlySafeOwner = async function (masterAddress, ownedAddress, artifacts) {
+const isOnlySafeOwner = async function(masterAddress, ownedAddress, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const owned = await GnosisSafe.at(ownedAddress)
   const ownerAddresses = await owned.getOwners()
-  return (ownerAddresses.length == 1) && (ownerAddresses[0] == masterAddress)
+  return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
 }
 
 /**
@@ -190,7 +190,10 @@ const buildOrders = async function(
   )
   for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
     const bracketAddress = bracketAddresses[bracketIndex]
-    assert(await isOnlySafeOwner(masterAddress, bracketAddress, artifacts), "each bracket should be owned only by the master Safe")
+    assert(
+      await isOnlySafeOwner(masterAddress, bracketAddress, artifacts),
+      "each bracket should be owned only by the master Safe"
+    )
 
     const lowerLimit = lowestLimit + bracketIndex * stepSize
     const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
@@ -219,7 +222,7 @@ const buildOrders = async function(
       data: orderData,
     }
 
-    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, web3, artifacts))
+    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts))
   }
   log("Transaction bundle size", transactions.length)
   return await buildBundledTransaction(transactions, web3, artifacts)
@@ -265,13 +268,7 @@ const checkSufficiencyOfBalance = async function(token, owner, amount) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const buildGenericFundMovement = async function(
-  masterAddress,
-  withdrawals,
-  functionName,
-  web3 = web3,
-  artifacts = artifacts
-) {
+const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) {
   BatchExchange.setProvider(web3.currentProvider)
   BatchExchange.setNetwork(web3.network_id)
   const exchange = await BatchExchange.deployed()
@@ -306,13 +303,7 @@ const buildGenericFundMovement = async function(
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(
-      masterAddress,
-      withdrawal.bracketAddress,
-      transactionToExecute,
-      web3,
-      artifacts
-    )
+    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
     masterTransactions.push(execTransaction)
   }
   return buildBundledTransaction(masterTransactions, web3, artifacts)
@@ -334,12 +325,17 @@ const buildTransferApproveDepositFromList = async function(masterAddress, deposi
   // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
   // TODO - make deposit list easier so that we dont' have to query the token every time.
   for (const deposit of depositList) {
-    assert(await isOnlySafeOwner(masterAddress, deposit.bracketAddress, artifacts), "All depositors must be owned only by the master Safe")
+    assert(
+      await isOnlySafeOwner(masterAddress, deposit.bracketAddress, artifacts),
+      "All depositors must be owned only by the master Safe"
+    )
     const depositToken = await ERC20.at(deposit.tokenAddress)
     const tokenSymbol = await depositToken.symbol.call()
     const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
     log(
-      `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+      `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
+        masterAddress
+      )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
     )
 
     transactions = transactions.concat(
@@ -415,7 +411,7 @@ const buildTransferApproveDepositFromOrders = async function(
       )
     )
   }
-  for (const i of Array(fleetSizeDiv2).keys()) {  
+  for (const i of Array(fleetSizeDiv2).keys()) {
     const deposit = {
       amount: investmentTargetToken.div(new BN(fleetSizeDiv2)).toString(),
       tokenAddress: targetTokenAddress,
@@ -495,13 +491,7 @@ const buildBracketTransactionForTransferApproveDeposit = async (
     artifacts
   )
   // Get transaction executing approve/deposit multisend via bracket
-  const execTransaction = await buildExecTransaction(
-    masterAddress,
-    bracketAddress,
-    bracketBundledTransaction,
-    web3,
-    artifacts
-  )
+  const execTransaction = await buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction, artifacts)
   transactions.push(execTransaction)
   return transactions
 }
@@ -560,13 +550,7 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(
-      masterAddress,
-      withdrawal.bracketAddress,
-      transactionToExecute,
-      web3,
-      artifacts
-    )
+    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
     masterTransactions.push(execTransaction)
   }
   return await buildBundledTransaction(masterTransactions, web3, artifacts)

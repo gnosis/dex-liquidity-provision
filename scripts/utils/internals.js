@@ -212,7 +212,7 @@ const execTransactionData = async function(gnosisSafeMasterCopy, owner, transact
  * @param {Transaction} transaction The transaction to be executed by execTransaction
  * @return {Transaction} Transaction calling execTransaction; should be executed by master
  */
-const buildExecTransaction = async function(masterAddress, bracketAddress, transaction, web3, artifacts) {
+const buildExecTransaction = async function(masterAddress, bracketAddress, transaction, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const gnosisSafeMasterCopy = await GnosisSafe.deployed()
 

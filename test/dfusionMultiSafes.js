@@ -23,17 +23,17 @@ const {
 } = require("../scripts/utils/trading_strategy_helpers")
 const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("../scripts/utils/internals")
 
-const checkPricesOfBracketStrategy = async function(targetPrice, slaveSafes, exchange) {
+const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
   const rangePercentage = 0.2
-  const stepSize = (targetPrice * (2 * rangePercentage)) / slaveSafes.length
+  const stepSize = (targetPrice * (2 * rangePercentage)) / bracketSafes.length
   const minimalPrice = targetPrice * (1 - rangePercentage)
   let multiplicator = new BN("10")
   if (targetPrice < 10) {
     multiplicator = new BN("10000000")
   }
   // Correctness assertions
-  for (const [index, slaveAddress] of slaveSafes.entries()) {
-    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
+  for (const [index, bracketAddress] of bracketSafes.entries()) {
+    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements
     // Check buy order prices
@@ -87,175 +87,195 @@ contract("GnosisSafe", function(accounts) {
     await owlToken.mintOWL(account, toETH(10))
     await owlToken.approve(exchange.address, toETH(10))
   }
-
-  it("Adds tokens to the exchange", async () => {
-    await prepareTokenRegistration(accounts[0])
-    await exchange.addToken(testToken.address, { from: accounts[0] })
-    assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
+  describe("Exchange interaction test:", async function() {
+    it("Adds tokens to the exchange", async () => {
+      await prepareTokenRegistration(accounts[0])
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+      assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
+    })
   })
-
-  it("Deploys Fleet of Gnosis Safes", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
-    assert.equal(fleet.length, 10)
-    for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
+  describe("Gnosis Safe deployments:", async function() {
+    it("Deploys Fleet of Gnosis Safes", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const fleet = await deployFleetOfSafes(masterSafe.address, 10, artifacts)
+      assert.equal(fleet.length, 10)
+      for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
+    })
   })
+  describe("transfer tests:", async function() {
+    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
+      const depositAmount = 1000
+      await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
+      await testToken.transfer(masterSafe.address, depositAmount * bracketAddresses.length)
+      // Note that we are have NOT registered the tokens on the exchange but we can deposit them nevertheless.
 
-  it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
-    const depositAmount = 1000
-    await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
-    await testToken.transfer(masterSafe.address, depositAmount * bracketAddresses.length)
-    // Note that we are have NOT registered the tokens on the exchange but can deposit them nontheless.
+      const deposits = bracketAddresses.map(bracketAddress => ({
+        amount: depositAmount.toString(),
+        tokenAddress: testToken.address,
+        bracketAddress: bracketAddress,
+      }))
 
-    const deposits = bracketAddresses.map(bracketAddress => ({
-      amount: depositAmount.toString(),
-      tokenAddress: testToken.address,
-      bracketAddress: bracketAddress,
-    }))
+      const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, web3, artifacts)
 
-    const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, web3, artifacts)
+      await execTransaction(masterSafe, lw, batchTransaction)
+      // Close auction for deposits to be refelcted in exchange balance
+      await waitForNSeconds(301)
 
-    await execTransaction(masterSafe, lw, batchTransaction)
-    // Close auction for deposits to be refelcted in exchange balance
-    await waitForNSeconds(301)
+      for (const bracketAddress of bracketAddresses) {
+        const bracketExchangeBalance = (await exchange.getBalance(bracketAddress, testToken.address)).toNumber()
+        assert.equal(bracketExchangeBalance, depositAmount)
+        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+        // This should always output 0 as the brackets should never directly hold funds
+        assert.equal(bracketPersonalTokenBalance, 0)
+      }
+    })
 
-    for (const bracketAddress of bracketAddresses) {
-      const bracketExchangeBalance = (await exchange.getBalance(bracketAddress, testToken.address)).toNumber()
-      assert.equal(bracketExchangeBalance, depositAmount)
-      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
-      // This should always output 0 as the brackets should never directly hold funds
-      assert.equal(bracketPersonalTokenBalance, 0)
-    }
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const fleetSize = 2
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
+      const depositAmountStableToken = new BN(1000)
+      const stableToken = await TestToken.new(18)
+      await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
+      await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
+      const depositAmountTargetToken = new BN(2000)
+      const targetToken = await TestToken.new(18)
+      await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
+      await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
+
+      const batchTransaction = await buildTransferApproveDepositFromOrders(
+        masterSafe.address,
+        bracketAddresses,
+        stableToken.address,
+        depositAmountStableToken,
+        targetToken.address,
+        depositAmountTargetToken,
+        artifacts,
+        web3
+      )
+
+      await execTransaction(masterSafe, lw, batchTransaction)
+      // Close auction for deposits to be refelcted in exchange balance
+      await waitForNSeconds(301)
+
+      for (const bracketAddress of bracketAddresses.slice(0, fleetSize / 2)) {
+        let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
+        assert.equal(bracketExchangeBalance, depositAmountStableToken)
+        bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
+        assert.equal(bracketExchangeBalance, 0)
+        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+        // This should always output 0 as the brackets should never directly hold funds
+        assert.equal(bracketPersonalTokenBalance, 0)
+      }
+      for (const bracketAddress of bracketAddresses.slice(fleetSize / 2 + 1, fleetSize / 2)) {
+        let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
+        assert.equal(bracketExchangeBalance, depositAmountTargetToken)
+        bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
+        assert.equal(bracketExchangeBalance, 0)
+        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+        // This should always output 0 as the brackets should never directly hold funds
+        assert.equal(bracketPersonalTokenBalance, 0)
+      }
+    })
   })
+  describe("bracket order placement test:", async function() {
+    it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // DAI
+      const targetPrice = 100
+      await prepareTokenRegistration(accounts[0])
+      await exchange.addToken(testToken.address, { from: accounts[0] })
 
-  it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const fleetSize = 2
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
-    const depositAmountStableToken = new BN(1000)
-    const stableToken = await TestToken.new(18)
-    await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-    await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-    const depositAmountTargetToken = new BN(2000)
-    const targetToken = await TestToken.new(18)
-    await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
-    await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken,
+        stableToken,
+        targetPrice,
+        web3,
+        artifacts
+      )
+      await execTransaction(masterSafe, lw, transaction)
 
-    const batchTransaction = await buildTransferApproveDepositFromOrders(
-      masterSafe.address,
-      bracketAddresses,
-      stableToken.address,
-      depositAmountStableToken,
-      targetToken.address,
-      depositAmountTargetToken,
-      artifacts,
-      web3
-    )
+      // Correctness assertions
+      for (const bracketAddress of bracketAddresses) {
+        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        assert.equal(auctionElements.length, 2)
+        const [buyOrder, sellOrder] = auctionElements
 
-    await execTransaction(masterSafe, lw, batchTransaction)
-    // Close auction for deposits to be refelcted in exchange balance
-    await waitForNSeconds(301)
+        // Checks that bracket orders are profitable for liquidity provider
+        const initialAmount = new BN(10).pow(new BN(18))
+        const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
+        const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
+        assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-    for (const bracketAddress of bracketAddresses.slice(0, fleetSize / 2)) {
-      let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
-      assert.equal(bracketExchangeBalance, depositAmountStableToken)
-      bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
-      assert.equal(bracketExchangeBalance, 0)
-      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
-      // This should always output 0 as the brackets should never directly hold funds
-      assert.equal(bracketPersonalTokenBalance, 0)
-    }
-    for (const bracketAddress of bracketAddresses.slice(fleetSize / 2 + 1, fleetSize / 2)) {
-      let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
-      assert.equal(bracketExchangeBalance, depositAmountTargetToken)
-      bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
-      assert.equal(bracketExchangeBalance, 0)
-      const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
-      // This should always output 0 as the brackets should never directly hold funds
-      assert.equal(bracketPersonalTokenBalance, 0)
-    }
-  })
+        assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
+        assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
+      }
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // DAI
+      const targetPrice = 1 / 100
+      await prepareTokenRegistration(accounts[0])
+      await exchange.addToken(testToken.address, { from: accounts[0] })
 
-  it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
-    const targetToken = 0 // ETH
-    const stableToken = 1 // DAI
-    const targetPrice = 100
-    await prepareTokenRegistration(accounts[0])
-    await exchange.addToken(testToken.address, { from: accounts[0] })
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        targetPrice,
+        web3,
+        artifacts
+      )
+      await execTransaction(masterSafe, lw, transaction)
 
-    const transaction = await buildOrders(
-      masterSafe.address,
-      bracketAddresses,
-      targetToken,
-      stableToken,
-      targetPrice,
-      web3,
-      artifacts
-    )
-    await execTransaction(masterSafe, lw, transaction)
+      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      // Check that unlimited orders are being used
+      for (const bracketAddress of bracketSafes) {
+        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const [buyOrder, sellOrder] = auctionElements
+        assert(buyOrder.priceNumerator.eq(max128))
+        assert(sellOrder.priceDenominator.eq(max128))
+      }
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
+      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // DAI
+      const targetPrice = 100
+      await prepareTokenRegistration(accounts[0])
+      await exchange.addToken(testToken.address, { from: accounts[0] })
 
-    // Correctness assertions
-    for (const bracketAddress of bracketAddresses) {
-      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
-      assert.equal(auctionElements.length, 2)
-      const [buyOrder, sellOrder] = auctionElements
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        targetPrice,
+        web3,
+        artifacts
+      )
+      await execTransaction(masterSafe, lw, transaction)
 
-      // Checks that bracket orders are profitable for liquidity provider
-      const initialAmount = new BN(10).pow(new BN(18))
-      const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
-      const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
-      assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
-
-      assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
-      assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
-    }
-  })
-  it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
-    const targetToken = 0 // ETH
-    const stableToken = 1 // DAI
-    const targetPrice = 1 / 100
-    await prepareTokenRegistration(accounts[0])
-    await exchange.addToken(testToken.address, { from: accounts[0] })
-
-    const transaction = await buildOrders(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice, web3, artifacts)
-    await execTransaction(masterSafe, lw, transaction)
-
-    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
-    // Check that unlimited orders are being used
-    for (const slaveAddress of slaveSafes) {
-      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
-      const [buyOrder, sellOrder] = auctionElements
-      assert(buyOrder.priceNumerator.eq(max128))
-      assert(sellOrder.priceDenominator.eq(max128))
-    }
-  })
-  it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
-    const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
-    const slaveSafes = await deployFleetOfSafes(masterSafe.address, 6, artifacts)
-    const targetToken = 0 // ETH
-    const stableToken = 1 // DAI
-    const targetPrice = 100
-    await prepareTokenRegistration(accounts[0])
-    await exchange.addToken(testToken.address, { from: accounts[0] })
-
-    const transaction = await buildOrders(masterSafe.address, slaveSafes, targetToken, stableToken, targetPrice, web3, artifacts)
-    await execTransaction(masterSafe, lw, transaction)
-
-    await checkPricesOfBracketStrategy(targetPrice, slaveSafes, exchange)
-    // Check that unlimited orders are being used
-    for (const slaveAddress of slaveSafes) {
-      const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(slaveAddress))
-      assert.equal(auctionElements.length, 2)
-      const [buyOrder, sellOrder] = auctionElements
-      assert(buyOrder.priceDenominator.eq(max128))
-      assert(sellOrder.priceNumerator.eq(max128))
-    }
+      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      // Check that unlimited orders are being used
+      for (const bracketAddress of bracketSafes) {
+        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        assert.equal(auctionElements.length, 2)
+        const [buyOrder, sellOrder] = auctionElements
+        assert(buyOrder.priceDenominator.eq(max128))
+        assert(sellOrder.priceNumerator.eq(max128))
+      }
+    })
   })
 
   describe("Test withdrawals", async function() {
