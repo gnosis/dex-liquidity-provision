@@ -7,7 +7,7 @@ const {
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
-const { toETH } = require("./utils/internals")
+const { toErc20Units } = require("./utils/printing_tools")
 const assert = require("assert")
 
 const argv = require("yargs")
@@ -53,8 +53,8 @@ module.exports = async callback => {
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
-    const investmentTargetToken = toETH(argv.investmentTargetToken)
-    const investmentStableToken = toETH(argv.investmentStableToken)
+    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, 18)
+    const investmentStableToken = toErc20Units(argv.investmentStableToken, 18)
     const ERC20Detailed = artifacts.require("ERC20Detailed")
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)

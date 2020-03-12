@@ -1,6 +1,5 @@
 const util = require("util")
 const lightwallet = require("eth-lightwallet")
-const BN = require("bn.js")
 const assert = require("assert")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const CALL = 0
@@ -44,11 +43,6 @@ const send = function(method, params, web3Provider) {
 const waitForNSeconds = async function(seconds, web3Provider = web3) {
   await send("evm_increaseTime", [seconds], web3Provider)
   await send("evm_mine", [], web3Provider)
-}
-
-function toETH(value) {
-  const GWEI = 1000000000
-  return new BN(value * GWEI).mul(new BN(GWEI))
 }
 
 const execTransaction = async function(safe, lightWallet, transaction) {
@@ -233,7 +227,6 @@ function logGasUsage(subject, transactionOrReceipt) {
 
 module.exports = {
   waitForNSeconds,
-  toETH,
   execTransaction,
   deploySafe,
   encodeMultiSend,
