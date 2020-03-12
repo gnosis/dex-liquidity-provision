@@ -4,6 +4,7 @@ const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const {
   getExchange,
   getSafe,
+  fetchTokenInfoAtAddresses,
   buildRequestWithdraw,
   buildWithdraw,
   buildTransferFundsToMaster,
@@ -109,6 +110,7 @@ module.exports = async callback => {
     }
 
     const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
+    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts, true)
     for (const withdrawal of withdrawals) {
       const ERC20 = artifacts.require("ERC20Detailed")
       const token = await ERC20.at(withdrawal.tokenAddress)

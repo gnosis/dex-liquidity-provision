@@ -1,7 +1,7 @@
 const axios = require("axios")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrders, fetchTokenInfo } = require("./utils/trading_strategy_helpers")
+const { buildOrders, fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
@@ -68,9 +68,9 @@ const getDexagPrice = async function(tokenBought, tokenSold) {
 
 const acceptedPriceDeviationInPercentage = 2
 const isPriceReasonable = async function(exchange, targetTokenId, stableTokenId, price) {
-  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
-  const targetToken = tokenInfo[targetTokenId]
-  const stableToken = tokenInfo[stableTokenId]
+  const tokenInfoPromises = await fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+  const targetToken = await tokenInfoPromises[targetTokenId]
+  const stableToken = await tokenInfoPromises[stableTokenId]
   const dexagPrice = await getDexagPrice(targetToken.symbol, stableToken.symbol)
   // TODO add unit test checking whether getDexagPrice works as expected
   if (dexagPrice === undefined) {

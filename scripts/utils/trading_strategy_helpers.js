@@ -71,6 +71,21 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  */
 
 /**
+ * @typedef TokenObject
+ *  * Example:
+ * {
+ *   symbol: "WETH",
+ *   decimals: 18,
+ *   tokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+ * }
+ * @type {object}
+ * @property {string} symbol symbol representing the token
+ * @property {(number|BN)} decimals number of decimals of the token
+ * @property {address} [tokenAddress] address of the token contract on the EVM
+
+ */
+
+/**
  * Returns an instance of the exchange contract
  */
 const getExchange = async function(web3) {
@@ -101,37 +116,60 @@ const isOnlySafeOwner = async function(masterAddress, ownedAddress, artifacts) {
 
 /**
  * Queries EVM for ERC20 token details by address
- * and returns a list of detailed token information.
- * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
- * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
- * @return {TokenObject[]} list of detailed/relevant token information
+ * and returns a list of promises of detailed token information.
+ * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
+ * @return {Promise<TokenObject>[]} list of detailed/relevant token information
  */
-const globalTokenObjects = {}
-const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = false) {
+const globalTokenPromisesFromAddress = {}
+const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
   log("Fetching token data from EVM")
-  const tokenObjects = {}
-  await Promise.all(
-    tokenIds.map(async id => {
-      if (!(id in globalTokenObjects)) {
-        const tokenAddress = await exchange.tokenIdToAddressMap(id)
+  const tokenPromises = {}
+  for (const tokenAddress of tokenAddresses) {
+    if (!(tokenAddress in globalTokenPromisesFromAddress)) {
+      globalTokenPromisesFromAddress[tokenAddress] = (async () => {
         const tokenInstance = await ERC20.at(tokenAddress)
         const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
         const tokenInfo = {
-          id: id,
           address: tokenAddress,
           symbol: tokenSymbol,
           decimals: tokenDecimals.toNumber(),
         }
-        log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
-        globalTokenObjects[id] = tokenInfo
-      }
-      tokenObjects[id] = globalTokenObjects[id]
-    })
-  )
-  return tokenObjects
+        log(`Found token ${tokenInfo.symbol} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`)
+        return tokenInfo
+      }).call()
+      tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
+    }
+  }
+  return tokenPromises
+}
+
+/**
+ * Queries EVM for ERC20 token details by token id
+ * and returns a list of detailed token information.
+ * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
+ * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
+ * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+ */
+const globalTokenPromisesFromId = {}
+const fetchTokenInfoFromExchange = async function(exchange, tokenIds, artifacts, debug = false) {
+  const log = debug ? () => console.log.apply(arguments) : () => {}
+
+  log("Fetching token data from EVM")
+  const tokenPromises = {}
+  for (const id of tokenIds) {
+    if (!(id in globalTokenPromisesFromId)) {
+      globalTokenPromisesFromId[id] = (async () => {
+        const tokenAddress = await exchange.tokenIdToAddressMap(id)
+        log(`Token id ${id} corresponds to token at address ${tokenAddress}`)
+        return fetchTokenInfoAtAddresses([tokenAddress], artifacts, debug)[tokenAddress]
+      }).call()
+    }
+    tokenPromises[id] = globalTokenPromisesFromId[id]
+  }
+  return tokenPromises
 }
 
 /**
@@ -192,10 +230,10 @@ const buildOrders = async function(
   log("Batch Exchange", exchange.address)
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
+  const tokenInfoPromises = await fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
 
-  const targetToken = tokenInfo[targetTokenId]
-  const stableToken = tokenInfo[stableTokenId]
+  const targetToken = await tokenInfoPromises[targetTokenId]
+  const stableToken = await tokenInfoPromises[stableTokenId]
   // TODO - handle other cases later.
   assert(stableToken.decimals === 18, "Target token must have 18 decimals")
   assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
@@ -585,7 +623,8 @@ module.exports = {
   checkSufficiencyOfBalance,
   buildRequestWithdraw,
   buildWithdraw,
-  fetchTokenInfo,
+  fetchTokenInfoAtAddresses,
+  fetchTokenInfoFromExchange,
   isOnlySafeOwner,
   max128,
   maxU32,
