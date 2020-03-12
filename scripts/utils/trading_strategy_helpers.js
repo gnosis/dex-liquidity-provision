@@ -329,14 +329,11 @@ const checkSufficiencyOfBalance = async function(token, owner, amount) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) {
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
-  const exchange = await BatchExchange.deployed()
-  const masterTransactions = []
-
-  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
-  for (const withdrawal of withdrawals) {
+const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) { // TODO: do we need artifacts here?
+  const exchange = await getExchange(web3)
+  
+  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry TODO: is this still true?
+  const masterTransactionsPromises = withdrawals.map((withdrawal) => (async () => {
     // create transaction for the token
     let transactionData
     switch (functionName) {
@@ -364,9 +361,12 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-    masterTransactions.push(execTransaction)
-  }
+    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+  }).call())
+
+  // safe pushing to array
+  const masterTransactions = []
+  for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
   return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
@@ -545,7 +545,7 @@ const buildBracketTransactionForTransferApproveDeposit = async (
 withdrawal of the desired funds
 */
 const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
+  return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
 /**
@@ -559,7 +559,7 @@ const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, ar
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
 const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
+  return buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
 /**
