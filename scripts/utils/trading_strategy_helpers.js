@@ -90,24 +90,31 @@ const isOnlySafeOwner = async function(masterAddress, ownedAddress, artifacts) {
  * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
  * @return {TokenObject[]} list of detailed/relevant token information
  */
+const globalTokenObjects = {}
 const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
   log("Fetching token data from EVM")
   const tokenObjects = {}
-  for (const id of tokenIds) {
-    const tokenAddress = await exchange.tokenIdToAddressMap(id)
-    const tokenInstance = await ERC20.at(tokenAddress)
-    const tokenInfo = {
-      id: id,
-      address: tokenAddress,
-      symbol: await tokenInstance.symbol.call(),
-      decimals: (await tokenInstance.decimals.call()).toNumber(),
-    }
-    tokenObjects[id] = tokenInfo
-    log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
-  }
+  await Promise.all(
+    tokenIds.map(async id => {
+      if (!(id in globalTokenObjects)) {
+        const tokenAddress = await exchange.tokenIdToAddressMap(id)
+        const tokenInstance = await ERC20.at(tokenAddress)
+        const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
+        const tokenInfo = {
+          id: id,
+          address: tokenAddress,
+          symbol: tokenSymbol,
+          decimals: tokenDecimals.toNumber(),
+        }
+        log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
+        globalTokenObjects[id] = tokenInfo
+      }
+      tokenObjects[id] = globalTokenObjects[id]
+    })
+  )
   return tokenObjects
 }
 
