@@ -96,6 +96,7 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
   const ERC20 = artifacts.require("ERC20Detailed")
 
   log("Fetching token data from EVM")
+  const tokenObjects = {}
   await Promise.all(
     tokenIds.map(async id => {
       if (!(id in globalTokenObjects)) {
@@ -111,9 +112,10 @@ const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = fal
         log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
         globalTokenObjects[id] = tokenInfo
       }
+      tokenObjects[id] = globalTokenObjects[id]
     })
   )
-  return globalTokenObjects
+  return tokenObjects
 }
 
 /**
