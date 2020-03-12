@@ -569,10 +569,10 @@ const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
 const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount, web3, artifacts) {
-  const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
+
   // TODO: enforce that there are no overlapping withdrawals
-  for (const withdrawal of withdrawals) {
+  const masterTransactionsPromises = withdrawals.map((withdrawal) => (async () => {
     const token = await ERC20.at(withdrawal.tokenAddress)
     let amount
     if (limitToMaxWithdrawableAmount) {
@@ -591,10 +591,13 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-    masterTransactions.push(execTransaction)
-  }
-  return await buildBundledTransaction(masterTransactions, web3, artifacts)
+    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+  }).call())
+
+  const masterTransactions = []
+  for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
+
+  return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -604,8 +607,10 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back the funds stored in the exchange
  */
 const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
-  const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals, web3, artifacts)
-  const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
+  const [withdrawalTransaction, transferFundsToMasterTransaction] = await Promise.all([
+    buildWithdraw(masterAddress, withdrawals, web3, artifacts),
+    buildTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
+  ])
   return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
 }
 
