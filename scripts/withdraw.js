@@ -80,7 +80,8 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
 
 module.exports = async callback => {
   try {
-    const [ exchange, masterSafe ] = await Promise.all([ getExchange(web3), getSafe(argv.masterSafe, artifacts) ])
+    const masterSafePromise = getSafe(argv.masterSafe, artifacts)
+    const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
 
@@ -98,13 +99,13 @@ module.exports = async callback => {
 
     console.log("Started building withdraw transaction.")
     let transactionPromise
-    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals, web3, artifacts)
     else if (argv.withdraw && !argv.transferBackToMaster)
-      transactionPromise = buildWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdraw(argv.masterSafe, withdrawals, web3, artifacts)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transactionPromise = buildTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
+      transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true, web3, artifacts)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transactionPromise = buildWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals, web3, artifacts)
     else {
       throw new Error("No operation specified")
     }
@@ -125,7 +126,7 @@ module.exports = async callback => {
       else if (!argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
-            masterSafe.address
+            argv.masterSafe
           )}`
         )
       else if (argv.withdraw && argv.transferBackToMaster)
@@ -133,7 +134,7 @@ module.exports = async callback => {
           `Safe ${
             withdrawal.bracketAddress
           } withdrawing ${userAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
-            masterSafe.address
+            argv.masterSafe
           )})`
         )
       else {
@@ -143,7 +144,7 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, await transactionPromise, web3, argv.network)
+      await signAndSend(await masterSafePromise, await transactionPromise, web3, argv.network)
     }
 
     callback()
