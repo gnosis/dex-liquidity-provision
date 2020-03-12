@@ -1,5 +1,6 @@
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
+const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const {
   getExchange,
   getSafe,
@@ -107,6 +108,7 @@ module.exports = async callback => {
       throw new Error("No operation specified")
     }
 
+    const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
     for (const withdrawal of withdrawals) {
       const ERC20 = artifacts.require("ERC20Detailed")
       const token = await ERC20.at(withdrawal.tokenAddress)
