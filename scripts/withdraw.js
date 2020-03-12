@@ -95,14 +95,14 @@ module.exports = async callback => {
     }
 
     console.log("Started building withdraw transaction.")
-    let transaction
-    if (argv.requestWithdraw) transaction = await buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+    let transactionPromise
+    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (argv.withdraw && !argv.transferBackToMaster)
-      transaction = await buildWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdraw(masterSafe.address, withdrawals, web3, artifacts)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transaction = await buildTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
+      transactionPromise = buildTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transaction = await buildWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
     else {
       throw new Error("No operation specified")
     }
@@ -110,8 +110,7 @@ module.exports = async callback => {
     for (const withdrawal of withdrawals) {
       const ERC20 = artifacts.require("ERC20Detailed")
       const token = await ERC20.at(withdrawal.tokenAddress)
-      const tokenDecimals = (await token.decimals.call()).toNumber()
-      const tokenSymbol = await token.symbol.call()
+      const [tokenSymbol, tokenDecimals] = await Promise.all([token.symbol.call(), token.decimals.call()])
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 
@@ -142,7 +141,7 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, transaction, web3, argv.network)
+      await signAndSend(masterSafe, await transactionPromise, web3, argv.network)
     }
 
     callback()
