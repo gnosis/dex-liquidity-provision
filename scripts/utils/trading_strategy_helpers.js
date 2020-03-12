@@ -4,8 +4,8 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
-const { deploySafe, buildBundledTransaction, buildExecTransaction, toETH, CALL } = require("./internals")
-const { shortenedAddress, toErc20Units } = require("./printing_tools")
+const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")
+const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
 const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -244,16 +244,16 @@ const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
   const priceFormatted = toErc20Units(price, targetToken.decimals)
   let sellAmount
   let buyAmount
-  if (priceFormatted.gt(toETH(1))) {
+  if (priceFormatted.gt(toErc20Units(1, 18))) {
     sellAmount = max128
-      .mul(toETH(1))
+      .mul(toErc20Units(1, 18))
       .div(priceFormatted)
       .toString()
     buyAmount = max128.toString()
   } else {
     buyAmount = max128
       .mul(priceFormatted)
-      .div(toETH(1))
+      .div(toErc20Units(1, 18))
       .toString()
     sellAmount = max128.toString()
   }
@@ -336,7 +336,8 @@ const buildTransferApproveDepositFromList = async function(masterAddress, deposi
     )
     const depositToken = await ERC20.at(deposit.tokenAddress)
     const tokenSymbol = await depositToken.symbol.call()
-    const unitAmount = web3.utils.fromWei(deposit.amount, "ether")
+    const tokenDecimals = await depositToken.decimals.call()
+    const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
     log(
       `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
         masterAddress

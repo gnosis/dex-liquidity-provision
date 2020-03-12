@@ -21,7 +21,8 @@ const {
   max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")
-const { waitForNSeconds, toETH, execTransaction, deploySafe } = require("../scripts/utils/internals")
+const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")
+const { toErc20Units } = require("../scripts/utils/printing_tools")
 
 const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
   const rangePercentage = 0.2
@@ -84,8 +85,8 @@ contract("GnosisSafe", function(accounts) {
   async function prepareTokenRegistration(account) {
     const owlToken = await TokenOWL.at(await exchange.feeToken())
     await owlToken.setMinter(account)
-    await owlToken.mintOWL(account, toETH(10))
-    await owlToken.approve(exchange.address, toETH(10))
+    await owlToken.mintOWL(account, toErc20Units(10, 18))
+    await owlToken.approve(exchange.address, toErc20Units(10, 18))
   }
   describe("Exchange interaction test:", async function() {
     it("Adds tokens to the exchange", async () => {
@@ -208,7 +209,7 @@ contract("GnosisSafe", function(accounts) {
         const [buyOrder, sellOrder] = auctionElements
 
         // Checks that bracket orders are profitable for liquidity provider
-        const initialAmount = new BN(10).pow(new BN(18))
+        const initialAmount = toErc20Units(1, 18)
         const amountAfterSelling = initialAmount.mul(sellOrder.priceNumerator).div(sellOrder.priceDenominator)
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
@@ -349,7 +350,7 @@ contract("GnosisSafe", function(accounts) {
     it("Withdraw full amount, three steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
-      const depositAmount = toETH(200)
+      const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
 
       await testToken.mint(accounts[0], fullTokenAmount.toString())
@@ -373,7 +374,7 @@ contract("GnosisSafe", function(accounts) {
       // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
       const withdrawalsModified = withdrawals
       withdrawalsModified.map(withdraw => {
-        withdraw.amount = withdraw.amount.add(toETH(1))
+        withdraw.amount = withdraw.amount.add(toErc20Units(1, 18))
         withdraw
       })
       const withdrawalTransaction = await buildWithdraw(masterSafe.address, withdrawalsModified, web3, artifacts)
@@ -429,7 +430,7 @@ contract("GnosisSafe", function(accounts) {
     it("Withdraw full amount, two steps", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2, artifacts)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2, artifacts)
-      const depositAmount = toETH(200)
+      const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
 
       await testToken.mint(accounts[0], fullTokenAmount.toString())
