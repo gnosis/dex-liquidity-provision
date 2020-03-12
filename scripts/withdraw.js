@@ -112,9 +112,7 @@ module.exports = async callback => {
     const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
     const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts, true)
     for (const withdrawal of withdrawals) {
-      const ERC20 = artifacts.require("ERC20Detailed")
-      const token = await ERC20.at(withdrawal.tokenAddress)
-      const [tokenSymbol, tokenDecimals] = await Promise.all([token.symbol.call(), token.decimals.call()])
+      const {symbol: tokenSymbol, decimals: tokenDecimals} = await tokenInfoPromises[withdrawal.tokenAddress]
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 
