@@ -2,6 +2,7 @@ const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const { buildOrders } = require("./utils/trading_strategy_helpers")
 const { isPriceReasonable } = require("./utils/price-utils.js")
+const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
@@ -60,15 +61,9 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
-    let proceedAnyways = false
-    if (!priceCheck) {
-      const answer = await promptUser("Continue anyway? [yN] ")
-      if (answer != "y" && answer.toLowerCase() != "yes") {
-        proceedAnyways = true
-      }
-    }
+    const proceed = await proceedAnyways(priceCheck)
 
-    if (priceCheck || proceedAnyways) {
+    if (priceCheck || proceed) {
       console.log("Preparing order transaction data")
       const transaction = await buildOrders(
         argv.masterSafe,

@@ -5,9 +5,10 @@ const { isPriceReasonable } = require("../scripts/utils/price-utils")
 
 contract("PriceOracle", function(accounts) {
   describe("Price oracle sanity check", async () => {
-    it("checks that the WETH price is above 9", async () => {
-      const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+    it("checks that price is within reasonable range (10 ≤ price ≤ 1990)", async () => {
+      //the following test especially checks that the price p is not inverted (1/p) and is not below 1
 
+      const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
       BatchExchange.setProvider(web3.currentProvider)
       BatchExchange.setNetwork(web3.network_id)
       const exchange = await BatchExchange.deployed()
