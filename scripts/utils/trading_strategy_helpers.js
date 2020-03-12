@@ -71,6 +71,22 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  */
 
 /**
+ * Returns an instance of the exchange contract
+ */
+const getExchange = async function(web3) {
+  await Promise.all([BatchExchange.setProvider(web3.currentProvider), BatchExchange.setNetwork(web3.network_id)])
+  return BatchExchange.deployed()
+}
+
+/**
+ * Returns an instance of the safe contract at the given address
+ * @param {Address} safeAddress address of the safe of which to create an instance
+ */
+const getSafe = function(safeAddress, artifacts) {
+  return artifacts.require("GnosisSafe").at(safeAddress)
+}
+
+/**
  * Checks that the first input address is the only owner of the first input address
  * @param {Address} masterAddress address that should be the only owner
  * @param {Address} ownedAddress address that is owned
@@ -556,6 +572,8 @@ const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, with
 }
 
 module.exports = {
+  getSafe,
+  getExchange,
   deployFleetOfSafes,
   buildOrders,
   buildBundledTransaction,

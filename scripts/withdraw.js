@@ -1,9 +1,8 @@
-const Contract = require("@truffle/contract")
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
 const {
+  getExchange,
+  getSafe,
   buildRequestWithdraw,
   buildWithdraw,
   buildTransferFundsToMaster,
@@ -79,11 +78,7 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
 
 module.exports = async callback => {
   try {
-    await BatchExchange.setProvider(web3.currentProvider)
-    await BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+    const [ exchange, masterSafe ] = await Promise.all([ getExchange(web3), getSafe(argv.masterSafe, artifacts) ])
 
     let withdrawals = require(argv.withdrawalFile)
 
