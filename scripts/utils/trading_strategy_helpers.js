@@ -544,7 +544,7 @@ const buildBracketTransactionForTransferApproveDeposit = async (
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+const buildRequestWithdraw = function(masterAddress, withdrawals, web3, artifacts) {
   return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
@@ -558,7 +558,7 @@ const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, ar
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
-const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
+const buildWithdraw = function(masterAddress, withdrawals, web3, artifacts) {
   return buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
