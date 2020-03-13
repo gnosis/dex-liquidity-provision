@@ -333,7 +333,7 @@ withdrawal of or to withdraw the desired funds
 const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) { // TODO: do we need artifacts here?
   const exchange = await getExchange(web3)
   
-  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry TODO: is this still true?
+  // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
   const masterTransactionsPromises = withdrawals.map(withdrawal => {
     // create transaction for the token
     let transactionData
