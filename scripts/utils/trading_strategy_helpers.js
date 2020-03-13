@@ -572,7 +572,7 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
   const ERC20 = artifacts.require("ERC20Mintable")
 
   // TODO: enforce that there are no overlapping withdrawals
-  const masterTransactionsPromises = withdrawals.map((withdrawal) => (async () => {
+  const masterTransactions = await Promise.all(withdrawals.map(async withdrawal => {
     const token = await ERC20.at(withdrawal.tokenAddress)
     let amount
     if (limitToMaxWithdrawableAmount) {
@@ -592,10 +592,7 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
     }
     // build transaction to execute previous transaction through master
     return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-  }).call())
-
-  const masterTransactions = []
-  for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
+  }))
 
   return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
