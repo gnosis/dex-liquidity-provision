@@ -333,18 +333,18 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
   const exchange = await getExchange(web3)
   
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry TODO: is this still true?
-  const masterTransactionsPromises = withdrawals.map((withdrawal) => (async () => {
+  const masterTransactionsPromises = withdrawals.map(withdrawal => {
     // create transaction for the token
     let transactionData
     switch (functionName) {
       case "requestWithdraw":
-        transactionData = await exchange.contract.methods["requestWithdraw"](
+        transactionData = exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
           withdrawal.amount.toString()
         ).encodeABI()
         break
       case "withdraw":
-        transactionData = await exchange.contract.methods["withdraw"](
+        transactionData = exchange.contract.methods["withdraw"](
           withdrawal.bracketAddress,
           withdrawal.tokenAddress
         ).encodeABI()
@@ -362,7 +362,7 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
     }
     // build transaction to execute previous transaction through master
     return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-  }).call())
+  })
 
   // safe pushing to array
   const masterTransactions = []
