@@ -89,7 +89,8 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  * Returns an instance of the exchange contract
  */
 const getExchange = async function(web3) {
-  await Promise.all([BatchExchange.setProvider(web3.currentProvider), BatchExchange.setNetwork(web3.network_id)])
+  BatchExchange.setNetwork(web3.network_id)
+  BatchExchange.setProvider(web3.currentProvider)
   return BatchExchange.deployed()
 }
 
