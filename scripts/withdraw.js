@@ -84,6 +84,8 @@ module.exports = async callback => {
     const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
+    const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
+    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts, true)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
@@ -110,8 +112,6 @@ module.exports = async callback => {
       throw new Error("No operation specified")
     }
 
-    const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
-    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts, true)
     for (const withdrawal of withdrawals) {
       const {symbol: tokenSymbol, decimals: tokenDecimals} = await tokenInfoPromises[withdrawal.tokenAddress]
 
