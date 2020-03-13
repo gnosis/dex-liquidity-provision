@@ -114,13 +114,13 @@ const isOnlySafeOwner = async function(masterAddress, ownedAddress, artifacts) {
   return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
 }
 
+const globalTokenPromisesFromAddress = {}
 /**
  * Queries EVM for ERC20 token details by address
  * and returns a list of promises of detailed token information.
  * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
  * @return {Promise<TokenObject>[]} list of detailed/relevant token information
  */
-const globalTokenPromisesFromAddress = {}
 const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
@@ -146,6 +146,7 @@ const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = fa
   return tokenPromises
 }
 
+const globalTokenPromisesFromId = {}
 /**
  * Queries EVM for ERC20 token details by token id
  * and returns a list of detailed token information.
@@ -153,7 +154,6 @@ const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = fa
  * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
  * @return {Promise<TokenObject>[]} list of detailed/relevant token information
  */
-const globalTokenPromisesFromId = {}
 const fetchTokenInfoFromExchange = async function(exchange, tokenIds, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
 
