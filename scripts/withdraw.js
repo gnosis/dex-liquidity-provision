@@ -85,7 +85,7 @@ module.exports = async callback => {
 
     let withdrawals = require(argv.withdrawalFile)
     const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
-    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts, true)
+    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
