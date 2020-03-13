@@ -155,7 +155,7 @@ const globalTokenPromisesFromId = {}
  * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
  * @return {Promise<TokenObject>[]} list of detailed/relevant token information
  */
-const fetchTokenInfoFromExchange = async function(exchange, tokenIds, artifacts, debug = false) {
+const fetchTokenInfoFromExchange = function(exchange, tokenIds, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
 
   log("Fetching token data from EVM")

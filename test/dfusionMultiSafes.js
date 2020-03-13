@@ -116,16 +116,16 @@ contract("GnosisSafe", function(accounts) {
       await checkTokenInfo(token1, token1Info2)
       await checkTokenInfo(token2, token2Info2)
     })
-    it("Fetches tokens from exchange", async function() {
+    it.only("Fetches tokens from exchange", async function() {
       const owlToken = await TokenOWL.at(await exchange.feeToken())
       await prepareTokenRegistration(accounts[0])
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const tokenInfoPromises1 = await fetchTokenInfoFromExchange(exchange, [0], artifacts)
+      const tokenInfoPromises1 = fetchTokenInfoFromExchange(exchange, [0], artifacts)
       const token0Info1 = await tokenInfoPromises1[0]
       await checkTokenInfo(owlToken, token0Info1)
 
-      const tokenInfoPromises2 = await fetchTokenInfoFromExchange(exchange, [0, 1], artifacts)
+      const tokenInfoPromises2 = fetchTokenInfoFromExchange(exchange, [0, 1], artifacts)
       const token0Info2 = await tokenInfoPromises2[0]
       const token1Info2 = await tokenInfoPromises2[1]
       await checkTokenInfo(owlToken, token0Info2)
