@@ -140,8 +140,8 @@ const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = fa
         log(`Found token ${tokenInfo.symbol} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`)
         return tokenInfo
       }).call()
-      tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
     }
+    tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
   }
   return tokenPromises
 }
