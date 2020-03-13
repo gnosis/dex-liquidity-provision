@@ -9,6 +9,8 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
 const {
+  fetchTokenInfoFromExchange,
+  fetchTokenInfoAtAddresses,
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromList,
@@ -82,10 +84,10 @@ contract("GnosisSafe", function(accounts) {
     exchange = await BatchExchange.deployed()
   })
 
-  async function prepareTokenRegistration(account) {
+  async function prepareTokenRegistration(account, amount=1) {
     const owlToken = await TokenOWL.at(await exchange.feeToken())
     await owlToken.setMinter(account)
-    await owlToken.mintOWL(account, toErc20Units(10, 18))
+    await owlToken.mintOWL(account, toErc20Units(10*amount, 18))
     await owlToken.approve(exchange.address, toErc20Units(10, 18))
   }
   describe("Exchange interaction test:", async function() {
@@ -93,6 +95,26 @@ contract("GnosisSafe", function(accounts) {
       await prepareTokenRegistration(accounts[0])
       await exchange.addToken(testToken.address, { from: accounts[0] })
       assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
+    })
+    const checkTokenInfo = async function(token, tokenInfo) {
+      assert.equal((await token.decimals()).toString(), tokenInfo.decimals.toString(), "wrong number of decimals")
+      assert.equal(await token.address, tokenInfo.address, "wrong address")
+      assert.equal(await token.symbol(), tokenInfo.symbol, "wrong symbol")
+    }
+    it("Asynchronously fetches tokens", async function() {
+      const token1 = await TestToken.new(18)
+      const token2 = await TestToken.new(9)
+      assert(token1.address != token2.address, "The two newly generated tokens should be different")
+
+      const tokenInfoPromises1 = fetchTokenInfoAtAddresses([token1.address], artifacts)
+      const token1Info1 = await tokenInfoPromises1[token1.address]
+      await checkTokenInfo(token1, token1Info1)
+
+      const tokenInfoPromises2 = fetchTokenInfoAtAddresses([token1.address, token2.address], artifacts)
+      const token1Info2 = await tokenInfoPromises2[token1.address]
+      const token2Info2 = await tokenInfoPromises2[token2.address]
+      await checkTokenInfo(token1, token1Info2)
+      await checkTokenInfo(token2, token2Info2)
     })
   })
   describe("Gnosis Safe deployments:", async function() {
