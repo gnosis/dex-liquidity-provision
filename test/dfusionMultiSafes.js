@@ -84,10 +84,10 @@ contract("GnosisSafe", function(accounts) {
     exchange = await BatchExchange.deployed()
   })
 
-  async function prepareTokenRegistration(account, amount=1) {
+  async function prepareTokenRegistration(account) {
     const owlToken = await TokenOWL.at(await exchange.feeToken())
     await owlToken.setMinter(account)
-    await owlToken.mintOWL(account, toErc20Units(10*amount, 18))
+    await owlToken.mintOWL(account, toErc20Units(10, 18))
     await owlToken.approve(exchange.address, toErc20Units(10, 18))
   }
   describe("Exchange interaction test:", async function() {
@@ -101,7 +101,7 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(await token.address, tokenInfo.address, "wrong address")
       assert.equal(await token.symbol(), tokenInfo.symbol, "wrong symbol")
     }
-    it("Asynchronously fetches tokens", async function() {
+    it("Asynchronously fetches tokens at addresses", async function() {
       const token1 = await TestToken.new(18)
       const token2 = await TestToken.new(9)
       assert(token1.address != token2.address, "The two newly generated tokens should be different")
@@ -115,6 +115,21 @@ contract("GnosisSafe", function(accounts) {
       const token2Info2 = await tokenInfoPromises2[token2.address]
       await checkTokenInfo(token1, token1Info2)
       await checkTokenInfo(token2, token2Info2)
+    })
+    it("Fetches tokens from exchange", async function() {
+      const owlToken = await TokenOWL.at(await exchange.feeToken())
+      await prepareTokenRegistration(accounts[0])
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+
+      const tokenInfoPromises1 = await fetchTokenInfoFromExchange(exchange, [0], artifacts)
+      const token0Info1 = await tokenInfoPromises1[0]
+      await checkTokenInfo(owlToken, token0Info1)
+
+      const tokenInfoPromises2 = await fetchTokenInfoFromExchange(exchange, [0, 1], artifacts)
+      const token0Info2 = await tokenInfoPromises2[0]
+      const token1Info2 = await tokenInfoPromises2[1]
+      await checkTokenInfo(owlToken, token0Info2)
+      await checkTokenInfo(testToken, token1Info2)
     })
   })
   describe("Gnosis Safe deployments:", async function() {
