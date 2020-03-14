@@ -19,8 +19,8 @@ const promptUser = function(message) {
 }
 
 /**
- * Signs and send the transaction to the gnosis-safe UI
- * @param {Address} masterAddress Address of the master safe owning the brackets*
+ * Signs and sends the transaction to the gnosis-safe UI
+ * @param {Address} masterAddress Address of the master safe owning the brackets
  * @param {Transaction} transaction The transaction to be signed and sent
  */
 const signAndSend = async function(masterSafe, transaction, web3, network) {
