@@ -19,19 +19,18 @@ const promptUser = function(message) {
 }
 
 /**
- * Deploys specified number singler-owner Gnosis Safes having specified ownership
- * @param {string} fleetOwner {@link EthereumAddress} of Gnosis Safe (Multi-Sig)
- * @param {integer} fleetSize number of sub-Safes to be created with fleetOwner as owner
- * @return {EthereumAddress[]} list of Ethereum Addresses for the subsafes that were deployed
+ * Signs and send the transaction to the gnosis-safe UI
+ * @param {Address} masterAddress Address of the master safe owning the brackets*
+ * @param {Transaction} transaction The transaction to be signed and sent
  */
-const signAndSend = async function(masterSafe, transactionData, web3, network) {
+const signAndSend = async function(masterSafe, transaction, web3, network) {
   const nonce = await masterSafe.nonce()
   console.log("Aquiring Transaction Hash")
   const transactionHash = await masterSafe.getTransactionHash(
-    transactionData.to,
-    transactionData.value,
-    transactionData.data,
-    transactionData.operation,
+    transaction.to,
+    transaction.value,
+    transaction.data,
+    transaction.operation,
     0,
     0,
     0,
@@ -46,10 +45,10 @@ const signAndSend = async function(masterSafe, transactionData, web3, network) {
 
   const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
   const postData = {
-    to: transactionData.to,
-    value: transactionData.value,
-    data: transactionData.data,
-    operation: transactionData.operation,
+    to: transaction.to,
+    value: transaction.value,
+    data: transaction.data,
+    operation: transaction.operation,
     safeTxGas: 0, // TODO: magic later
     baseGas: 0,
     gasPrice: 0, // important that this is zero
