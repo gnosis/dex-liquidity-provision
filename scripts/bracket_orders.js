@@ -61,9 +61,8 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
-    const proceed = await proceedAnyways(priceCheck)
 
-    if (priceCheck || proceed) {
+    if (priceCheck || (await proceedAnyways("Price check failed!"))) {
       console.log("Preparing order transaction data")
       const transaction = await buildOrders(
         argv.masterSafe,

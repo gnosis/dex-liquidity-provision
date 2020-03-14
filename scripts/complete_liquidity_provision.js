@@ -69,19 +69,20 @@ module.exports = async callback => {
 
     console.log("1. Sanity checks")
     if (!(await checkSufficiencyOfBalance(targetToken, masterSafe.address, investmentTargetToken))) {
-      return callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
+      callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
     }
     if (!(await checkSufficiencyOfBalance(stableToken, masterSafe.address, investmentStableToken))) {
-      return callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
+      callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
-    const proceed = proceedAnyways(priceCheck)
 
-    if (!priceCheck || !proceed) {
-      return callback("Error: Price checks did not pass")
+    if (!priceCheck) {
+      if (!(await proceedAnyways("Price check failed!"))) {
+        callback("Error: Price checks did not pass")
+      }
     }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
