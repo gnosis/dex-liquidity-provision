@@ -1,5 +1,5 @@
 const axios = require("axios")
-const { fetchTokenInfo } = require("./trading_strategy_helpers")
+const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")
 
 // returns undefined if the price was not available
 const getDexagPrice = async function(tokenBought, tokenSold) {
@@ -27,9 +27,9 @@ const isPriceReasonable = async function(
   artifacts = artifacts,
   acceptedPriceDeviationInPercentage = 2
 ) {
-  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
-  const targetToken = tokenInfo[targetTokenId]
-  const stableToken = tokenInfo[stableTokenId]
+  const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+  const targetToken = await tokenInfoPromises[targetTokenId]
+  const stableToken = await tokenInfoPromises[stableTokenId]
   const dexagPrice = await getDexagPrice(stableToken.symbol, targetToken.symbol)
   if (dexagPrice === undefined) {
     console.log("Warning: could not perform price check against dex.ag.")
