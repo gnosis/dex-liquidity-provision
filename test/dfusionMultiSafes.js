@@ -3,11 +3,12 @@ const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const TokenOWL = artifacts.require("TokenOWL")
 const ERC20 = artifacts.require("ERC20Detailed")
+const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
+const { prepareTokenRegistration } = require("./test-utils")
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -77,22 +78,17 @@ contract("GnosisSafe", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    testToken = await TestToken.new(18)
+    testToken = await TestToken.new("TEST", 18)
 
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
   })
 
-  async function prepareTokenRegistration(account) {
-    const owlToken = await TokenOWL.at(await exchange.feeToken())
-    await owlToken.setMinter(account)
-    await owlToken.mintOWL(account, toErc20Units(10, 18))
-    await owlToken.approve(exchange.address, toErc20Units(10, 18))
-  }
   describe("Exchange interaction test:", async function() {
     it("Adds tokens to the exchange", async () => {
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
       assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
     })
@@ -102,8 +98,8 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(await token.symbol(), tokenInfo.symbol, "wrong symbol")
     }
     it("Asynchronously fetches tokens at addresses", async function() {
-      const token1 = await TestToken.new(18)
-      const token2 = await TestToken.new(9)
+      const token1 = await TestToken.new("TEST", 18)
+      const token2 = await TestToken.new("TEST", 9)
       assert(token1.address != token2.address, "The two newly generated tokens should be different")
 
       const tokenInfoPromises1 = fetchTokenInfoAtAddresses([token1.address], artifacts)
@@ -118,7 +114,7 @@ contract("GnosisSafe", function(accounts) {
     })
     it("Fetches tokens from exchange", async function() {
       const owlToken = await TokenOWL.at(await exchange.feeToken())
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
       const tokenId = await exchange.tokenAddressToIdMap(testToken.address) // TODO: make tests independent and replace tokenId with 1
 
@@ -176,11 +172,11 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 2
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize, artifacts)
       const depositAmountStableToken = new BN(1000)
-      const stableToken = await TestToken.new(18)
+      const stableToken = await TestToken.new("TEST", 18)
       await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       const depositAmountTargetToken = new BN(2000)
-      const targetToken = await TestToken.new(18)
+      const targetToken = await TestToken.new("TEST", 18)
       await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
       await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
@@ -226,7 +222,8 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
@@ -262,7 +259,8 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 1 / 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
+
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(
@@ -291,7 +289,7 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       const transaction = await buildOrders(

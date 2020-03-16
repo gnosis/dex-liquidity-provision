@@ -1,4 +1,5 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
+const { isPriceReasonable } = require("./utils/price-utils")
 const Contract = require("@truffle/contract")
 const {
   buildTransferApproveDepositFromOrders,
@@ -6,6 +7,8 @@ const {
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { proceedAnyways } = require("./utils/user-interface-helpers")
+
 const { toErc20Units } = require("./utils/printing_tools")
 const assert = require("assert")
 
@@ -64,15 +67,25 @@ module.exports = async callback => {
 
     assert(argv.fleetSize % 2 == 0, "Fleet size must be a even number for easy deployment script")
 
-    console.log("1. Check for sufficient funds")
+    console.log("1. Sanity checks")
     if (!(await checkSufficiencyOfBalance(targetToken, masterSafe.address, investmentTargetToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
     }
     if (!(await checkSufficiencyOfBalance(stableToken, masterSafe.address, investmentStableToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
+    // check price against dex.ag's API
+    const targetTokenId = argv.targetToken
+    const stableTokenId = argv.stableToken
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
 
-    console.log(`2. Deploying ${argv.fleetSize} subsafes `)
+    if (!priceCheck) {
+      if (!(await proceedAnyways("Price check failed!"))) {
+        callback("Error: Price checks did not pass")
+      }
+    }
+
+    console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 

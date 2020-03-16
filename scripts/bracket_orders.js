@@ -1,7 +1,8 @@
-const axios = require("axios")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrders, fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")
+const { buildOrders } = require("./utils/trading_strategy_helpers")
+const { isPriceReasonable } = require("./utils/price-utils.js")
+const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")
 
 const argv = require("yargs")
@@ -48,53 +49,6 @@ const argv = require("yargs")
   )
   .version(false).argv
 
-// returns undefined if the price was not available
-const getDexagPrice = async function(tokenBought, tokenSold) {
-  // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
-  tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
-  tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
-  // see https://docs.dex.ag/ for API documentation
-  const url = "https://api-v2.dex.ag/price?from=" + tokenSold + "&to=" + tokenBought + "&fromAmount=1&dex=ag"
-  let price
-  try {
-    const requestResult = await axios.get(url)
-    price = requestResult.data.price
-  } catch (error) {
-    console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-    console.log(">", error.response.data.error)
-  }
-  return price
-}
-
-const acceptedPriceDeviationInPercentage = 2
-const isPriceReasonable = async function(exchange, targetTokenId, stableTokenId, price) {
-  const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
-  const targetToken = await tokenInfoPromises[targetTokenId]
-  const stableToken = await tokenInfoPromises[stableTokenId]
-  const dexagPrice = await getDexagPrice(targetToken.symbol, stableToken.symbol)
-  // TODO add unit test checking whether getDexagPrice works as expected
-  if (dexagPrice === undefined) {
-    console.log("Warning: could not perform price check against dex.ag.")
-    const answer = await promptUser("Continue anyway? [yN] ")
-    if (answer != "y" && answer.toLowerCase() != "yes") {
-      return false
-    }
-  } else if (Math.abs(dexagPrice - price) >= acceptedPriceDeviationInPercentage / 100) {
-    console.log(
-      "Warning: the chosen price differs by more than",
-      acceptedPriceDeviationInPercentage,
-      "percent from the price found on dex.ag."
-    )
-    console.log("         chosen price:", price, targetToken.symbol, "bought for 1", stableToken.symbol)
-    console.log("         dex.ag price:", dexagPrice, targetToken.symbol, "bought for 1", stableToken.symbol)
-    const answer = await promptUser("Continue anyway? [yN] ")
-    if (answer != "y" && answer.toLowerCase() != "yes") {
-      return false
-    }
-  }
-  return true
-}
-
 module.exports = async callback => {
   try {
     await BatchExchange.setProvider(web3.currentProvider)
@@ -106,9 +60,9 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceIsOk = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
 
-    if (priceIsOk) {
+    if (priceCheck || (await proceedAnyways("Price check failed!"))) {
       console.log("Preparing order transaction data")
       const transaction = await buildOrders(
         argv.masterSafe,
