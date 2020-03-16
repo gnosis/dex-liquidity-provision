@@ -19,14 +19,14 @@ const getDexagPrice = async function(tokenBought, tokenSold) {
   return price
 }
 
-const isPriceReasonable = async function(
+const isPriceReasonable = async (
   exchange,
   targetTokenId,
   stableTokenId,
   price,
   artifacts = artifacts,
   acceptedPriceDeviationInPercentage = 2
-) {
+) => {
   const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
   const targetToken = await tokenInfoPromises[targetTokenId]
   const stableToken = await tokenInfoPromises[stableTokenId]

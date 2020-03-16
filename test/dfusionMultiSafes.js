@@ -4,6 +4,7 @@ const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const ERC20 = artifacts.require("ERC20Detailed")
+const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
@@ -97,8 +98,8 @@ contract("GnosisSafe", function(accounts) {
       assert.equal(await token.symbol(), tokenInfo.symbol, "wrong symbol")
     }
     it("Asynchronously fetches tokens at addresses", async function() {
-      const token1 = await TestToken.new(18)
-      const token2 = await TestToken.new(9)
+      const token1 = await TestToken.new("TEST", 18)
+      const token2 = await TestToken.new("TEST", 9)
       assert(token1.address != token2.address, "The two newly generated tokens should be different")
 
       const tokenInfoPromises1 = fetchTokenInfoAtAddresses([token1.address], artifacts)
@@ -113,7 +114,7 @@ contract("GnosisSafe", function(accounts) {
     })
     it("Fetches tokens from exchange", async function() {
       const owlToken = await TokenOWL.at(await exchange.feeToken())
-      await prepareTokenRegistration(accounts[0])
+      await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
       const tokenId = await exchange.tokenAddressToIdMap(testToken.address) // TODO: make tests independent and replace tokenId with 1
 
