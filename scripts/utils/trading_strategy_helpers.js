@@ -71,6 +71,38 @@ const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
  */
 
 /**
+ * @typedef TokenObject
+ *  * Example:
+ * {
+ *   symbol: "WETH",
+ *   decimals: 18,
+ *   tokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+ * }
+ * @type {object}
+ * @property {string} symbol symbol representing the token
+ * @property {(number|BN)} decimals number of decimals of the token
+ * @property {address} [tokenAddress] address of the token contract on the EVM
+
+ */
+
+/**
+ * Returns an instance of the exchange contract
+ */
+const getExchange = function(web3) {
+  BatchExchange.setNetwork(web3.network_id)
+  BatchExchange.setProvider(web3.currentProvider)
+  return BatchExchange.deployed()
+}
+
+/**
+ * Returns an instance of the safe contract at the given address
+ * @param {Address} safeAddress address of the safe of which to create an instance
+ */
+const getSafe = function(safeAddress, artifacts) {
+  return artifacts.require("GnosisSafe").at(safeAddress)
+}
+
+/**
  * Checks that the first input address is the only owner of the first input address
  * @param {Address} masterAddress address that should be the only owner
  * @param {Address} ownedAddress address that is owned
@@ -83,39 +115,62 @@ const isOnlySafeOwner = async function(masterAddress, ownedAddress, artifacts) {
   return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
 }
 
+const globalTokenPromisesFromAddress = {}
 /**
  * Queries EVM for ERC20 token details by address
- * and returns a list of detailed token information.
- * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
- * @param {integer[]} tokenIds list of token ids whose data is to be fetch from EVM
- * @return {TokenObject[]} list of detailed/relevant token information
+ * and returns a list of promises of detailed token information.
+ * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
+ * @return {Promise<TokenObject>[]} list of detailed/relevant token information
  */
-const globalTokenObjects = {}
-const fetchTokenInfo = async function(exchange, tokenIds, artifacts, debug = false) {
+const fetchTokenInfoAtAddresses = function(tokenAddresses, artifacts, debug = false) {
   const log = debug ? () => console.log.apply(arguments) : () => {}
   const ERC20 = artifacts.require("ERC20Detailed")
 
   log("Fetching token data from EVM")
-  const tokenObjects = {}
-  await Promise.all(
-    tokenIds.map(async id => {
-      if (!(id in globalTokenObjects)) {
-        const tokenAddress = await exchange.tokenIdToAddressMap(id)
+  const tokenPromises = {}
+  for (const tokenAddress of tokenAddresses) {
+    if (!(tokenAddress in globalTokenPromisesFromAddress)) {
+      globalTokenPromisesFromAddress[tokenAddress] = (async () => {
         const tokenInstance = await ERC20.at(tokenAddress)
         const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
         const tokenInfo = {
-          id: id,
           address: tokenAddress,
           symbol: tokenSymbol,
           decimals: tokenDecimals.toNumber(),
         }
-        log(`Found Token ${tokenInfo.symbol} at ID ${tokenInfo.id} with ${tokenInfo.decimals} decimals`)
-        globalTokenObjects[id] = tokenInfo
-      }
-      tokenObjects[id] = globalTokenObjects[id]
-    })
-  )
-  return tokenObjects
+        log(`Found token ${tokenInfo.symbol} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`)
+        return tokenInfo
+      }).call()
+    }
+    tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
+  }
+  return tokenPromises
+}
+
+const globalTokenPromisesFromId = {}
+/**
+ * Queries EVM for ERC20 token details by token id
+ * and returns a list of detailed token information.
+ * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
+ * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
+ * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+ */
+const fetchTokenInfoFromExchange = function(exchange, tokenIds, artifacts, debug = false) {
+  const log = debug ? () => console.log.apply(arguments) : () => {}
+
+  log("Fetching token data from EVM")
+  const tokenPromises = {}
+  for (const id of tokenIds) {
+    if (!(id in globalTokenPromisesFromId)) {
+      globalTokenPromisesFromId[id] = (async () => {
+        const tokenAddress = await exchange.tokenIdToAddressMap(id)
+        log(`Token id ${id} corresponds to token at address ${tokenAddress}`)
+        return fetchTokenInfoAtAddresses([tokenAddress], artifacts, debug)[tokenAddress]
+      }).call()
+    }
+    tokenPromises[id] = globalTokenPromisesFromId[id]
+  }
+  return tokenPromises
 }
 
 /**
@@ -176,10 +231,10 @@ const buildOrders = async function(
   log("Batch Exchange", exchange.address)
 
   const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-  const tokenInfo = await fetchTokenInfo(exchange, [targetTokenId, stableTokenId], artifacts)
+  const tokenInfoPromises = await fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
 
-  const targetToken = tokenInfo[targetTokenId]
-  const stableToken = tokenInfo[stableTokenId]
+  const targetToken = await tokenInfoPromises[targetTokenId]
+  const stableToken = await tokenInfoPromises[stableTokenId]
   // TODO - handle other cases later.
   assert(stableToken.decimals === 18, "Target token must have 18 decimals")
   assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
@@ -275,25 +330,22 @@ const checkSufficiencyOfBalance = async function(token, owner, amount) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) {
-  BatchExchange.setProvider(web3.currentProvider)
-  BatchExchange.setNetwork(web3.network_id)
-  const exchange = await BatchExchange.deployed()
-  const masterTransactions = []
-
+const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) { // TODO: do we need artifacts here?
+  const exchange = await getExchange(web3)
+  
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
-  for (const withdrawal of withdrawals) {
+  const masterTransactionsPromises = withdrawals.map(withdrawal => {
     // create transaction for the token
     let transactionData
     switch (functionName) {
       case "requestWithdraw":
-        transactionData = await exchange.contract.methods["requestWithdraw"](
+        transactionData = exchange.contract.methods["requestWithdraw"](
           withdrawal.tokenAddress,
           withdrawal.amount.toString()
         ).encodeABI()
         break
       case "withdraw":
-        transactionData = await exchange.contract.methods["withdraw"](
+        transactionData = exchange.contract.methods["withdraw"](
           withdrawal.bracketAddress,
           withdrawal.tokenAddress
         ).encodeABI()
@@ -310,9 +362,12 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-    masterTransactions.push(execTransaction)
-  }
+    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+  })
+
+  // safe pushing to array
+  const masterTransactions = []
+  for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
   return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
@@ -490,8 +545,8 @@ const buildBracketTransactionForTransferApproveDeposit = async (
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
+const buildRequestWithdraw = function(masterAddress, withdrawals, web3, artifacts) {
+  return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw", web3, artifacts)
 }
 
 /**
@@ -504,8 +559,8 @@ const buildRequestWithdraw = async function(masterAddress, withdrawals, web3, ar
  * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
  * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
  */
-const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts) {
-  return await buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
+const buildWithdraw = function(masterAddress, withdrawals, web3, artifacts) {
+  return buildGenericFundMovement(masterAddress, withdrawals, "withdraw", web3, artifacts)
 }
 
 /**
@@ -515,10 +570,10 @@ const buildWithdraw = async function(masterAddress, withdrawals, web3, artifacts
  * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
  */
 const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount, web3, artifacts) {
-  const masterTransactions = []
   const ERC20 = artifacts.require("ERC20Mintable")
+
   // TODO: enforce that there are no overlapping withdrawals
-  for (const withdrawal of withdrawals) {
+  const masterTransactions = await Promise.all(withdrawals.map(async withdrawal => {
     const token = await ERC20.at(withdrawal.tokenAddress)
     let amount
     if (limitToMaxWithdrawableAmount) {
@@ -537,10 +592,10 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    const execTransaction = await buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-    masterTransactions.push(execTransaction)
-  }
-  return await buildBundledTransaction(masterTransactions, web3, artifacts)
+    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+  }))
+
+  return buildBundledTransaction(masterTransactions, web3, artifacts)
 }
 
 /**
@@ -556,6 +611,8 @@ const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, with
 }
 
 module.exports = {
+  getSafe,
+  getExchange,
   deployFleetOfSafes,
   buildOrders,
   buildBundledTransaction,
@@ -567,7 +624,8 @@ module.exports = {
   checkSufficiencyOfBalance,
   buildRequestWithdraw,
   buildWithdraw,
-  fetchTokenInfo,
+  fetchTokenInfoAtAddresses,
+  fetchTokenInfoFromExchange,
   isOnlySafeOwner,
   max128,
   maxU32,
