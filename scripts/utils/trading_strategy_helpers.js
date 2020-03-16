@@ -473,7 +473,7 @@ const buildTransferApproveDepositFromOrders = async function(
   }
   if (storeDepositsAsFile) {
     const depositsAsJsonString = formatDepositString(JSON.stringify(deposits))
-    fs.writeFile("./automaticallyGeneratedDeposits.js", depositsAsJsonString, function(err) {
+    fs.writeFile("./automaticallyGeneratedDeposits.json", depositsAsJsonString, function(err) {
       if (err) {
         console.log("Warning: deposits could not be stored as a file.")
         console.log(err)
