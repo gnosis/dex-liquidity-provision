@@ -225,13 +225,11 @@ const buildOrders = async function(
 ) {
   const log = debug ? (...a) => console.log(...a) : () => {}
 
-  await BatchExchange.setProvider(web3.currentProvider)
-  await BatchExchange.setNetwork(web3.network_id)
-  const exchange = await BatchExchange.deployed()
+  const exchange = await getExchange(web3)
   log("Batch Exchange", exchange.address)
 
-  const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-  const tokenInfoPromises = await fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+  const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+  const batchIndexPromise = exchange.getCurrentBatchId.call()
 
   const targetToken = await tokenInfoPromises[targetTokenId]
   const stableToken = await tokenInfoPromises[stableTokenId]
@@ -246,12 +244,10 @@ const buildOrders = async function(
 
   const stepSize = (highestLimit - lowestLimit) / bracketAddresses.length
 
-  const transactions = []
   log(
     `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
   )
-  for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
-    const bracketAddress = bracketAddresses[bracketIndex]
+  const transactions = await Promise.all(bracketAddresses.map(async (bracketAddress, bracketIndex) => {
     assert(
       await isOnlySafeOwner(masterAddress, bracketAddress, artifacts),
       "each bracket should be owned only by the master Safe"
@@ -265,16 +261,15 @@ const buildOrders = async function(
     // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
     const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
-    log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
-    log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
+    log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
     const buyTokens = [targetTokenId, stableTokenId]
     const sellTokens = [stableTokenId, targetTokenId]
-    const validFroms = [batch_index + validFrom, batch_index + validFrom]
+    const validFroms = [await batchIndexPromise + validFrom, await batchIndexPromise + validFrom]
     const validTos = [expiry, expiry]
     const buyAmounts = [lowerBuyAmount, upperBuyAmount]
     const sellAmounts = [lowerSellAmount, upperSellAmount]
 
-    const orderData = await exchange.contract.methods
+    const orderData = exchange.contract.methods
       .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
       .encodeABI()
     const orderTransaction = {
@@ -284,10 +279,11 @@ const buildOrders = async function(
       data: orderData,
     }
 
-    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts))
-  }
+    return buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts)
+  }))
+
   log("Transaction bundle size", transactions.length)
-  return await buildBundledTransaction(transactions, web3, artifacts)
+  return buildBundledTransaction(transactions, web3, artifacts)
 }
 
 const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
