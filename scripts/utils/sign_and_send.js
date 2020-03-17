@@ -61,8 +61,9 @@ const signAndSend = async function(masterSafe, transaction, web3, network) {
   }
   await axios.post(endpoint, postData)
 
+  const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
   console.log(
-    `Transaction awaiting execution in the interface https://${linkPrefix[network]}gnosis-safe.io/safes/${masterSafe.address}/transactions`
+    "Transaction awaiting execution in the interface", interfaceLink
   )
 }
 
