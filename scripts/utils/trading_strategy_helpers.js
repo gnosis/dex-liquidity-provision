@@ -1,10 +1,11 @@
+//module.exports = function(web3 = web3, artifacts = artifacts) {
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
 const assert = require("assert")
 const BN = require("bn.js")
 const fs = require("fs")
-const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")
+const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
 const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 const maxU32 = 2 ** 32 - 1
@@ -190,7 +191,7 @@ const deployFleetOfSafes = async function(masterAddress, fleetSize, artifacts, d
   // TODO - Batch all of this in a single transaction
   const createdSafes = []
   for (let i = 0; i < fleetSize; i++) {
-    const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterAddress], 1, artifacts)
+    const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterAddress], 1)
     log("New Safe Created", newSafe.address)
     createdSafes.push(newSafe.address)
   }
@@ -284,10 +285,10 @@ const buildOrders = async function(
       data: orderData,
     }
 
-    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts))
+    transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction))
   }
   log("Transaction bundle size", transactions.length)
-  return await buildBundledTransaction(transactions, web3, artifacts)
+  return await buildBundledTransaction(transactions)
 }
 
 const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
@@ -360,13 +361,13 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
       data: transactionData,
     }
     // build transaction to execute previous transaction through master
-    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute)
   })
 
   // safe pushing to array
   const masterTransactions = []
   for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
-  return buildBundledTransaction(masterTransactions, web3, artifacts)
+  return buildBundledTransaction(masterTransactions)
 }
 
 /**
@@ -410,7 +411,7 @@ const buildTransferApproveDepositFromList = async function(masterAddress, deposi
       )
     )
   }
-  return await buildBundledTransaction(transactions, web3, artifacts)
+  return await buildBundledTransaction(transactions)
 }
 
 const formatDepositString = function(depositsAsJsonString) {
@@ -522,16 +523,12 @@ const buildBracketTransactionForTransferApproveDeposit = async (
   // Get data to deposit funds from bracket to exchange
   const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
   // Get transaction for approve and deposit multisend on bracket
-  const bracketBundledTransaction = await buildBundledTransaction(
-    [
-      { operation: CALL, to: tokenAddress, value: 0, data: approveData },
-      { operation: CALL, to: exchange.address, value: 0, data: depositData },
-    ],
-    web3,
-    artifacts
-  )
+  const bracketBundledTransaction = await buildBundledTransaction([
+    { operation: CALL, to: tokenAddress, value: 0, data: approveData },
+    { operation: CALL, to: exchange.address, value: 0, data: depositData },
+  ])
   // Get transaction executing approve/deposit multisend via bracket
-  const execTransaction = await buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction, artifacts)
+  const execTransaction = await buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction)
   transactions.push(execTransaction)
   return transactions
 }
@@ -591,11 +588,11 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
         data: transactionData,
       }
       // build transaction to execute previous transaction through master
-      return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+      return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute)
     })
   )
 
-  return buildBundledTransaction(masterTransactions, web3, artifacts)
+  return buildBundledTransaction(masterTransactions)
 }
 
 /**
@@ -607,7 +604,7 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
 const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals, web3 = web3, artifacts = artifacts) {
   const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals, web3, artifacts)
   const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false, web3, artifacts)
-  return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction], web3, artifacts)
+  return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
 }
 
 module.exports = {
