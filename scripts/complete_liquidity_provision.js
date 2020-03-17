@@ -1,5 +1,5 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
-const { isPriceReasonable } = require("./utils/price-utils")
+const { isPriceReasonable } = require("./utils/price-utils")(web3, artifacts)
 const Contract = require("@truffle/contract")
 const {
   buildTransferApproveDepositFromOrders,
@@ -77,7 +77,7 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
 
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {

@@ -1,7 +1,7 @@
 const assert = require("assert")
 const Contract = require("@truffle/contract")
 const { prepareTokenRegistration } = require("./test-utils")
-const { isPriceReasonable } = require("../scripts/utils/price-utils")
+const { isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
 
 contract("PriceOracle", function(accounts) {
   describe("Price oracle sanity check", async () => {
@@ -25,7 +25,7 @@ contract("PriceOracle", function(accounts) {
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
       assert(
-        await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, artifacts, acceptedPriceDeviationInPercentage)
+        await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage)
       )
     })
   })
