@@ -1,6 +1,6 @@
 const Contract = require("@truffle/contract")
 
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { CALL } = require("./utils/internals")
 const {  toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 

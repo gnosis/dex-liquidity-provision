@@ -1,4 +1,4 @@
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
 const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const {

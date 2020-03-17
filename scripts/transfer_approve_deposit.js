@@ -1,4 +1,4 @@
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { buildTransferApproveDepositFromList } = require("./utils/trading_strategy_helpers")
 
 const argv = require("yargs")

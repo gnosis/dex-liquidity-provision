@@ -3,7 +3,7 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 const { buildOrders } = require("./utils/trading_strategy_helpers")
 const { isPriceReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 
 const argv = require("yargs")
   .option("targetToken", {
