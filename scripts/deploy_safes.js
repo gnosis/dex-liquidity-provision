@@ -1,4 +1,4 @@
-const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
+const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -19,7 +19,7 @@ module.exports = async callback => {
   try {
     console.log("Master Safe:", argv.masterSafe)
     console.log(`Deploying a fleet of Safes of size ${argv.fleetSize}`)
-    const fleet = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, artifacts, true)
+    const fleet = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize, true)
     console.log(" Addresses", fleet.join())
     callback()
   } catch (error) {

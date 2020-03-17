@@ -9,7 +9,7 @@ const {
   buildWithdraw,
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
-} = require("./utils/trading_strategy_helpers")
+} = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -80,12 +80,12 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
 
 module.exports = async callback => {
   try {
-    const masterSafePromise = getSafe(argv.masterSafe, artifacts)
+    const masterSafePromise = getSafe(argv.masterSafe)
     const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
     const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
-    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved, artifacts)
+    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
@@ -101,13 +101,13 @@ module.exports = async callback => {
 
     console.log("Started building withdraw transaction.")
     let transactionPromise
-    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals, web3, artifacts)
+    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
     else if (argv.withdraw && !argv.transferBackToMaster)
-      transactionPromise = buildWithdraw(argv.masterSafe, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true, web3, artifacts)
+      transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
     else {
       throw new Error("No operation specified")
     }

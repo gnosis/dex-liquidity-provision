@@ -1,6 +1,6 @@
 const Contract = require("@truffle/contract")
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrders } = require("./utils/trading_strategy_helpers")
+const { buildOrders } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
@@ -70,8 +70,6 @@ module.exports = async callback => {
         argv.targetToken,
         argv.stableToken,
         argv.targetPrice,
-        web3,
-        artifacts,
         true,
         argv.priceRange,
         argv.validFrom,

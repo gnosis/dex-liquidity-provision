@@ -1,6 +1,6 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
-  const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")
+  const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
   // returns undefined if the price was not available
   const getDexagPrice = async function(tokenBought, tokenSold) {
@@ -27,7 +27,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     price,
     acceptedPriceDeviationInPercentage = 2
   ) => {
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]
     const dexagPrice = await getDexagPrice(stableToken.symbol, targetToken.symbol)
