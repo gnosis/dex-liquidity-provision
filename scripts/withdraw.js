@@ -81,7 +81,7 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
 module.exports = async callback => {
   try {
     const masterSafePromise = getSafe(argv.masterSafe, artifacts)
-    const exchange = getExchange(web3)
+    const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
     const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
