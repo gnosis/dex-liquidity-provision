@@ -24,9 +24,7 @@ contract("PriceOracle", function(accounts) {
       const stableTokenId = 2
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      assert(
-        await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage)
-      )
+      assert(await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage))
     })
   })
 })

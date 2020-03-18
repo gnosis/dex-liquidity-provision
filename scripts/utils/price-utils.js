@@ -20,13 +20,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return price
   }
 
-  const isPriceReasonable = async (
-    exchange,
-    targetTokenId,
-    stableTokenId,
-    price,
-    acceptedPriceDeviationInPercentage = 2
-  ) => {
+  const isPriceReasonable = async (exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage = 2) => {
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]

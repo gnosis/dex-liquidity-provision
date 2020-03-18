@@ -1,4 +1,4 @@
-module.exports =  function(web3 = web3, artifacts = artifacts) {
+module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
   const { signTransaction, createLightwallet } = require("../utils/internals")(web3, artifacts)
@@ -63,9 +63,7 @@ module.exports =  function(web3 = web3, artifacts = artifacts) {
     await axios.post(endpoint, postData)
 
     const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
-    console.log(
-      "Transaction awaiting execution in the interface", interfaceLink
-    )
+    console.log("Transaction awaiting execution in the interface", interfaceLink)
   }
 
   return {
