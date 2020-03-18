@@ -227,7 +227,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const exchange = await getExchange(web3)
     log("Batch Exchange", exchange.address)
 
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
     const batchIndexPromise = exchange.getCurrentBatchId.call()
 
     const targetToken = await tokenInfoPromises[targetTokenId]
@@ -278,7 +278,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
           data: orderData,
         }
 
-        return buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts)
+        return buildExecTransaction(masterAddress, bracketAddress, orderTransaction)
       })
     )
 
@@ -327,7 +327,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 withdrawal of or to withdraw the desired funds
 */
   const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName) {
-    // TODO: do we need artifacts here?
     const exchange = await getExchange(web3)
 
     // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry

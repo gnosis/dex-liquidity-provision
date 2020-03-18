@@ -102,11 +102,11 @@ contract("GnosisSafe", function(accounts) {
       const token2 = await TestToken.new("TEST", 9)
       assert(token1.address != token2.address, "The two newly generated tokens should be different")
 
-      const tokenInfoPromises1 = fetchTokenInfoAtAddresses([token1.address], artifacts)
+      const tokenInfoPromises1 = fetchTokenInfoAtAddresses([token1.address])
       const token1Info1 = await tokenInfoPromises1[token1.address]
       await checkTokenInfo(token1, token1Info1)
 
-      const tokenInfoPromises2 = fetchTokenInfoAtAddresses([token1.address, token2.address], artifacts)
+      const tokenInfoPromises2 = fetchTokenInfoAtAddresses([token1.address, token2.address])
       const token1Info2 = await tokenInfoPromises2[token1.address]
       const token2Info2 = await tokenInfoPromises2[token2.address]
       await checkTokenInfo(token1, token1Info2)
@@ -118,11 +118,11 @@ contract("GnosisSafe", function(accounts) {
       await exchange.addToken(testToken.address, { from: accounts[0] })
       const tokenId = await exchange.tokenAddressToIdMap(testToken.address) // TODO: make tests independent and replace tokenId with 1
 
-      const tokenInfoPromises1 = fetchTokenInfoFromExchange(exchange, [0], artifacts)
+      const tokenInfoPromises1 = fetchTokenInfoFromExchange(exchange, [0])
       const token0Info1 = await tokenInfoPromises1[0]
       await checkTokenInfo(owlToken, token0Info1)
 
-      const tokenInfoPromises2 = fetchTokenInfoFromExchange(exchange, [0, tokenId], artifacts)
+      const tokenInfoPromises2 = fetchTokenInfoFromExchange(exchange, [0, tokenId])
       const token0Info2 = await tokenInfoPromises2[0]
       const token1Info2 = await tokenInfoPromises2[tokenId]
       await checkTokenInfo(owlToken, token0Info2)
@@ -134,7 +134,7 @@ contract("GnosisSafe", function(accounts) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleet = await deployFleetOfSafes(masterSafe.address, 10)
       assert.equal(fleet.length, 10)
-      for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress, artifacts))
+      for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
     })
   })
   describe("transfer tests:", async function() {
