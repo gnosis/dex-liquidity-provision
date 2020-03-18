@@ -239,22 +239,23 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
     // Number of brackets is determined by bracketAddresses.length
-    const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
+    const lowestLimit = targetPrice / (1 + priceRangePercentage / 100)
     const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
     log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
-    const stepSize = (highestLimit - lowestLimit) / bracketAddresses.length
-
+    const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     const transactions = []
     log(
       `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
     )
+    let currentLowerPriceLimit = lowestLimit
+
     for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
       const bracketAddress = bracketAddresses[bracketIndex]
       assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
-      const lowerLimit = lowestLimit + bracketIndex * stepSize
-      const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
+      const lowerLimit = currentLowerPriceLimit
+      const upperLimit = currentLowerPriceLimit * stepSizeAsMultiplier
 
       const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
       // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
@@ -281,6 +282,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       }
 
       transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction))
+      currentLowerPriceLimit = upperLimit
     }
     log("Transaction bundle size", transactions.length)
     return await buildBundledTransaction(transactions)
