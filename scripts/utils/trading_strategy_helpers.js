@@ -224,13 +224,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    await BatchExchange.setProvider(web3.currentProvider)
-    await BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
+    const exchange = await getExchange(web3)
     log("Batch Exchange", exchange.address)
 
-    const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-    const tokenInfoPromises = await fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId], artifacts)
+    const batchIndexPromise = exchange.getCurrentBatchId.call()
 
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]
@@ -244,34 +242,30 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
-    const transactions = []
     log(
       `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
     )
-    let currentLowerPriceLimit = lowestLimit
 
-    for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
-      const bracketAddress = bracketAddresses[bracketIndex]
+    const transactions = await Promise.all(bracketAddresses.map(async (bracketAddress, bracketIndex) => {
       assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
-      const lowerLimit = currentLowerPriceLimit
-      const upperLimit = currentLowerPriceLimit * stepSizeAsMultiplier
+      const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
+      const upperLimit = lowerLimit * stepSizeAsMultiplier
 
       const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
       // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
       // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
       const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
-      log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}`)
-      log(`  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
+      log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
       const buyTokens = [targetTokenId, stableTokenId]
       const sellTokens = [stableTokenId, targetTokenId]
-      const validFroms = [batch_index + validFrom, batch_index + validFrom]
+      const validFroms = [await batchIndexPromise + validFrom, await batchIndexPromise + validFrom]
       const validTos = [expiry, expiry]
       const buyAmounts = [lowerBuyAmount, upperBuyAmount]
       const sellAmounts = [lowerSellAmount, upperSellAmount]
 
-      const orderData = await exchange.contract.methods
+      const orderData = exchange.contract.methods
         .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
         .encodeABI()
       const orderTransaction = {
@@ -281,11 +275,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         data: orderData,
       }
 
-      transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction))
-      currentLowerPriceLimit = upperLimit
-    }
+      return buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts)
+    }))
+
     log("Transaction bundle size", transactions.length)
-    return await buildBundledTransaction(transactions)
+    return buildBundledTransaction(transactions)
   }
 
   const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
