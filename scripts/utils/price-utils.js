@@ -2,6 +2,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
+  const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
+    return targetPrice * 0.5 < lowestLimit && highestLimit < targetPrice * 1.5
+  }
+
   // returns undefined if the price was not available
   const getDexagPrice = async function(tokenBought, tokenSold) {
     // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
