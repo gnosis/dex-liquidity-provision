@@ -240,7 +240,7 @@ const buildOrders = async function(
   assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
   // Number of brackets is determined by bracketAddresses.length
-  const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
+  const lowestLimit = targetPrice / (1 + priceRangePercentage / 100)
   const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
   log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
