@@ -47,5 +47,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   return {
     isPriceReasonable,
+    areBoundsReasonable,
   }
 }
