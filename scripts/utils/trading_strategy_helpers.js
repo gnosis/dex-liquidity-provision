@@ -246,37 +246,41 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
     )
 
-    const transactions = await Promise.all(bracketAddresses.map(async (bracketAddress, bracketIndex) => {
-      assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
+    const transactions = await Promise.all(
+      bracketAddresses.map(async (bracketAddress, bracketIndex) => {
+        assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
-      const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
-      const upperLimit = lowerLimit * stepSizeAsMultiplier
+        const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
+        const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-      const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
-      // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
-      // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-      const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
+        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+        // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
+        // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
+        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
 
-      log(`Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`)
-      const buyTokens = [targetTokenId, stableTokenId]
-      const sellTokens = [stableTokenId, targetTokenId]
-      const validFroms = [await batchIndexPromise + validFrom, await batchIndexPromise + validFrom]
-      const validTos = [expiry, expiry]
-      const buyAmounts = [lowerBuyAmount, upperBuyAmount]
-      const sellAmounts = [lowerSellAmount, upperSellAmount]
+        log(
+          `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
+        )
+        const buyTokens = [targetTokenId, stableTokenId]
+        const sellTokens = [stableTokenId, targetTokenId]
+        const validFroms = [(await batchIndexPromise) + validFrom, (await batchIndexPromise) + validFrom]
+        const validTos = [expiry, expiry]
+        const buyAmounts = [lowerBuyAmount, upperBuyAmount]
+        const sellAmounts = [lowerSellAmount, upperSellAmount]
 
-      const orderData = exchange.contract.methods
-        .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
-        .encodeABI()
-      const orderTransaction = {
-        operation: CALL,
-        to: exchange.address,
-        value: 0,
-        data: orderData,
-      }
+        const orderData = exchange.contract.methods
+          .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
+          .encodeABI()
+        const orderTransaction = {
+          operation: CALL,
+          to: exchange.address,
+          value: 0,
+          data: orderData,
+        }
 
-      return buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts)
-    }))
+        return buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts)
+      })
+    )
 
     log("Transaction bundle size", transactions.length)
     return buildBundledTransaction(transactions)
