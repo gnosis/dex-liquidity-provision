@@ -29,8 +29,8 @@ const { toErc20Units } = require("../scripts/utils/printing_tools")
 
 const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
   const rangePercentage = 0.2
-  const stepSize = (targetPrice * (2 * rangePercentage)) / bracketSafes.length
-  const minimalPrice = targetPrice * (1 - rangePercentage)
+  const stepSizeAsMultiplier = Math.pow(1 + rangePercentage, 2 / bracketSafes.length)
+  const minimalPrice = targetPrice / (1 + rangePercentage)
   let multiplicator = new BN("10")
   if (targetPrice < 10) {
     multiplicator = new BN("10000000")
@@ -47,7 +47,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(buyOrder.priceNumerator)
           .toNumber() -
-          (minimalPrice + stepSize * index) * multiplicator.toNumber()
+          minimalPrice * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
       ),
       2
     )
@@ -58,7 +58,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(sellOrder.priceDenominator)
           .toNumber() -
-          multiplicator.toNumber() * (minimalPrice + stepSize * (index + 1))
+          minimalPrice * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
       ),
       2
     )
@@ -224,13 +224,7 @@ contract("GnosisSafe", function(accounts) {
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken,
-        stableToken,
-        targetPrice
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketAddresses, targetToken, stableToken, targetPrice)
       await execTransaction(masterSafe, lw, transaction)
 
       // Correctness assertions
@@ -259,13 +253,7 @@ contract("GnosisSafe", function(accounts) {
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        targetToken,
-        stableToken,
-        targetPrice
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
       await execTransaction(masterSafe, lw, transaction)
 
       await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
@@ -286,13 +274,7 @@ contract("GnosisSafe", function(accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        targetToken,
-        stableToken,
-        targetPrice
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
       await execTransaction(masterSafe, lw, transaction)
 
       await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
@@ -427,11 +409,7 @@ contract("GnosisSafe", function(accounts) {
         )
 
       // tries to transfer more funds to master than available, script should be aware of it
-      const transferFundsToMasterTransaction = await buildTransferFundsToMaster(
-        masterSafe.address,
-        withdrawalsModified,
-        true
-      )
+      const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterSafe.address, withdrawalsModified, true)
 
       await execTransaction(masterSafe, lw, transferFundsToMasterTransaction, "transfer funds to master for all brackets")
 
