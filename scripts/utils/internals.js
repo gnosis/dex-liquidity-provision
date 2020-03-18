@@ -140,8 +140,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return signatureBytes
   }
 
-  const encodeMultiSend = async function(multiSend, txs, web3 = web3) {
-    return await multiSend.contract.methods
+  const encodeMultiSend = function(multiSend, txs, web3 = web3) {
+    return multiSend.contract.methods
       .multiSend(
         `0x${txs
           .map(tx =>
@@ -166,7 +166,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const buildBundledTransaction = async function(transactions) {
     const MultiSend = artifacts.require("MultiSend")
     const multiSend = await MultiSend.deployed()
-    const transactionData = await encodeMultiSend(multiSend, transactions, web3)
+    const transactionData = encodeMultiSend(multiSend, transactions, web3)
     const bundledTransaction = {
       operation: DELEGATECALL,
       to: multiSend.address,
@@ -176,14 +176,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return bundledTransaction
   }
 
-  const execTransactionData = async function(gnosisSafeMasterCopy, owner, transaction) {
+  const execTransactionData = function(gnosisSafeMasterCopy, owner, transaction) {
     const sigs =
       "0x" +
       "000000000000000000000000" +
       owner.replace("0x", "") +
       "0000000000000000000000000000000000000000000000000000000000000000" +
       "01"
-    return await gnosisSafeMasterCopy.contract.methods
+    return gnosisSafeMasterCopy.contract.methods
       .execTransaction(
         transaction.to,
         transaction.value,

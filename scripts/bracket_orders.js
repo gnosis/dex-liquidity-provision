@@ -1,6 +1,8 @@
-const Contract = require("@truffle/contract")
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-const { buildOrders } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const {
+  getExchange,
+  getSafe,
+  buildOrders
+} = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
@@ -51,11 +53,8 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    await BatchExchange.setProvider(web3.currentProvider)
-    await BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+    const masterSafePromise = getSafe(argv.masterSafe, artifacts)
+    const exchange = await getExchange(web3)
 
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
@@ -78,7 +77,7 @@ module.exports = async callback => {
 
       const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
       if (answer == "y" || answer.toLowerCase() == "yes") {
-        await signAndSend(masterSafe, transaction, web3, argv.network)
+        await signAndSend(await masterSafePromise(), transaction, web3, argv.network)
       }
     }
 
