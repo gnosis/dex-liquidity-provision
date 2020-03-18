@@ -102,8 +102,7 @@ module.exports = async callback => {
     console.log("Started building withdraw transaction.")
     let transactionPromise
     if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
-    else if (argv.withdraw && !argv.transferBackToMaster)
-      transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
+    else if (argv.withdraw && !argv.transferBackToMaster) transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
     else if (!argv.withdraw && argv.transferBackToMaster)
       transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
     else if (argv.withdraw && argv.transferBackToMaster)
@@ -113,7 +112,7 @@ module.exports = async callback => {
     }
 
     for (const withdrawal of withdrawals) {
-      const {symbol: tokenSymbol, decimals: tokenDecimals} = await tokenInfoPromises[withdrawal.tokenAddress]
+      const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 

@@ -104,14 +104,14 @@ const tooManyDecimals = function() {
 }
 
 // takes an integer and produces an array containing the same value expressed in all types accepted for "decimals"
-const decimalTypesToTest = function (decimals) {
+const decimalTypesToTest = function(decimals) {
   return [decimals, decimals.toString(), new BN(decimals)]
 }
 
 describe("toErc20Units", () => {
   const testGoodEntries = function(entries) {
     for (const { user, machine, decimals } of entries) {
-      decimalTypesToTest(decimals).map( _decimals => {
+      decimalTypesToTest(decimals).map(_decimals => {
         assert.equal(
           toErc20Units(user, _decimals).toString(),
           machine,
@@ -139,7 +139,7 @@ describe("toErc20Units", () => {
         default:
           throw Error("Invalid error to test")
       }
-      decimalTypesToTest(decimals).map( _decimals => {
+      decimalTypesToTest(decimals).map(_decimals => {
         assert.throws(
           function() {
             return toErc20Units(user, _decimals)
@@ -311,19 +311,19 @@ describe("toErc20Units", () => {
 
 describe("fromErc20Units", () => {
   // takes an entry and produces an array containing the same entry expressed in all accepted input types
-  const allTypesForEntry = function (entry) {
+  const allTypesForEntry = function(entry) {
     let entriesToTest = []
-    decimalTypesToTest(entry.decimals).map( decimals => {
+    decimalTypesToTest(entry.decimals).map(decimals => {
       entriesToTest = entriesToTest.concat(
-        {user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine},
-        {user: entry.user, error: entry.error, decimals: decimals, machine: new BN(entry.machine)}
+        { user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine },
+        { user: entry.user, error: entry.error, decimals: decimals, machine: new BN(entry.machine) }
       )
     })
     return entriesToTest
   }
   const testGoodEntries = function(entries) {
     for (const entry of entries) {
-      allTypesForEntry(entry).map( ({ machine, decimals, user }) => {
+      allTypesForEntry(entry).map(({ machine, decimals, user }) => {
         assert.equal(
           fromErc20Units(machine, decimals),
           user,
@@ -334,7 +334,7 @@ describe("fromErc20Units", () => {
   }
   const testBadEntries = function(entries) {
     for (const entry of entries) {
-      allTypesForEntry(entry).map( ({ machine, decimals }) => {
+      allTypesForEntry(entry).map(({ machine, decimals }) => {
         let errorMessage
         switch (entry.error) {
           case "invalidDecimals":
