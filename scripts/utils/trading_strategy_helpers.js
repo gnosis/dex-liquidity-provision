@@ -216,9 +216,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     bracketAddresses,
     targetTokenId,
     stableTokenId,
-    targetPrice,
+    lowestLimit,
+    highestLimit,
     debug = false,
-    priceRangePercentage = 20,
     validFrom = 3,
     expiry = maxU32
   ) {
@@ -237,13 +237,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
     // Number of brackets is determined by bracketAddresses.length
-    const lowestLimit = targetPrice / (1 + priceRangePercentage / 100)
-    const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
     log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
-      `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
+      `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${stableToken.symbol} per ${targetToken.symbol}`
     )
 
     const transactions = await Promise.all(

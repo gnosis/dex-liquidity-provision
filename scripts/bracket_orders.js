@@ -26,10 +26,13 @@ const argv = require("yargs")
       return str.split(",")
     },
   })
-  .option("priceRange", {
+  .option("lowestLimit", {
     type: "float",
-    describe: "Percentage above and below the target price for which orders are to be placed",
-    default: 20,
+    describe: "Price for the bracket buying with the lowest price",
+  })
+  .option("highestLimit", {
+    type: "float",
+    describe: "Price for the bracket selling at the highest price",
   })
   .option("validFrom", {
     type: "int",
@@ -64,9 +67,9 @@ module.exports = async callback => {
         argv.brackets,
         argv.targetToken,
         argv.stableToken,
-        argv.targetPrice,
+        argv.lowestLimit,
+        argv.highestLimit,
         true,
-        argv.priceRange,
         argv.validFrom,
         argv.expiry
       )

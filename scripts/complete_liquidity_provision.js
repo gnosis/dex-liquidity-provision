@@ -39,10 +39,13 @@ const argv = require("yargs")
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
-  .option("priceRangePercentage", {
-    type: "int",
-    default: 20,
-    describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+  .option("lowestLimit", {
+    type: "float",
+    describe: "Price for the bracket buying with the lowest price",
+  })
+  .option("highestLimit", {
+    type: "float",
+    describe: "Price for the bracket selling at the highest price",
   })
   .demand(["masterSafe", "targetToken", "stableToken", "targetPrice", "investmentTargetToken", "investmentStableToken"])
   .help(
@@ -95,9 +98,9 @@ module.exports = async callback => {
       bracketAddresses,
       argv.targetToken,
       argv.stableToken,
-      argv.targetPrice,
-      true,
-      argv.priceRangePercentage
+      argv.lowestLimit,
+      argv.highestLimit,
+      true
     )
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,

@@ -42,7 +42,7 @@ truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --fleetSize=2 --n
 Requires that Master and bracket Safes are already deployed.
 
 ```js
-truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetPrice 270 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
+truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
 ```
 
 ### Transfer-Approve-Deposit
@@ -112,86 +112,19 @@ The deployed safes addresses will be displayed in the terminal and should be rec
 Using the list of safes just deployed and whatever values you would like for the other parameters.
 
 ```js
-truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetPrice 278 --masterSafe=$MASTER_SAFE --brackets=0x0f41B6BaF8202512e62CCc9866D27032D9DCFcD1,0x1d8A3D8d21466d36DDCa5432FD8b5d95956023B5,0x97f87462cC8738E1AFf8656A0C1D499e28d17E3b,0xF3b3609BEb25CB725377AaF06eBf50ff856F5C64,0x5e95f9a4f4Ed1323Dd489bDfd10bdd718e4d4720,0x194d09D906846aeF3402c5eab775bF8e6d6A9556,0xe635149d28302891377168964f873728175E8976,0x8beF6f835628688bDaC3Db28030769F5BCd37240,0xFEFC78e2363dCD8f9699F9336b14B292B29cf98e,0x8932112aEB83C7f7AebE9c83Beb62BCe5ad83275,0x90FeeD152232eD3fe0dAe28f2BE3651e38208E60,0xE6f636BD71e42F8D4EB17F47b216E945E0C156aE,0x5961D9411e6722BD299a5C36a7A5CDD3fc5Ec35E,0x52863CB34be1bE58B199281a6623D259BB670950,0x88580dd3dF04Eb9418D9ECC694FBc95786189cFE,0x185076bcba4aBD58F8d07C7276B7194Ec124Ea55,0x3A8CE5F3186C0E116d412c80D1e56b9778182a1A,0x0703B45ca5172016aF1f9fdF43f80bDc9088b542,0xBd7982cE05fe5484448b775E2FD017203Cd9aE90,0x5F1D32eFF4E25c4FD8C57d8cf3F8251eFB82bEC2 --network=$NETWORK_NAME
+truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --targetPrice 278 --lowestLimit 250 --highestLimit 330 --masterSafe=$MASTER_SAFE --brackets=0x0f41B6BaF8202512e62CCc9866D27032D9DCFcD1,0x1d8A3D8d21466d36DDCa5432FD8b5d95956023B5,0x97f87462cC8738E1AFf8656A0C1D499e28d17E3b,0xF3b3609BEb25CB725377AaF06eBf50ff856F5C64,0x5e95f9a4f4Ed1323Dd489bDfd10bdd718e4d4720,0x194d09D906846aeF3402c5eab775bF8e6d6A9556,0xe635149d28302891377168964f873728175E8976,0x8beF6f835628688bDaC3Db28030769F5BCd37240,0xFEFC78e2363dCD8f9699F9336b14B292B29cf98e,0x8932112aEB83C7f7AebE9c83Beb62BCe5ad83275,0x90FeeD152232eD3fe0dAe28f2BE3651e38208E60,0xE6f636BD71e42F8D4EB17F47b216E945E0C156aE,0x5961D9411e6722BD299a5C36a7A5CDD3fc5Ec35E,0x52863CB34be1bE58B199281a6623D259BB670950,0x88580dd3dF04Eb9418D9ECC694FBc95786189cFE,0x185076bcba4aBD58F8d07C7276B7194Ec124Ea55,0x3A8CE5F3186C0E116d412c80D1e56b9778182a1A,0x0703B45ca5172016aF1f9fdF43f80bDc9088b542,0xBd7982cE05fe5484448b775E2FD017203Cd9aE90,0x5F1D32eFF4E25c4FD8C57d8cf3F8251eFB82bEC2 --network=$NETWORK_NAME
 ```
 
-This will reult in the following text displayed in your terminal. Note that you will be prompted before the transaction is sent.
+This will generate the orders for the bracket and result in a final output looking like this:
 
 ```
-Preparing order transaction data
-Batch Exchange 0xC576eA7bd102F7E476368a5E98FA455d1Ea34dE2
-Lowest-Highest Limit 222.4-333.59999999999997
-Constructing bracket trading strategy order data based on valuation 278 DAI per WETH
-Safe 0 - 0x0f41B6BaF8202512e62CCc9866D27032D9DCFcD1:
-  Buy  WETH with DAI at 222.4
-  Sell WETH for  DAI at 227.96
-Safe 1 - 0x1d8A3D8d21466d36DDCa5432FD8b5d95956023B5:
-  Buy  WETH with DAI at 227.96
-  Sell WETH for  DAI at 233.52
-Safe 2 - 0x97f87462cC8738E1AFf8656A0C1D499e28d17E3b:
-  Buy  WETH with DAI at 233.52
-  Sell WETH for  DAI at 239.07999999999998
-Safe 3 - 0xF3b3609BEb25CB725377AaF06eBf50ff856F5C64:
-  Buy  WETH with DAI at 239.07999999999998
-  Sell WETH for  DAI at 244.64
-Safe 4 - 0x5e95f9a4f4Ed1323Dd489bDfd10bdd718e4d4720:
-  Buy  WETH with DAI at 244.64
-  Sell WETH for  DAI at 250.2
-Safe 5 - 0x194d09D906846aeF3402c5eab775bF8e6d6A9556:
-  Buy  WETH with DAI at 250.2
-  Sell WETH for  DAI at 255.76
-Safe 6 - 0xe635149d28302891377168964f873728175E8976:
-  Buy  WETH with DAI at 255.76
-  Sell WETH for  DAI at 261.32
-Safe 7 - 0x8beF6f835628688bDaC3Db28030769F5BCd37240:
-  Buy  WETH with DAI at 261.32
-  Sell WETH for  DAI at 266.88
-Safe 8 - 0xFEFC78e2363dCD8f9699F9336b14B292B29cf98e:
-  Buy  WETH with DAI at 266.88
-  Sell WETH for  DAI at 272.44
-Safe 9 - 0x8932112aEB83C7f7AebE9c83Beb62BCe5ad83275:
-  Buy  WETH with DAI at 272.44
-  Sell WETH for  DAI at 278
-Safe 10 - 0x90FeeD152232eD3fe0dAe28f2BE3651e38208E60:
-  Buy  WETH with DAI at 278
-  Sell WETH for  DAI at 283.56
-Safe 11 - 0xE6f636BD71e42F8D4EB17F47b216E945E0C156aE:
-  Buy  WETH with DAI at 283.56
-  Sell WETH for  DAI at 289.12
-Safe 12 - 0x5961D9411e6722BD299a5C36a7A5CDD3fc5Ec35E:
-  Buy  WETH with DAI at 289.12
-  Sell WETH for  DAI at 294.67999999999995
-Safe 13 - 0x52863CB34be1bE58B199281a6623D259BB670950:
-  Buy  WETH with DAI at 294.67999999999995
-  Sell WETH for  DAI at 300.24
-Safe 14 - 0x88580dd3dF04Eb9418D9ECC694FBc95786189cFE:
-  Buy  WETH with DAI at 300.24
-  Sell WETH for  DAI at 305.79999999999995
-Safe 15 - 0x185076bcba4aBD58F8d07C7276B7194Ec124Ea55:
-  Buy  WETH with DAI at 305.79999999999995
-  Sell WETH for  DAI at 311.35999999999996
-Safe 16 - 0x3A8CE5F3186C0E116d412c80D1e56b9778182a1A:
-  Buy  WETH with DAI at 311.35999999999996
-  Sell WETH for  DAI at 316.91999999999996
-Safe 17 - 0x0703B45ca5172016aF1f9fdF43f80bDc9088b542:
-  Buy  WETH with DAI at 316.91999999999996
-  Sell WETH for  DAI at 322.47999999999996
-Safe 18 - 0xBd7982cE05fe5484448b775E2FD017203Cd9aE90:
-  Buy  WETH with DAI at 322.47999999999996
-  Sell WETH for  DAI at 328.03999999999996
-Safe 19 - 0x5F1D32eFF4E25c4FD8C57d8cf3F8251eFB82bEC2:
-  Buy  WETH with DAI at 328.03999999999996
-  Sell WETH for  DAI at 333.59999999999997
-Transaction bundle size 20
-Are you sure you want to send this transaction to the EVM? [yN] y
-Aquiring Transaction Hash
 > Signing and posting multi-send transaction request from proposer account 0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1
-Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/safes/0xb2162C8868AB135604270c92ed1faFA47b2BB50B/transactions
+Transaction awaiting execution in the interface https://rinkeby.gnosis-safe.io/app/#/safes/0xb2162C8868AB135604270c92ed1faFA47b2BB50B/transactions
 ```
 
 Follow the link from the last line to complete signing and execution of the proposed transaction.
 
-When propted to confirm and execute transaction, be sure to adjust the gas estimates suggested by metamask (10x)
+When prompted to confirm and execute transaction, be sure to adjust the gas estimates suggested by metamask (10x)
 
 3. Transfer-Approve-Deposit
 

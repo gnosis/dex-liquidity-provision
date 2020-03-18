@@ -27,12 +27,10 @@ const {
 const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
 const { toErc20Units } = require("../scripts/utils/printing_tools")
 
-const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
-  const rangePercentage = 0.2
-  const stepSizeAsMultiplier = Math.pow(1 + rangePercentage, 2 / bracketSafes.length)
-  const minimalPrice = targetPrice / (1 + rangePercentage)
+const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
+  const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
   let multiplicator = new BN("10")
-  if (targetPrice < 10) {
+  if ((lowestLimit + highestLimit) / 2 < 10) {
     multiplicator = new BN("10000000")
   }
   // Correctness assertions
@@ -47,7 +45,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(buyOrder.priceNumerator)
           .toNumber() -
-          minimalPrice * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
+          lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
       ),
       2
     )
@@ -58,7 +56,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(sellOrder.priceDenominator)
           .toNumber() -
-          minimalPrice * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
+          lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
       ),
       2
     )
@@ -220,11 +218,20 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
+      const lowestLimit = 90
+      const highestLimit = 120
       await prepareTokenRegistration(accounts[0], exchange)
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketAddresses, targetToken, stableToken, targetPrice)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
       // Correctness assertions
@@ -248,15 +255,23 @@ contract("GnosisSafe", function(accounts) {
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 1 / 100
+      const lowestLimit = 0.09
+      const highestLimit = 0.12
       await prepareTokenRegistration(accounts[0], exchange)
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
-      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
@@ -271,13 +286,22 @@ contract("GnosisSafe", function(accounts) {
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
       const targetPrice = 100
+      const lowestLimit = 80
+      const highestLimit = 110
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
-      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
