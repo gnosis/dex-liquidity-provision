@@ -237,20 +237,20 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
     // Number of brackets is determined by bracketAddresses.length
-    const lowestLimit = targetPrice * (1 - priceRangePercentage / 100)
+    const lowestLimit = targetPrice / (1 + priceRangePercentage / 100)
     const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
     log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
-    const stepSize = (highestLimit - lowestLimit) / bracketAddresses.length
-
+    const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
       `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
     )
+
     const transactions = await Promise.all(bracketAddresses.map(async (bracketAddress, bracketIndex) => {
       assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
-      const lowerLimit = lowestLimit + bracketIndex * stepSize
-      const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
+      const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
+      const upperLimit = lowerLimit * stepSizeAsMultiplier
 
       const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
       // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
