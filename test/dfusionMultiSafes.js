@@ -217,7 +217,6 @@ contract("GnosisSafe", function(accounts) {
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 100
       const lowestLimit = 90
       const highestLimit = 120
       await prepareTokenRegistration(accounts[0], exchange)
@@ -285,7 +284,6 @@ contract("GnosisSafe", function(accounts) {
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 100
       const lowestLimit = 80
       const highestLimit = 110
       await prepareTokenRegistration(accounts[0], exchange)
