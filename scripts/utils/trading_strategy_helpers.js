@@ -244,12 +244,13 @@ const buildOrders = async function(
   const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
   log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
 
-  const stepSize = (highestLimit - lowestLimit) / bracketAddresses.length
+  const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
 
   const transactions = []
   log(
     `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
   )
+  let currentLowerPriceLimit = lowestLimit
   for (let bracketIndex = 0; bracketIndex < bracketAddresses.length; bracketIndex++) {
     const bracketAddress = bracketAddresses[bracketIndex]
     assert(
@@ -257,8 +258,8 @@ const buildOrders = async function(
       "each bracket should be owned only by the master Safe"
     )
 
-    const lowerLimit = lowestLimit + bracketIndex * stepSize
-    const upperLimit = lowestLimit + (bracketIndex + 1) * stepSize
+    const lowerLimit = currentLowerPriceLimit
+    const upperLimit = currentLowerPriceLimit * stepSizeAsMultiplier
 
     const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
     // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
@@ -285,6 +286,7 @@ const buildOrders = async function(
     }
 
     transactions.push(await buildExecTransaction(masterAddress, bracketAddress, orderTransaction, artifacts))
+    currentLowerPriceLimit = upperLimit
   }
   log("Transaction bundle size", transactions.length)
   return await buildBundledTransaction(transactions, web3, artifacts)
@@ -330,9 +332,10 @@ const checkSufficiencyOfBalance = async function(token, owner, amount) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) { // TODO: do we need artifacts here?
+const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName, web3 = web3, artifacts = artifacts) {
+  // TODO: do we need artifacts here?
   const exchange = await getExchange(web3)
-  
+
   // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
   const masterTransactionsPromises = withdrawals.map(withdrawal => {
     // create transaction for the token
@@ -345,10 +348,7 @@ const buildGenericFundMovement = async function(masterAddress, withdrawals, func
         ).encodeABI()
         break
       case "withdraw":
-        transactionData = exchange.contract.methods["withdraw"](
-          withdrawal.bracketAddress,
-          withdrawal.tokenAddress
-        ).encodeABI()
+        transactionData = exchange.contract.methods["withdraw"](withdrawal.bracketAddress, withdrawal.tokenAddress).encodeABI()
         break
       default:
         assert(false, "Function " + functionName + "is not implemented")
@@ -573,27 +573,29 @@ const buildTransferFundsToMaster = async function(masterAddress, withdrawals, li
   const ERC20 = artifacts.require("ERC20Mintable")
 
   // TODO: enforce that there are no overlapping withdrawals
-  const masterTransactions = await Promise.all(withdrawals.map(async withdrawal => {
-    const token = await ERC20.at(withdrawal.tokenAddress)
-    let amount
-    if (limitToMaxWithdrawableAmount) {
-      amount = BN.min(new BN(withdrawal.amount), new BN(await token.balanceOf.call(withdrawal.bracketAddress)))
-    } else {
-      amount = withdrawal.amount
-    }
-    // create transaction for the token
-    const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
+  const masterTransactions = await Promise.all(
+    withdrawals.map(async withdrawal => {
+      const token = await ERC20.at(withdrawal.tokenAddress)
+      let amount
+      if (limitToMaxWithdrawableAmount) {
+        amount = BN.min(new BN(withdrawal.amount), new BN(await token.balanceOf.call(withdrawal.bracketAddress)))
+      } else {
+        amount = withdrawal.amount
+      }
+      // create transaction for the token
+      const transactionData = await token.contract.methods.transfer(masterAddress, amount.toString()).encodeABI()
 
-    // prepare bracket transaction
-    const transactionToExecute = {
-      operation: CALL,
-      to: token.address,
-      value: 0,
-      data: transactionData,
-    }
-    // build transaction to execute previous transaction through master
-    return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
-  }))
+      // prepare bracket transaction
+      const transactionToExecute = {
+        operation: CALL,
+        to: token.address,
+        value: 0,
+        data: transactionData,
+      }
+      // build transaction to execute previous transaction through master
+      return buildExecTransaction(masterAddress, withdrawal.bracketAddress, transactionToExecute, artifacts)
+    })
+  )
 
   return buildBundledTransaction(masterTransactions, web3, artifacts)
 }

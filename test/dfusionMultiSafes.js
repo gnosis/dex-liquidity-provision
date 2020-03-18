@@ -29,7 +29,7 @@ const { toErc20Units } = require("../scripts/utils/printing_tools")
 
 const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
   const rangePercentage = 0.2
-  const stepSize = (targetPrice * (2 * rangePercentage)) / bracketSafes.length
+  const stepSizeAsMultiplier = Math.pow((1 + rangePercentage) / (1 - rangePercentage), 1 / bracketSafes.length)
   const minimalPrice = targetPrice * (1 - rangePercentage)
   let multiplicator = new BN("10")
   if (targetPrice < 10) {
@@ -47,7 +47,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(buyOrder.priceNumerator)
           .toNumber() -
-          (minimalPrice + stepSize * index) * multiplicator.toNumber()
+          minimalPrice * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
       ),
       2
     )
@@ -58,7 +58,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(sellOrder.priceDenominator)
           .toNumber() -
-          multiplicator.toNumber() * (minimalPrice + stepSize * (index + 1))
+          minimalPrice * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
       ),
       2
     )
