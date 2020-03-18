@@ -1,12 +1,12 @@
-const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")
-const { isPriceReasonable } = require("./utils/price-utils")
+const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { isPriceReasonable } = require("./utils/price-utils")(web3, artifacts)
 const Contract = require("@truffle/contract")
 const {
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 
 const { toErc20Units } = require("./utils/printing_tools")
@@ -77,7 +77,7 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
 
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
@@ -86,7 +86,7 @@ module.exports = async callback => {
     }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, artifacts, true)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 
     console.log("3. Building orders and deposits")
@@ -96,8 +96,6 @@ module.exports = async callback => {
       argv.targetToken,
       argv.stableToken,
       argv.targetPrice,
-      web3,
-      artifacts,
       true,
       argv.priceRangePercentage
     )
@@ -108,8 +106,6 @@ module.exports = async callback => {
       investmentStableToken,
       targetToken.address,
       investmentTargetToken,
-      artifacts,
-      web3,
       true
     )
 
