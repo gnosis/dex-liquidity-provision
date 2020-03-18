@@ -2,10 +2,10 @@ const {
   getExchange,
   getSafe,
   buildOrders
-} = require("./utils/trading_strategy_helpers")
-const { isPriceReasonable } = require("./utils/price-utils.js")
+} = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { isPriceReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 
 const argv = require("yargs")
   .option("targetToken", {
@@ -59,7 +59,7 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice, artifacts)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
       console.log("Preparing order transaction data")
@@ -69,8 +69,6 @@ module.exports = async callback => {
         argv.targetToken,
         argv.stableToken,
         argv.targetPrice,
-        web3,
-        artifacts,
         true,
         argv.priceRange,
         argv.validFrom,
