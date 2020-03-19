@@ -236,9 +236,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     assert(stableToken.decimals === 18, "Target token must have 18 decimals")
     assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
-    // Number of brackets is determined by bracketAddresses.length
-    log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
-
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
       `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${stableToken.symbol} per ${targetToken.symbol}`

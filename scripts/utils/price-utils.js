@@ -3,7 +3,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
   const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
-    return targetPrice * 0.5 < lowestLimit && highestLimit < targetPrice * 1.5
+    const areReasonable = targetPrice / 1.5 < lowestLimit && highestLimit < targetPrice * 1.5
+    if (!areReasonable) {
+      console.log("Please double check your bounds. They seem to be unreasonable")
+    }
+    return areReasonable
   }
 
   // returns undefined if the price was not available
