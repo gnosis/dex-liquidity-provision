@@ -88,8 +88,8 @@ module.exports = async callback => {
     }
     const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
     if (!boundCheck) {
-      if (!(await proceedAnyways("Bound check failed!"))) {
-        callback("Error: Price checks did not pass")
+      if (!(await proceedAnyways("Bound checks failed!"))) {
+        callback("Error: Bound checks did not pass")
       }
     }
 

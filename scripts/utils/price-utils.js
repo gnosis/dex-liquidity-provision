@@ -82,11 +82,15 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
-    const areReasonable = targetPrice / 1.5 < lowestLimit && highestLimit < targetPrice * 1.5
-    if (!areReasonable) {
+    const boundsCloseToTargetPrice = targetPrice / 1.5 < lowestLimit && highestLimit < targetPrice * 1.5
+    if (!boundsCloseToTargetPrice) {
       console.log("Please double check your bounds. They seem to be unreasonable")
     }
-    return areReasonable
+    const targetPriceWithinBounds = targetPrice > lowestLimit && highestLimit < targetPrice
+    if (!targetPriceWithinBounds) {
+      console.log("Please double check your bounds. Current price is not within the bounds")
+    }
+    return targetPriceWithinBounds && boundsCloseToTargetPrice
   }
 
   // returns undefined if the price was not available

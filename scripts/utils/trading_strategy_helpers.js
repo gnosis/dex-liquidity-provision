@@ -443,8 +443,13 @@ withdrawal of or to withdraw the desired funds
     // bracketIndexAtTargetPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = targetPrice and solved for x
     // in case the targetPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
     // second order will be funded.
-    const bracketIndexAtTargetPrice = Math.round(Math.log(targetPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
-    assert(bracketIndexAtTargetPrice <= fleetSize, "TargetPrice is not between the bounds")
+    let bracketIndexAtTargetPrice = Math.round(Math.log(targetPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
+    if (bracketIndexAtTargetPrice > fleetSize) {
+      bracketIndexAtTargetPrice = fleetSize
+    }
+    if (bracketIndexAtTargetPrice < 0) {
+      bracketIndexAtTargetPrice = 0
+    }
 
     const deposits = []
 
