@@ -137,7 +137,7 @@ contract("GnosisSafe", function(accounts) {
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
     })
   })
-  describe("transfer tests:", async function() {
+  describe.only("transfer tests:", async function() {
     const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
@@ -177,9 +177,7 @@ contract("GnosisSafe", function(accounts) {
         { decimals: 50, amount: "0.1" },
         { decimals: 0, amount: "2" },
       ]
-      for (const { decimals, amount } of testEntries) {
-        await testManualDeposits(decimals, amount)
-      }
+      await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
 
     const testAutomaticDeposits = async function(
@@ -246,9 +244,11 @@ contract("GnosisSafe", function(accounts) {
         { stableTokenDecimals: 18, stableTokenAmount: "0.1", targetTokenDecimals: 6, targetTokenAmount: "100.101" },
         { stableTokenDecimals: 4, stableTokenAmount: "100.0001", targetTokenDecimals: 0, targetTokenAmount: "2" },
       ]
-      for (const { stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount } of testEntries) {
-        await testAutomaticDeposits(stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount)
-      }
+      await Promise.all(
+        testEntries.map(({ stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount }) =>
+          testAutomaticDeposits(stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount)
+        )
+      )
     })
   })
   describe("bracket order placement test:", async function() {
