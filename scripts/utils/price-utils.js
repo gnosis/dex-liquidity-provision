@@ -93,7 +93,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     if (!boundsCloseTocurrentPrice) {
       console.log("Please double check your bounds. They seem to be unreasonable")
     }
-    const currentPriceWithinBounds = currentPrice > lowestLimit && highestLimit < currentPrice
+    const currentPriceWithinBounds = currentPrice > lowestLimit && highestLimit > currentPrice
     if (!currentPriceWithinBounds) {
       console.log("Please double check your bounds. Current price is not within the bounds")
     }
