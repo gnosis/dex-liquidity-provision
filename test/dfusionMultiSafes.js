@@ -300,7 +300,7 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 4
       const lowestLimit = 0.8
       const highestLimit = 1.2
-      const currentPrice = 1
+      const currentPrice = 0.9
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
       const depositAmountStableToken = new BN(1000)
 
