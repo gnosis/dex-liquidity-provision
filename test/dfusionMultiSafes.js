@@ -25,7 +25,7 @@ const {
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
-const { toErc20Units } = require("../scripts/utils/printing_tools")
+const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
 const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
   const rangePercentage = 0.2
@@ -141,14 +141,18 @@ contract("GnosisSafe", function(accounts) {
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-      const depositAmount = 1000
-      await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
-      await testToken.transfer(masterSafe.address, depositAmount * bracketAddresses.length)
+      const tokenDecimals = 18
+      const readableDepositAmount = "0.000000000000001"
+      const depositAmount = toErc20Units(readableDepositAmount, tokenDecimals)
+      const totalTokenNeeded = depositAmount.muln(bracketAddresses.length)
+      const token = await TestToken.new("TEST", tokenDecimals)
+      await token.mint(accounts[0], totalTokenNeeded)
+      await token.transfer(masterSafe.address, totalTokenNeeded)
       // Note that we are have NOT registered the tokens on the exchange but we can deposit them nevertheless.
 
       const deposits = bracketAddresses.map(bracketAddress => ({
         amount: depositAmount.toString(),
-        tokenAddress: testToken.address,
+        tokenAddress: token.address,
         bracketAddress: bracketAddress,
       }))
 
@@ -159,9 +163,11 @@ contract("GnosisSafe", function(accounts) {
       await waitForNSeconds(301)
 
       for (const bracketAddress of bracketAddresses) {
-        const bracketExchangeBalance = (await exchange.getBalance(bracketAddress, testToken.address)).toNumber()
-        assert.equal(bracketExchangeBalance, depositAmount)
-        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+        const bracketExchangeBalance = await exchange.getBalance(bracketAddress, token.address)
+        const bracketExchangeReadableBalance = fromErc20Units(bracketExchangeBalance, tokenDecimals)
+        assert.equal(bracketExchangeBalance.toString(), depositAmount.toString())
+        assert.equal(bracketExchangeReadableBalance, readableDepositAmount)
+        const bracketPersonalTokenBalance = (await token.balanceOf(bracketAddress)).toNumber()
         // This should always output 0 as the brackets should never directly hold funds
         assert.equal(bracketPersonalTokenBalance, 0)
       }
