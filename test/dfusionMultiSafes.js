@@ -138,11 +138,9 @@ contract("GnosisSafe", function(accounts) {
     })
   })
   describe("transfer tests:", async function() {
-    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
+    const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-      const tokenDecimals = 18
-      const readableDepositAmount = "0.000000000000001"
       const depositAmount = toErc20Units(readableDepositAmount, tokenDecimals)
       const totalTokenNeeded = depositAmount.muln(bracketAddresses.length)
       const token = await TestToken.new("TEST", tokenDecimals)
@@ -171,20 +169,27 @@ contract("GnosisSafe", function(accounts) {
         // This should always output 0 as the brackets should never directly hold funds
         assert.equal(bracketPersonalTokenBalance, 0)
       }
+    }
+    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
+      const testEntries = [
+        {decimals:6, amount:"100"},
+        {decimals:18, amount:"0.000000000000001"},
+        {decimals:50, amount:"0.1"},
+        {decimals:0, amount:"2"},
+      ]
+      for (const {decimals, amount} of testEntries) {
+        await testManualDeposits(decimals, amount)
+      }
     })
 
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+    const testAutomaticDeposits = async function(stableTokenDecimals, readableDepositAmountStableToken, targetTokenDecimals, readableDepositAmountTargetToken) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleetSize = 2
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
-      const readableDepositAmountStableToken = "0.000000000000001"
-      const stableTokenDecimals = 18
       const depositAmountStableToken = toErc20Units(readableDepositAmountStableToken, stableTokenDecimals)
       const stableToken = await TestToken.new("TEST", stableTokenDecimals)
       await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      const readableDepositAmountTargetToken = "0.000000000000001"
-      const targetTokenDecimals = 18
       const depositAmountTargetToken = toErc20Units(readableDepositAmountTargetToken, targetTokenDecimals)
       const targetToken = await TestToken.new("TEST", targetTokenDecimals)
       await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
@@ -222,6 +227,17 @@ contract("GnosisSafe", function(accounts) {
         const bracketPersonalTokenBalance = await testToken.balanceOf(bracketAddress)
         // This should always output 0 as the brackets should never directly hold funds
         assert.equal(bracketPersonalTokenBalance.toString(), "0")
+      }
+    }
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
+      const testEntries = [
+        {stableTokenDecimals:18, stableTokenAmount:"0.000000000000001", targetTokenDecimals:18, targetTokenAmount:"0.000000000000001"},
+        {stableTokenDecimals:6, stableTokenAmount:"100.101", targetTokenDecimals:18, targetTokenAmount:"0.1"},
+        {stableTokenDecimals:18, stableTokenAmount:"0.1", targetTokenDecimals:6, targetTokenAmount:"100.101"},
+        {stableTokenDecimals:4, stableTokenAmount:"100.0001", targetTokenDecimals:0, targetTokenAmount:"2"},
+      ]
+      for (const {stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount} of testEntries) {
+        await testAutomaticDeposits(stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount)
       }
     })
   })
