@@ -75,8 +75,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const checkFundingInTheMiddleBracket = function(
     bracketExchangeBalanceStableToken,
     bracketExchangeBalanceTargetToken,
-    investmentStableTokenPerBracket
-    investmentTargetTokenPerBracket,
+    investmentStableTokenPerBracket,
+    investmentTargetTokenPerBracket
   ) {
     // For the middle bracket the funding can go in either bracket
     // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
