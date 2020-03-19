@@ -177,12 +177,16 @@ contract("GnosisSafe", function(accounts) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleetSize = 2
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
-      const depositAmountStableToken = new BN(1000)
-      const stableToken = await TestToken.new("TEST", 18)
+      const readableDepositAmountStableToken = "0.000000000000001"
+      const stableTokenDecimals = 18
+      const depositAmountStableToken = toErc20Units(readableDepositAmountStableToken, stableTokenDecimals)
+      const stableToken = await TestToken.new("TEST", stableTokenDecimals)
       await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
       await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      const depositAmountTargetToken = new BN(2000)
-      const targetToken = await TestToken.new("TEST", 18)
+      const readableDepositAmountTargetToken = "0.000000000000001"
+      const targetTokenDecimals = 18
+      const depositAmountTargetToken = toErc20Units(readableDepositAmountTargetToken, targetTokenDecimals)
+      const targetToken = await TestToken.new("TEST", targetTokenDecimals)
       await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
       await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
@@ -200,22 +204,24 @@ contract("GnosisSafe", function(accounts) {
       await waitForNSeconds(301)
 
       for (const bracketAddress of bracketAddresses.slice(0, fleetSize / 2)) {
-        let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
-        assert.equal(bracketExchangeBalance, depositAmountStableToken)
-        bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
-        assert.equal(bracketExchangeBalance, 0)
+        let bracketExchangeBalance = await exchange.getBalance(bracketAddress, stableToken.address)
+        assert.equal(bracketExchangeBalance.toString(), depositAmountStableToken.toString())
+        assert.equal(fromErc20Units(bracketExchangeBalance, stableTokenDecimals), readableDepositAmountStableToken)
+        bracketExchangeBalance = await exchange.getBalance(bracketAddress, targetToken.address)
+        assert.equal(bracketExchangeBalance.toString(), "0")
         const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
         // This should always output 0 as the brackets should never directly hold funds
-        assert.equal(bracketPersonalTokenBalance, 0)
+        assert.equal(bracketPersonalTokenBalance.toString(), "0")
       }
       for (const bracketAddress of bracketAddresses.slice(fleetSize / 2 + 1, fleetSize / 2)) {
-        let bracketExchangeBalance = (await exchange.getBalance(bracketAddress, targetToken.address)).toNumber()
-        assert.equal(bracketExchangeBalance, depositAmountTargetToken)
-        bracketExchangeBalance = (await exchange.getBalance(bracketAddress, stableToken.address)).toNumber()
-        assert.equal(bracketExchangeBalance, 0)
-        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
+        let bracketExchangeBalance = await exchange.getBalance(bracketAddress, targetToken.address)
+        assert.equal(bracketExchangeBalance.toString(), depositAmountTargetToken.toString())
+        assert.equal(fromErc20Units(bracketExchangeBalance, stableTokenDecimals), readableDepositAmountTargetToken)
+        bracketExchangeBalance = await exchange.getBalance(bracketAddress, stableToken.address)
+        assert.equal(bracketExchangeBalance.toString(), "0")
+        const bracketPersonalTokenBalance = await testToken.balanceOf(bracketAddress)
         // This should always output 0 as the brackets should never directly hold funds
-        assert.equal(bracketPersonalTokenBalance, 0)
+        assert.equal(bracketPersonalTokenBalance.toString(), "0")
       }
     })
   })
