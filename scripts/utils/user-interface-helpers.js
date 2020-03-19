@@ -1,4 +1,4 @@
-const { promptUser } = require("./sign_and_send")
+const { promptUser } = require("./sign_and_send")(web3, artifacts)
 
 const proceedAnyways = async message => {
   const answer = await promptUser(message + " Continue anyway? [yN] ")
