@@ -17,7 +17,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
     const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
-    const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() == bracketAddress.toLowerCase())
+    const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 
     const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
@@ -81,9 +81,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // For the middle bracket the funding can go in either bracket
     // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
     return (
-      (bracketExchangeBalanceStableToken == 0 &&
-        bracketExchangeBalanceTargetToken == investmentTargetTokenPerBracket.toString()) ||
-      (bracketExchangeBalanceTargetToken == 0 && bracketExchangeBalanceStableToken == investmentStableTokenPerBracket.toString())
+      (bracketExchangeBalanceStableToken === "0" &&
+        bracketExchangeBalanceTargetToken === investmentTargetTokenPerBracket.toString()) ||
+      (bracketExchangeBalanceTargetToken === "0" &&
+        bracketExchangeBalanceStableToken === investmentStableTokenPerBracket.toString())
     )
   }
 
