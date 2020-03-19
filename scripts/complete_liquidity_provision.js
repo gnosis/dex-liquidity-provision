@@ -35,7 +35,7 @@ const argv = require("yargs")
   .option("investmentStableToken", {
     describe: "Amount to be invested into the stableToken",
   })
-  .option("targetPrice", {
+  .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
@@ -47,7 +47,7 @@ const argv = require("yargs")
     type: "float",
     describe: "Price for the bracket selling at the highest price",
   })
-  .demand(["masterSafe", "targetToken", "stableToken", "targetPrice", "investmentTargetToken", "investmentStableToken"])
+  .demand(["masterSafe", "targetToken", "stableToken", "currentPrice", "investmentTargetToken", "investmentStableToken"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -80,13 +80,13 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
       }
     }
-    const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
+    const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
     if (!boundCheck) {
       if (!(await proceedAnyways("Bound checks failed!"))) {
         callback("Error: Bound checks did not pass")
@@ -114,7 +114,7 @@ module.exports = async callback => {
       stableToken.address,
       argv.lowestLimit,
       argv.highestLimit,
-      argv.targetPrice,
+      argv.currentPrice,
       investmentStableToken,
       investmentTargetToken,
       true

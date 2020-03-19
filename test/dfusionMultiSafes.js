@@ -172,7 +172,7 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 4
       const lowestLimit = 100
       const highestLimit = 121
-      const targetPrice = 110
+      const currentPrice = 110
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
       const depositAmountStableToken = new BN(1000)
 
@@ -211,7 +211,7 @@ contract("GnosisSafe", function(accounts) {
         stableToken.address,
         lowestLimit,
         highestLimit,
-        targetPrice,
+        currentPrice,
         depositAmountStableToken,
         depositAmountTargetToken
       )
@@ -221,7 +221,7 @@ contract("GnosisSafe", function(accounts) {
 
       for (const bracketAddress of bracketAddresses) {
         await checkCorrectnessOfDeposits(
-          targetPrice,
+          currentPrice,
           bracketAddress,
           exchange,
           stableToken,
@@ -236,7 +236,7 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 4
       const lowestLimit = 0.09
       const highestLimit = 0.12
-      const targetPrice = 0.105
+      const currentPrice = 0.105
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
       const depositAmountStableToken = new BN(1000)
 
@@ -275,7 +275,7 @@ contract("GnosisSafe", function(accounts) {
         stableToken.address,
         lowestLimit,
         highestLimit,
-        targetPrice,
+        currentPrice,
         depositAmountStableToken,
         depositAmountTargetToken
       )
@@ -285,7 +285,7 @@ contract("GnosisSafe", function(accounts) {
 
       for (const bracketAddress of bracketAddresses) {
         await checkCorrectnessOfDeposits(
-          targetPrice,
+          currentPrice,
           bracketAddress,
           exchange,
           stableToken,
@@ -300,7 +300,7 @@ contract("GnosisSafe", function(accounts) {
       const fleetSize = 4
       const lowestLimit = 0.8
       const highestLimit = 1.2
-      const targetPrice = 1
+      const currentPrice = 1
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
       const depositAmountStableToken = new BN(1000)
 
@@ -339,7 +339,7 @@ contract("GnosisSafe", function(accounts) {
         stableToken.address,
         lowestLimit,
         highestLimit,
-        targetPrice,
+        currentPrice,
         depositAmountStableToken,
         depositAmountTargetToken
       )
@@ -349,7 +349,7 @@ contract("GnosisSafe", function(accounts) {
 
       for (const bracketAddress of bracketAddresses) {
         await checkCorrectnessOfDeposits(
-          targetPrice,
+          currentPrice,
           bracketAddress,
           exchange,
           stableToken,

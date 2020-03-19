@@ -6,7 +6,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
   const checkCorrectnessOfDeposits = async (
-    targetPrice,
+    currentPrice,
     bracketAddress,
     exchange,
     stableToken,
@@ -25,9 +25,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const sellTargetTokenOrder = bracketOrders.filter(order => order.sellToken == targetTokenId)[0]
 
     // Check that tokens with a lower price than the target price are funded with stableTokens
-    if (checkThatOrderPriceIsBelowTarget(targetPrice, sellStableTokenOrder)) {
+    if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
       // checks whether price is in middle of bracket:
-      if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
+      if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
         assert.isTrue(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
@@ -43,8 +43,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       assert.equal(bracketExchangeBalanceStableToken, 0)
     }
 
-    if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
-      if (checkThatOrderPriceIsBelowTarget(targetPrice, sellStableTokenOrder)) {
+    if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
+      if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
         assert.isTrue(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
@@ -61,9 +61,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     }
   }
 
-  const checkThatOrderPriceIsBelowTarget = function(targetPrice, order) {
+  const checkThatOrderPriceIsBelowTarget = function(currentPrice, order) {
     const multiplicator = 1000000000
-    return new BN(targetPrice * multiplicator).mul(order.priceNumerator) > order.priceDenominator.mul(new BN(multiplicator))
+    return new BN(currentPrice * multiplicator).mul(order.priceNumerator) > order.priceDenominator.mul(new BN(multiplicator))
   }
 
   const checkFundingInTheMiddleBracket = function(
@@ -73,7 +73,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     investmentStableTokenPerBracket
   ) {
     // For the middle bracket the funding can go in either bracket
-    // it depends on closer distance from the targetPrice to the limit prices fo the bracket-traders
+    // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
     return (
       (bracketExchangeBalanceStableToken == 0 &&
         bracketExchangeBalanceTargetToken == investmentTargetTokenPerBracket.toString()) ||
@@ -81,16 +81,16 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
   }
 
-  const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
-    const boundsCloseToTargetPrice = targetPrice / 1.5 < lowestLimit && highestLimit < targetPrice * 1.5
-    if (!boundsCloseToTargetPrice) {
+  const areBoundsReasonable = function(currentPrice, lowestLimit, highestLimit) {
+    const boundsCloseTocurrentPrice = currentPrice / 1.5 < lowestLimit && highestLimit < currentPrice * 1.5
+    if (!boundsCloseTocurrentPrice) {
       console.log("Please double check your bounds. They seem to be unreasonable")
     }
-    const targetPriceWithinBounds = targetPrice > lowestLimit && highestLimit < targetPrice
-    if (!targetPriceWithinBounds) {
+    const currentPriceWithinBounds = currentPrice > lowestLimit && highestLimit < currentPrice
+    if (!currentPriceWithinBounds) {
       console.log("Please double check your bounds. Current price is not within the bounds")
     }
-    return targetPriceWithinBounds && boundsCloseToTargetPrice
+    return currentPriceWithinBounds && boundsCloseTocurrentPrice
   }
 
   // returns undefined if the price was not available

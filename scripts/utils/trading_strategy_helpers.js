@@ -205,7 +205,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
    * @param {integer} targetTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
    * @param {integer} stableTokenId ID of "Stable Token" for which trade with target token (i.e. DAI)
-   * @param {number} targetPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
+   * @param {number} currentPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
    * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
    * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
    * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
@@ -433,39 +433,39 @@ withdrawal of or to withdraw the desired funds
     stableTokenAddress,
     lowestLimit,
     highestLimit,
-    targetPrice,
+    currentPrice,
     investmentStableToken,
     investmentTargetToken,
     storeDepositsAsFile = false
   ) {
     const fleetSize = bracketAddresses.length
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
-    // bracketIndexAtTargetPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = targetPrice and solved for x
-    // in case the targetPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
+    // bracketIndexAtcurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
+    // in case the currentPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
     // second order will be funded.
-    let bracketIndexAtTargetPrice = Math.round(Math.log(targetPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
-    if (bracketIndexAtTargetPrice > fleetSize) {
-      bracketIndexAtTargetPrice = fleetSize
+    let bracketIndexAtcurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
+    if (bracketIndexAtcurrentPrice > fleetSize) {
+      bracketIndexAtcurrentPrice = fleetSize
     }
-    if (bracketIndexAtTargetPrice < 0) {
-      bracketIndexAtTargetPrice = 0
+    if (bracketIndexAtcurrentPrice < 0) {
+      bracketIndexAtcurrentPrice = 0
     }
 
     const deposits = []
 
-    for (const i of Array(bracketIndexAtTargetPrice).keys()) {
+    for (const i of Array(bracketIndexAtcurrentPrice).keys()) {
       const deposit = {
-        amount: investmentStableToken.div(new BN(bracketIndexAtTargetPrice)).toString(),
+        amount: investmentStableToken.div(new BN(bracketIndexAtcurrentPrice)).toString(),
         tokenAddress: stableTokenAddress,
         bracketAddress: bracketAddresses[i],
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSize - bracketIndexAtTargetPrice).keys()) {
+    for (const i of Array(fleetSize - bracketIndexAtcurrentPrice).keys()) {
       const deposit = {
-        amount: investmentTargetToken.div(new BN(fleetSize - bracketIndexAtTargetPrice)).toString(),
+        amount: investmentTargetToken.div(new BN(fleetSize - bracketIndexAtcurrentPrice)).toString(),
         tokenAddress: targetTokenAddress,
-        bracketAddress: bracketAddresses[bracketIndexAtTargetPrice + i],
+        bracketAddress: bracketAddresses[bracketIndexAtcurrentPrice + i],
       }
       deposits.push(deposit)
     }
