@@ -62,11 +62,13 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    *   symbol: "WETH",
    *   decimals: 18,
    *   tokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   *   instance: [object Object],
    * }
    * @type {object}
    * @property {string} symbol symbol representing the token
    * @property {(number|BN)} decimals number of decimals of the token
    * @property {Address} address address of the token contract on the EVM
+   * @property {object} instance an instance of the token contract
  */
 
   /**
@@ -121,6 +123,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
             address: tokenAddress,
             symbol: tokenSymbol,
             decimals: tokenDecimals.toNumber(),
+            instance: tokenInstance,
           }
           log(`Found token ${tokenInfo.symbol} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`)
           return tokenInfo
