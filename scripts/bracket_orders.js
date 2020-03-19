@@ -11,7 +11,7 @@ const argv = require("yargs")
   .option("stableToken", {
     describe: "Stable Token for which to open orders (i.e. DAI)",
   })
-  .option("targetPrice", {
+  .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
@@ -44,7 +44,7 @@ const argv = require("yargs")
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
   })
-  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "brackets"])
+  .demand(["targetToken", "stableToken", "currentPrice", "masterSafe", "brackets"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -58,8 +58,8 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
-    const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
+    const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
       if (boundCheck || (await proceedAnyways("Bound check failed!"))) {
