@@ -69,7 +69,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @property {(number|BN)} decimals number of decimals of the token
    * @property {Address} address address of the token contract on the EVM
    * @property {object} instance an instance of the token contract
- */
+   */
 
   /**
    * Returns an instance of the exchange contract

@@ -172,17 +172,22 @@ contract("GnosisSafe", function(accounts) {
     }
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
       const testEntries = [
-        {decimals:6, amount:"100"},
-        {decimals:18, amount:"0.000000000000001"},
-        {decimals:50, amount:"0.1"},
-        {decimals:0, amount:"2"},
+        { decimals: 6, amount: "100" },
+        { decimals: 18, amount: "0.000000000000001" },
+        { decimals: 50, amount: "0.1" },
+        { decimals: 0, amount: "2" },
       ]
-      for (const {decimals, amount} of testEntries) {
+      for (const { decimals, amount } of testEntries) {
         await testManualDeposits(decimals, amount)
       }
     })
 
-    const testAutomaticDeposits = async function(stableTokenDecimals, readableDepositAmountStableToken, targetTokenDecimals, readableDepositAmountTargetToken) {
+    const testAutomaticDeposits = async function(
+      stableTokenDecimals,
+      readableDepositAmountStableToken,
+      targetTokenDecimals,
+      readableDepositAmountTargetToken
+    ) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleetSize = 2
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
@@ -231,12 +236,17 @@ contract("GnosisSafe", function(accounts) {
     }
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
       const testEntries = [
-        {stableTokenDecimals:18, stableTokenAmount:"0.000000000000001", targetTokenDecimals:18, targetTokenAmount:"0.000000000000001"},
-        {stableTokenDecimals:6, stableTokenAmount:"100.101", targetTokenDecimals:18, targetTokenAmount:"0.1"},
-        {stableTokenDecimals:18, stableTokenAmount:"0.1", targetTokenDecimals:6, targetTokenAmount:"100.101"},
-        {stableTokenDecimals:4, stableTokenAmount:"100.0001", targetTokenDecimals:0, targetTokenAmount:"2"},
+        {
+          stableTokenDecimals: 18,
+          stableTokenAmount: "0.000000000000001",
+          targetTokenDecimals: 18,
+          targetTokenAmount: "0.000000000000001",
+        },
+        { stableTokenDecimals: 6, stableTokenAmount: "100.101", targetTokenDecimals: 18, targetTokenAmount: "0.1" },
+        { stableTokenDecimals: 18, stableTokenAmount: "0.1", targetTokenDecimals: 6, targetTokenAmount: "100.101" },
+        { stableTokenDecimals: 4, stableTokenAmount: "100.0001", targetTokenDecimals: 0, targetTokenAmount: "2" },
       ]
-      for (const {stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount} of testEntries) {
+      for (const { stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount } of testEntries) {
         await testAutomaticDeposits(stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount)
       }
     })

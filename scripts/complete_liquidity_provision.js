@@ -64,8 +64,8 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const {instance: targetToken, decimals: targetTokenDecimals} = await tokenInfoPromises[targetTokenId]
-    const {instance: stableToken, decimals: stableTokenDecimals} = await tokenInfoPromises[stableTokenId]
+    const { instance: targetToken, decimals: targetTokenDecimals } = await tokenInfoPromises[targetTokenId]
+    const { instance: stableToken, decimals: stableTokenDecimals } = await tokenInfoPromises[stableTokenId]
 
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
