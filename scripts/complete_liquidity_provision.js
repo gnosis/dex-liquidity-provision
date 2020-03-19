@@ -2,6 +2,7 @@ const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3,
 const { isPriceReasonable } = require("./utils/price-utils")(web3, artifacts)
 const Contract = require("@truffle/contract")
 const {
+  fetchTokenInfoFromExchange,
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
@@ -55,15 +56,19 @@ module.exports = async callback => {
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
-    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, 18)
-    const investmentStableToken = toErc20Units(argv.investmentStableToken, 18)
-    const ERC20Detailed = artifacts.require("ERC20Detailed")
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     const exchange = await BatchExchange.deployed()
-    const targetToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.targetToken))
-    const stableToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.stableToken))
+
+    const targetTokenId = argv.targetToken
+    const stableTokenId = argv.stableToken
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
+    const {instance: targetToken, decimals: targetTokenDecimals} = await tokenInfoPromises[targetTokenId]
+    const {instance: stableToken, decimals: stableTokenDecimals} = await tokenInfoPromises[stableTokenId]
+
+    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
+    const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
     assert(argv.fleetSize % 2 == 0, "Fleet size must be a even number for easy deployment script")
 
@@ -75,8 +80,6 @@ module.exports = async callback => {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
-    const targetTokenId = argv.targetToken
-    const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
 
     if (!priceCheck) {
