@@ -354,8 +354,8 @@ contract("GnosisSafe", function(accounts) {
           exchange,
           stableToken,
           targetToken,
-          depositAmountStableToken.div(new BN(2)),
-          depositAmountTargetToken.div(new BN(2))
+          depositAmountStableToken.div(new BN(1)),
+          depositAmountTargetToken.div(new BN(3))
         )
       }
     })
