@@ -28,22 +28,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    */
 
   /**
-   * @typedef TokenObject
-   *  * Example:
-   * {
-   *   id: 0,
-   *   address: 0x0000000000000000000000000000000000000000,
-   *   symbol: "OWL",
-   *   decimals: 18,
-   * }
-   * @type {object}
-   * @property {integer} id integer denoting the id of the token on BatchExchange
-   * @property {Address} address Hex string denoting the ethereum address of token
-   * @property {string} symbol short, usually abbreviated, token name
-   * @property {integer} decimals number of decmial places token uses for a Unit
-   */
-
-  /**
    * Example:
    * {
    *   amount: 100,
