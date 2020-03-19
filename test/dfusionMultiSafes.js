@@ -167,12 +167,12 @@ contract("GnosisSafe", function(accounts) {
       }
     })
 
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p> 1", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleetSize = 4
-      const lowestLimit = 90
-      const highestLimit = 120
-      const targetPrice = 105
+      const lowestLimit = 100
+      const highestLimit = 121
+      const targetPrice = 110
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
       const depositAmountStableToken = new BN(1000)
 

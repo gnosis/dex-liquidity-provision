@@ -28,8 +28,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     if (checkThatOrderPriceIsBelowTarget(targetPrice, sellStableTokenOrder)) {
       // checks whether price is in middle of bracket:
       if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
-        // Then only the targetToken gets funded
-        assert.equal(bracketExchangeBalanceStableToken, 0)
+        assert.isTrue(
+          checkFundingInTheMiddleBracket(
+            bracketExchangeBalanceStableToken,
+            bracketExchangeBalanceTargetToken,
+            investmentTargetTokenPerBracket,
+            investmentStableTokenPerBracket
+          )
+        )
       } else {
         assert.equal(bracketExchangeBalanceStableToken, investmentStableTokenPerBracket.toString())
       }
@@ -38,7 +44,18 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     }
 
     if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
-      assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
+      if (checkThatOrderPriceIsBelowTarget(targetPrice, sellStableTokenOrder)) {
+        assert.isTrue(
+          checkFundingInTheMiddleBracket(
+            bracketExchangeBalanceStableToken,
+            bracketExchangeBalanceTargetToken,
+            investmentTargetTokenPerBracket,
+            investmentStableTokenPerBracket
+          )
+        )
+      } else {
+        assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
+      }
     } else {
       assert.equal(bracketExchangeBalanceTargetToken, 0)
     }
@@ -47,6 +64,21 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const checkThatOrderPriceIsBelowTarget = function(targetPrice, order) {
     const multiplicator = 1000000000
     return new BN(targetPrice * multiplicator).mul(order.priceNumerator) > order.priceDenominator.mul(new BN(multiplicator))
+  }
+
+  const checkFundingInTheMiddleBracket = function(
+    bracketExchangeBalanceStableToken,
+    bracketExchangeBalanceTargetToken,
+    investmentTargetTokenPerBracket,
+    investmentStableTokenPerBracket
+  ) {
+    // For the middle bracket the funding can go in either bracket
+    // it depends on closer distance from the targetPrice to the limit prices fo the bracket-traders
+    return (
+      (bracketExchangeBalanceStableToken == 0 &&
+        bracketExchangeBalanceTargetToken == investmentTargetTokenPerBracket.toString()) ||
+      (bracketExchangeBalanceTargetToken == 0 && bracketExchangeBalanceStableToken == investmentStableTokenPerBracket.toString())
+    )
   }
 
   const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
