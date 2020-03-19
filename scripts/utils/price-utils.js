@@ -18,12 +18,17 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
     const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() == bracketAddress.toLowerCase())
+    assert.equal(bracketOrders.length, 2)
+
     const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
-    const sellStableTokenOrder = bracketOrders.filter(order => order.sellToken == stableTokenId)[0]
+    const sellStableTokenOrders = bracketOrders.filter(order => order.sellToken == stableTokenId)
+    assert.equal(sellStableTokenOrder.length, 1)
+    const sellStableTokenOrder = sellStableTokenOrders[0]
 
     const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
-    const sellTargetTokenOrder = bracketOrders.filter(order => order.sellToken == targetTokenId)[0]
-
+    const sellTargetTokenOrders = bracketOrders.filter(order => order.sellToken == targetTokenId)
+    assert.equal(sellTargetTokenOrder.length, 1)
+    const sellTargetTokenOrder = sellTargetTokenOrders[0]
     // Check that tokens with a lower price than the target price are funded with stableTokens
     if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
       // checks whether price is in middle of bracket:
