@@ -1,6 +1,53 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
+  const BN = require("bn.js")
+  const exchangeUtils = require("@gnosis.pm/dex-contracts")
+
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
+
+  const checkCorrectnessOfDeposits = async (
+    targetPrice,
+    bracketAddress,
+    exchange,
+    stableToken,
+    targetToken,
+    investmentStableTokenPerBracket,
+    investmentTargetTokenPerBracket
+  ) => {
+    const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
+    const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
+    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+    const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() == bracketAddress.toLowerCase())
+    const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
+    const sellStableTokenOrder = bracketOrders.filter(order => order.sellToken == stableTokenId)[0]
+
+    const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
+    const sellTargetTokenOrder = bracketOrders.filter(order => order.sellToken == targetTokenId)[0]
+
+    // Check that tokens with a lower price than the target price are funded with stableTokens
+    if (checkThatOrderPriceIsBelowTarget(targetPrice, sellStableTokenOrder)) {
+      // checks whether price is in middle of bracket:
+      if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
+        // Then only the targetToken gets funded
+        assert.equal(bracketExchangeBalanceStableToken, 0)
+      } else {
+        assert.equal(bracketExchangeBalanceStableToken, investmentStableTokenPerBracket.toString())
+      }
+    } else {
+      assert.equal(bracketExchangeBalanceStableToken, 0)
+    }
+
+    if (checkThatOrderPriceIsBelowTarget(1 / targetPrice, sellTargetTokenOrder)) {
+      assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
+    } else {
+      assert.equal(bracketExchangeBalanceTargetToken, 0)
+    }
+  }
+
+  const checkThatOrderPriceIsBelowTarget = function(targetPrice, order) {
+    const multiplicator = 1000000000
+    return new BN(targetPrice * multiplicator).mul(order.priceNumerator) > order.priceDenominator.mul(new BN(multiplicator))
+  }
 
   const areBoundsReasonable = function(targetPrice, lowestLimit, highestLimit) {
     const areReasonable = targetPrice / 1.5 < lowestLimit && highestLimit < targetPrice * 1.5
@@ -52,5 +99,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   return {
     isPriceReasonable,
     areBoundsReasonable,
+    checkCorrectnessOfDeposits,
   }
 }

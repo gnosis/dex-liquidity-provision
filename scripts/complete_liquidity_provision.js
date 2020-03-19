@@ -110,9 +110,12 @@ module.exports = async callback => {
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
-      stableToken.address,
-      investmentStableToken,
       targetToken.address,
+      stableToken.address,
+      argv.lowestLimit,
+      argv.highestLimit,
+      argv.targetPrice,
+      investmentStableToken,
       investmentTargetToken,
       true
     )

@@ -429,30 +429,35 @@ withdrawal of or to withdraw the desired funds
   const buildTransferApproveDepositFromOrders = async function(
     masterAddress,
     bracketAddresses,
-    stableTokenAddress,
-    investmentStableToken,
     targetTokenAddress,
+    stableTokenAddress,
+    lowestLimit,
+    highestLimit,
+    targetPrice,
+    investmentStableToken,
     investmentTargetToken,
     storeDepositsAsFile = false
   ) {
     const fleetSize = bracketAddresses.length
-    assert(fleetSize % 2 == 0, "Fleet size must be a even number")
+    const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
+    const bracketIndexAtTargetPrice = Math.floor(Math.log(targetPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
+    assert(bracketIndexAtTargetPrice <= fleetSize, "TargetPrice is not between the bounds")
+
     const deposits = []
 
-    const fleetSizeDiv2 = fleetSize / 2
-    for (const i of Array(fleetSizeDiv2).keys()) {
+    for (const i of Array(bracketIndexAtTargetPrice).keys()) {
       const deposit = {
-        amount: investmentStableToken.div(new BN(fleetSizeDiv2)).toString(),
+        amount: investmentStableToken.div(new BN(bracketIndexAtTargetPrice)).toString(),
         tokenAddress: stableTokenAddress,
         bracketAddress: bracketAddresses[i],
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSizeDiv2).keys()) {
+    for (const i of Array(fleetSize - bracketIndexAtTargetPrice).keys()) {
       const deposit = {
-        amount: investmentTargetToken.div(new BN(fleetSizeDiv2)).toString(),
+        amount: investmentTargetToken.div(new BN(fleetSize - bracketIndexAtTargetPrice)).toString(),
         tokenAddress: targetTokenAddress,
-        bracketAddress: bracketAddresses[fleetSizeDiv2 + i],
+        bracketAddress: bracketAddresses[bracketIndexAtTargetPrice + i],
       }
       deposits.push(deposit)
     }
