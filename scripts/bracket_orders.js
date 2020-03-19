@@ -60,23 +60,26 @@ module.exports = async callback => {
     const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
     const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
-    if ((priceCheck && boundCheck) || (await proceedAnyways("Price check failed!"))) {
-      console.log("Preparing order transaction data")
-      const transaction = await buildOrders(
-        argv.masterSafe,
-        argv.brackets,
-        argv.targetToken,
-        argv.stableToken,
-        argv.lowestLimit,
-        argv.highestLimit,
-        true,
-        argv.validFrom,
-        argv.expiry
-      )
 
-      const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
-      if (answer == "y" || answer.toLowerCase() == "yes") {
-        await signAndSend(await masterSafePromise(), transaction, web3, argv.network)
+    if (priceCheck || (await proceedAnyways("Price check failed!"))) {
+      if (boundCheck || (await proceedAnyways("Bound check failed!"))) {
+        console.log("Preparing order transaction data")
+        const transaction = await buildOrders(
+          argv.masterSafe,
+          argv.brackets,
+          argv.targetToken,
+          argv.stableToken,
+          argv.lowestLimit,
+          argv.highestLimit,
+          true,
+          argv.validFrom,
+          argv.expiry
+        )
+
+        const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
+        if (answer == "y" || answer.toLowerCase() == "yes") {
+          await signAndSend(await masterSafePromise(), transaction, web3, argv.network)
+        }
       }
     }
 

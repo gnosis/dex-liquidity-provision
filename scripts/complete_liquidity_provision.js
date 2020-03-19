@@ -81,10 +81,14 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
-    const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
-
-    if (!(priceCheck && boundCheck)) {
+    if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
+        callback("Error: Price checks did not pass")
+      }
+    }
+    const boundCheck = areBoundsReasonable(argv.targetPrice, argv.lowestLimit, argv.highestLimit)
+    if (!boundCheck) {
+      if (!(await proceedAnyways("Bound check failed!"))) {
         callback("Error: Price checks did not pass")
       }
     }
