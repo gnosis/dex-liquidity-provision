@@ -137,7 +137,7 @@ contract("GnosisSafe", function(accounts) {
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
     })
   })
-  describe.only("transfer tests:", async function() {
+  describe("transfer tests:", async function() {
     const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
