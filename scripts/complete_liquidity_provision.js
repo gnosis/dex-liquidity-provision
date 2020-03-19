@@ -121,14 +121,14 @@ module.exports = async callback => {
     )
 
     console.log("4. Sending out orders")
-    await signAndSend(masterSafe, orderTransaction, web3, argv.network)
+    await signAndSend(masterSafe, orderTransaction, argv.network)
 
     console.log("5. Sending out funds")
     const answer = await promptUser(
       "Are you sure you that the order placement was correct, did you check the telegram bot? [yN] "
     )
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, bundledFundingTransaction, web3, argv.network)
+      await signAndSend(masterSafe, bundledFundingTransaction, argv.network)
     }
 
     callback()
