@@ -110,6 +110,7 @@ module.exports = async callback => {
       argv.highestLimit,
       true
     )
+    await promptUser("Waiting done between the intense steps? [yN] ")
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
