@@ -258,7 +258,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         )
         const buyTokens = [targetTokenId, stableTokenId]
         const sellTokens = [stableTokenId, targetTokenId]
-        const validFroms = [(await batchIndexPromise) + validFrom, (await batchIndexPromise) + validFrom]
+        const validFroms = [(await batchIndexPromise).toNumber() + validFrom, (await batchIndexPromise).toNumber() + validFrom]
         const validTos = [expiry, expiry]
         const buyAmounts = [lowerBuyAmount, upperBuyAmount]
         const sellAmounts = [lowerSellAmount, upperSellAmount]
