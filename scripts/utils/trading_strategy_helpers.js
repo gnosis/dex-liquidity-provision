@@ -380,7 +380,8 @@ withdrawal of or to withdraw the desired funds
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     // TODO - make deposit list easier so that we dont' have to query the token every time.
-    for (const deposit of depositList) {
+    for (const [index, deposit] of depositList.entries()) {
+      console.log(index)
       // assert(
       //   await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
       //   "All depositors must be owned only by the master Safe"
