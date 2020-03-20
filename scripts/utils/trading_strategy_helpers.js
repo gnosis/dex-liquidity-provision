@@ -517,7 +517,7 @@ withdrawal of or to withdraw the desired funds
     // Get data to deposit funds from bracket to exchange
     const depositData = exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
     // Get transaction for approve and deposit multisend on bracket
-    const bracketBundledTransaction = buildBundledTransaction([
+    const bracketBundledTransaction = await buildBundledTransaction([
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
     ])
