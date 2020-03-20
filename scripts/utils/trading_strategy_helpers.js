@@ -1,6 +1,9 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  BatchExchange.setProvider(web3.currentProvider)
+  BatchExchange.setNetwork(web3.network_id)
+  const exchangePromise = BatchExchange.deployed()
 
   const assert = require("assert")
   const BN = require("bn.js")
@@ -224,7 +227,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const exchange = await getExchange(web3)
+    const exchange = await exchangePromise
     log("Batch Exchange", exchange.address)
 
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
@@ -243,7 +246,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const transactions = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
-        assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
+        //assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
@@ -495,9 +498,7 @@ withdrawal of or to withdraw the desired funds
     const ERC20 = artifacts.require("ERC20Detailed")
     //const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
-    BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
+    const exchange = await exchangePromise
     const depositToken = await ERC20.at(tokenAddress)
     //const tokenDecimals = (await depositToken.decimals.call()).toNumber()
     const transactions = []

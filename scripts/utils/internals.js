@@ -5,6 +5,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const CALL = 0
   const DELEGATECALL = 1
+  const MultiSend = artifacts.require("MultiSend")
+  const multiSendPromise = MultiSend.deployed()
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
 
   /**
    * @typedef Transaction
@@ -164,8 +168,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Multisend transaction bundling all input transactions
    */
   const buildBundledTransaction = async function(transactions) {
-    const MultiSend = artifacts.require("MultiSend")
-    const multiSend = await MultiSend.deployed()
+    const multiSend = await multiSendPromise
     const transactionData = encodeMultiSend(multiSend, transactions, web3)
     const bundledTransaction = {
       operation: DELEGATECALL,
@@ -207,8 +210,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Transaction calling execTransaction; should be executed by master
    */
   const buildExecTransaction = async function(masterAddress, bracketAddress, transaction) {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
     const execTransaction = {
