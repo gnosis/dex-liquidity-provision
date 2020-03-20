@@ -94,7 +94,10 @@ module.exports = async callback => {
     }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
+    const bracketAddresses = "0xbC8B4efD8c248a4be0ff0E4B7ae23B906903E42F,0x26F6A699D67AFFd52992e4b881dd3b20d7bCc9BA,0xbBC4CD6F38C99f39f00A65cECB4922d78Bfb029C,0xf29362D089C9EDc901CF70cB7c55C2Aa2C98539F,0x51f633756De84c4560387127BE94Fb74Fa04b57c,0x02CcD30740867976Cc42049275A82392fC91eA26,0x6DaF9013E8497Cd76F18516a9cf24ec53A359609,0x9cA9B931a382c35bc5B1c8B308f9329b7eC6364E,0x9f550AE660491d1f77B4D141A53537a0d7949c60,0xAE940E7244528dE404f746eED56f0044BAa65252,0x3032aafDA2b54ec5BFf877790bd41A438923e6b4,0xF689f56b8653d492a85dE4a472894470dC9B9b33,0xE94980d906a4BD21E72d92431a5e32B7AD2436f2,0x98aff473B35E21Dc42c3983394c4867Ff8769cC6,0x1ea5A3e074e86Bd3728F8816D8A1d7C1490bD33A,0x087Dc2C109a14b5Aa07Da01B6326DC1c20fb44e5".split(
+      ","
+    )
+    //await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 
     console.log("3. Building orders and deposits")

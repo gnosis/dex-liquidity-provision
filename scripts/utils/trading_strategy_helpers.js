@@ -382,15 +382,15 @@ withdrawal of or to withdraw the desired funds
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const depositToken = await ERC20.at(deposit.tokenAddress)
-      const tokenSymbol = await depositToken.symbol.call()
-      const tokenDecimals = await depositToken.decimals.call()
-      const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
-      log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
-          masterAddress
-        )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
-      )
+      // const depositToken = await ERC20.at(deposit.tokenAddress)
+      // const tokenSymbol = await depositToken.symbol.call()
+      // const tokenDecimals = await depositToken.decimals.call()
+      // const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
+      // log(
+      //   `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
+      //     masterAddress
+      //   )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+      // )
 
       transactions = transactions.concat(
         await buildBracketTransactionForTransferApproveDeposit(
@@ -401,7 +401,7 @@ withdrawal of or to withdraw the desired funds
         )
       )
     }
-    return await buildBundledTransaction(transactions)
+    return buildBundledTransaction(transactions)
   }
 
   const formatDepositString = function(depositsAsJsonString) {
@@ -505,7 +505,7 @@ withdrawal of or to withdraw the desired funds
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
     assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
     // Get data to move funds from master to bracket
-    const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
+    const transferData = depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -513,16 +513,16 @@ withdrawal of or to withdraw the desired funds
       data: transferData,
     })
     // Get data to approve funds from bracket to exchange
-    const approveData = await depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
+    const approveData = depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
     // Get data to deposit funds from bracket to exchange
-    const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
+    const depositData = exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
     // Get transaction for approve and deposit multisend on bracket
-    const bracketBundledTransaction = await buildBundledTransaction([
+    const bracketBundledTransaction = buildBundledTransaction([
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
     ])
     // Get transaction executing approve/deposit multisend via bracket
-    const execTransaction = await buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction)
+    const execTransaction = buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction)
     transactions.push(execTransaction)
     return transactions
   }
