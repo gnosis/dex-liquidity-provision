@@ -359,7 +359,7 @@ contract("GnosisSafe", function(accounts) {
         )
       }
     })
-    it.only("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const fleetSize = 4
       const lowestLimit = 0.8
