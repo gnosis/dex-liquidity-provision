@@ -256,9 +256,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
         )
+        const validFromForAllOrders = (await batchIndexPromise).toNumber() + validFrom
+        log(`The orders will be valid from the batch: ${validFromForAllOrders}`)
+
         const buyTokens = [targetTokenId, stableTokenId]
         const sellTokens = [stableTokenId, targetTokenId]
-        const validFroms = [(await batchIndexPromise) + validFrom, (await batchIndexPromise) + validFrom]
+        const validFroms = [validFromForAllOrders, validFromForAllOrders]
         const validTos = [expiry, expiry]
         const buyAmounts = [lowerBuyAmount, upperBuyAmount]
         const sellAmounts = [lowerSellAmount, upperSellAmount]
