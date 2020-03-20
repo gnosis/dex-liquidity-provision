@@ -401,7 +401,7 @@ withdrawal of or to withdraw the desired funds
         )
       )
     }
-    return buildBundledTransaction(transactions)
+    return await buildBundledTransaction(transactions)
   }
 
   const formatDepositString = function(depositsAsJsonString) {
@@ -522,7 +522,7 @@ withdrawal of or to withdraw the desired funds
       { operation: CALL, to: exchange.address, value: 0, data: depositData },
     ])
     // Get transaction executing approve/deposit multisend via bracket
-    const execTransaction = buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction)
+    const execTransaction = await buildExecTransaction(masterAddress, bracketAddress, bracketBundledTransaction)
     transactions.push(execTransaction)
     return transactions
   }
