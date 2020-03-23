@@ -383,6 +383,7 @@ withdrawal of or to withdraw the desired funds
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
+    const tokenInfoPromises = fetchTokenInfoFromDeposits(depositList)
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     for (const deposit of depositList) {
@@ -390,7 +391,7 @@ withdrawal of or to withdraw the desired funds
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)[deposit.tokenAddress]
+      const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
       const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
         `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
