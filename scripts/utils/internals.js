@@ -85,13 +85,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
       .encodeABI()
     const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
-    // waiting two second to make sure infura can catch up
-    await sleep(1000)
     return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
-  }
-
-  const sleep = function(milliseconds) {
-    return new Promise(r => setTimeout(r, milliseconds))
   }
 
   // Need some small adjustments to default implementation for web3js 1.x
@@ -105,15 +99,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       logs = logs.filter(l => l.event === eventName && l.address === contract)
     }
     assert.equal(logs.length, 1, "too many logs found!")
-    const param = logs[0].args[paramName]
-    if (contractFactory != null) {
-      // Adjustment: add await
-      const contract = await contractFactory.at(param)
-      // assert.isObject(contract, `getting ${paramName} failed for ${param}`)
-      return contract
-    } else {
-      return param
-    }
+    return logs[0].args[paramName]
   }
 
   async function createLightwallet() {

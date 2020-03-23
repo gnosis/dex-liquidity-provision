@@ -181,9 +181,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // TODO - Batch all of this in a single transaction
     const createdSafes = []
     for (let i = 0; i < fleetSize; i++) {
-      const newSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterAddress], 1)
-      log("New Safe Created", newSafe.address)
-      createdSafes.push(newSafe.address)
+      const newSafeAddress = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterAddress], 1)
+      log("New Safe Created", newSafeAddress)
+      createdSafes.push(newSafeAddress)
     }
     return createdSafes
   }
