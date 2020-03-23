@@ -1,7 +1,9 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  const GnosisSafe = artifacts.require("GnosisSafe")
   const exchangePromise = getExchange(web3)
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
 
   const assert = require("assert")
   const BN = require("bn.js")
@@ -101,7 +103,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address} safeAddress address of the safe of which to create an instance
    */
   const getSafe = function(safeAddress) {
-    return artifacts.require("GnosisSafe").at(safeAddress)
+    return GnosisSafe.at(safeAddress)
   }
 
   /**
@@ -111,8 +113,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {bool} whether ownedAddress is indeed owned only by masterAddress
    */
   const isOnlySafeOwner = async function(masterAddress, ownedAddress) {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const owned = await GnosisSafe.at(ownedAddress)
+    const owned = await getSafe(ownedAddress)
     const ownerAddresses = await owned.getOwners()
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
@@ -183,11 +184,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    */
   const deployFleetOfSafes = async function(masterAddress, fleetSize, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const GnosisSafe = artifacts.require("GnosisSafe")
     const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
     const proxyFactory = await ProxyFactory.deployed()
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     // TODO - Batch all of this in a single transaction
     const createdSafes = []
