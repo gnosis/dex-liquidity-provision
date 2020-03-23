@@ -14,6 +14,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const fs = require("fs")
   const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
   const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -164,6 +165,25 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       tokenPromises[id] = globalTokenPromisesFromId[id]
     }
     return tokenPromises
+  }
+
+  /**
+   * Retrieves token information foll all tokens involved in the deposits.
+   * @param {Deposit[]} depositList List of {@link Deposit}
+   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   */
+  const fetchTokenInfoForDeposits = function(deposits, debug = false) {
+    const tokensInvolved = allElementsOnlyOnce(deposits.map(deposit => deposit.tokenAddress))
+    return fetchTokenInfoAtAddresses(tokensInvolved, debug)
+  }
+
+  /**
+   * Retrieves token information foll all tokens involved in the deposits.
+   * @param {Withdrawal[]} depositList List of {@link Withdrawals}
+   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   */
+  const fetchTokenInfoForWithdrawals = function(withdrawals, debug = false) {
+    return fetchTokenInfoForDeposits(withdrawals, debug)
   }
 
   /**
@@ -363,6 +383,7 @@ withdrawal of or to withdraw the desired funds
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
+    const tokenInfoPromises = fetchTokenInfoForDeposits(depositList)
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     for (const deposit of depositList) {
@@ -370,7 +391,7 @@ withdrawal of or to withdraw the desired funds
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)[deposit.tokenAddress]
+      const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
       const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
         `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
@@ -540,12 +561,13 @@ withdrawal of the desired funds
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
-    const ERC20 = artifacts.require("ERC20Mintable")
+    const tokeinInfoPromises = fetchTokenInfoForWithdrawals(withdrawals)
 
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
       withdrawals.map(async withdrawal => {
-        const token = await ERC20.at(withdrawal.tokenAddress)
+        const tokenInfo = await tokeinInfoPromises[withdrawal.tokenAddress]
+        const token = tokenInfo.instance
         let amount
         if (limitToMaxWithdrawableAmount) {
           amount = BN.min(new BN(withdrawal.amount), new BN(await token.balanceOf.call(withdrawal.bracketAddress)))
@@ -598,6 +620,8 @@ withdrawal of the desired funds
     buildWithdraw,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
+    fetchTokenInfoForDeposits,
+    fetchTokenInfoForWithdrawals,
     isOnlySafeOwner,
     max128,
     maxU32,
