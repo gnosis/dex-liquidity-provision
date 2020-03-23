@@ -478,11 +478,9 @@ withdrawal of or to withdraw the desired funds
    * @return {Transaction} Information describing the multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildBracketTransactionForTransferApproveDeposit = async (masterAddress, tokenAddress, bracketAddress, amount) => {
-    const ERC20 = artifacts.require("ERC20Detailed")
-
     const exchange = await exchangePromise
-    const depositToken = await ERC20.at(tokenAddress)
     const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
+    const depositToken = tokenInfo.instance
     const transactions = []
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
