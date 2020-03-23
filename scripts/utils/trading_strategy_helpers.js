@@ -566,7 +566,7 @@ withdrawal of the desired funds
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
       withdrawals.map(async withdrawal => {
-        const tokenInfo = await tokeinInfoPromises[withdrawal.tokenAddresses]
+        const tokenInfo = await tokeinInfoPromises[withdrawal.tokenAddress]
         const token = tokenInfo.instance
         let amount
         if (limitToMaxWithdrawableAmount) {
