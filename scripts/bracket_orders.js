@@ -1,5 +1,5 @@
 const { getExchange, getSafe, buildOrders } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { isPriceReasonable } = require("./utils/price-utils.js")(web3, artifacts)
+const { isPriceReasonable, areBoundsReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 
@@ -11,7 +11,7 @@ const argv = require("yargs")
   .option("stableToken", {
     describe: "Stable Token for which to open orders (i.e. DAI)",
   })
-  .option("targetPrice", {
+  .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
   })
@@ -26,10 +26,13 @@ const argv = require("yargs")
       return str.split(",")
     },
   })
-  .option("priceRange", {
+  .option("lowestLimit", {
     type: "float",
-    describe: "Percentage above and below the target price for which orders are to be placed",
-    default: 20,
+    describe: "Price for the bracket buying with the lowest price",
+  })
+  .option("highestLimit", {
+    type: "float",
+    describe: "Price for the bracket selling at the highest price",
   })
   .option("validFrom", {
     type: "int",
@@ -41,7 +44,7 @@ const argv = require("yargs")
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
   })
-  .demand(["targetToken", "stableToken", "targetPrice", "masterSafe", "brackets"])
+  .demand(["targetToken", "stableToken", "currentPrice", "masterSafe", "brackets"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -55,25 +58,28 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.targetPrice)
+    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
+    const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
-      console.log("Preparing order transaction data")
-      const transaction = await buildOrders(
-        argv.masterSafe,
-        argv.brackets,
-        argv.targetToken,
-        argv.stableToken,
-        argv.targetPrice,
-        true,
-        argv.priceRange,
-        argv.validFrom,
-        argv.expiry
-      )
+      if (boundCheck || (await proceedAnyways("Bound check failed!"))) {
+        console.log("Preparing order transaction data")
+        const transaction = await buildOrders(
+          argv.masterSafe,
+          argv.brackets,
+          argv.targetToken,
+          argv.stableToken,
+          argv.lowestLimit,
+          argv.highestLimit,
+          true,
+          argv.validFrom,
+          argv.expiry
+        )
 
-      const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
-      if (answer == "y" || answer.toLowerCase() == "yes") {
-        await signAndSend(await masterSafePromise(), transaction, web3, argv.network)
+        const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
+        if (answer == "y" || answer.toLowerCase() == "yes") {
+          await signAndSend(await masterSafePromise(), transaction, argv.network)
+        }
       }
     }
 

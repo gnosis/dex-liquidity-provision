@@ -1,6 +1,13 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  const GnosisSafe = artifacts.require("GnosisSafe")
+  const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
+  BatchExchange.setNetwork(web3.network_id)
+  BatchExchange.setProvider(web3.currentProvider)
+  const exchangePromise = BatchExchange.deployed()
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
+  const proxyFactoryPromise = ProxyFactory.deployed()
 
   const assert = require("assert")
   const BN = require("bn.js")
@@ -85,7 +92,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address} safeAddress address of the safe of which to create an instance
    */
   const getSafe = function(safeAddress) {
-    return artifacts.require("GnosisSafe").at(safeAddress)
+    return GnosisSafe.at(safeAddress)
   }
 
   /**
@@ -95,8 +102,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {bool} whether ownedAddress is indeed owned only by masterAddress
    */
   const isOnlySafeOwner = async function(masterAddress, ownedAddress) {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const owned = await GnosisSafe.at(ownedAddress)
+    const owned = await getSafe(ownedAddress)
     const ownerAddresses = await owned.getOwners()
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
@@ -168,11 +174,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    */
   const deployFleetOfSafes = async function(masterAddress, fleetSize, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
-    const proxyFactory = await ProxyFactory.deployed()
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const proxyFactory = await proxyFactoryPromise
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     // TODO - Batch all of this in a single transaction
     const createdSafes = []
@@ -191,7 +195,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
    * @param {integer} targetTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
    * @param {integer} stableTokenId ID of "Stable Token" for which trade with target token (i.e. DAI)
-   * @param {number} targetPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
+   * @param {number} currentPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
    * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
    * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
    * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
@@ -202,15 +206,15 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     bracketAddresses,
     targetTokenId,
     stableTokenId,
-    targetPrice,
+    lowestLimit,
+    highestLimit,
     debug = false,
-    priceRangePercentage = 20,
     validFrom = 3,
     expiry = maxU32
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const exchange = await getExchange(web3)
+    const exchange = await exchangePromise
     log("Batch Exchange", exchange.address)
 
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
@@ -222,14 +226,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     assert(stableToken.decimals === 18, "Target token must have 18 decimals")
     assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
-    // Number of brackets is determined by bracketAddresses.length
-    const lowestLimit = targetPrice / (1 + priceRangePercentage / 100)
-    const highestLimit = targetPrice * (1 + priceRangePercentage / 100)
-    log(`Lowest-Highest Limit ${lowestLimit}-${highestLimit}`)
-
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
-      `Constructing bracket trading strategy order data based on valuation ${targetPrice} ${stableToken.symbol} per ${targetToken.symbol}`
+      `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${stableToken.symbol} per ${targetToken.symbol}`
     )
 
     const transactions = await Promise.all(
@@ -247,9 +246,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
         )
+        const validFromForAllOrders = (await batchIndexPromise).toNumber() + validFrom
+        log(`The orders will be valid from the batch: ${validFromForAllOrders}`)
+
         const buyTokens = [targetTokenId, stableTokenId]
         const sellTokens = [stableTokenId, targetTokenId]
-        const validFroms = [(await batchIndexPromise) + validFrom, (await batchIndexPromise) + validFrom]
+        const validFroms = [validFromForAllOrders, validFromForAllOrders]
         const validTos = [expiry, expiry]
         const buyAmounts = [lowerBuyAmount, upperBuyAmount]
         const sellAmounts = [lowerSellAmount, upperSellAmount]
@@ -313,7 +315,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 withdrawal of or to withdraw the desired funds
 */
   const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName) {
-    const exchange = await getExchange(web3)
+    const exchange = await exchangePromise
 
     // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
     const masterTransactionsPromises = withdrawals.map(withdrawal => {
@@ -360,24 +362,20 @@ withdrawal of or to withdraw the desired funds
    */
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const ERC20 = artifacts.require("ERC20Detailed")
 
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
-    // TODO - make deposit list easier so that we dont' have to query the token every time.
     for (const deposit of depositList) {
       assert(
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const depositToken = await ERC20.at(deposit.tokenAddress)
-      const tokenSymbol = await depositToken.symbol.call()
-      const tokenDecimals = await depositToken.decimals.call()
-      const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
+      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)[deposit.tokenAddress]
+      const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
-          masterAddress
-        )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
+          tokenInfo.symbol
+        } into BatchExchange`
       )
 
       transactions = transactions.concat(
@@ -419,30 +417,43 @@ withdrawal of or to withdraw the desired funds
   const buildTransferApproveDepositFromOrders = async function(
     masterAddress,
     bracketAddresses,
-    stableTokenAddress,
-    investmentStableToken,
     targetTokenAddress,
+    stableTokenAddress,
+    lowestLimit,
+    highestLimit,
+    currentPrice,
+    investmentStableToken,
     investmentTargetToken,
     storeDepositsAsFile = false
   ) {
     const fleetSize = bracketAddresses.length
-    assert(fleetSize % 2 == 0, "Fleet size must be a even number")
+    const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
+    // bracketIndexAtcurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
+    // in case the currentPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
+    // second order will be funded.
+    let bracketIndexAtcurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
+    if (bracketIndexAtcurrentPrice > fleetSize) {
+      bracketIndexAtcurrentPrice = fleetSize
+    }
+    if (bracketIndexAtcurrentPrice < 0) {
+      bracketIndexAtcurrentPrice = 0
+    }
+
     const deposits = []
 
-    const fleetSizeDiv2 = fleetSize / 2
-    for (const i of Array(fleetSizeDiv2).keys()) {
+    for (const i of Array(bracketIndexAtcurrentPrice).keys()) {
       const deposit = {
-        amount: investmentStableToken.div(new BN(fleetSizeDiv2)).toString(),
+        amount: investmentStableToken.div(new BN(bracketIndexAtcurrentPrice)).toString(),
         tokenAddress: stableTokenAddress,
         bracketAddress: bracketAddresses[i],
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSizeDiv2).keys()) {
+    for (const i of Array(fleetSize - bracketIndexAtcurrentPrice).keys()) {
       const deposit = {
-        amount: investmentTargetToken.div(new BN(fleetSizeDiv2)).toString(),
+        amount: investmentTargetToken.div(new BN(fleetSize - bracketIndexAtcurrentPrice)).toString(),
         tokenAddress: targetTokenAddress,
-        bracketAddress: bracketAddresses[fleetSizeDiv2 + i],
+        bracketAddress: bracketAddresses[bracketIndexAtcurrentPrice + i],
       }
       deposits.push(deposit)
     }
@@ -468,17 +479,14 @@ withdrawal of or to withdraw the desired funds
    */
   const buildBracketTransactionForTransferApproveDeposit = async (masterAddress, tokenAddress, bracketAddress, amount) => {
     const ERC20 = artifacts.require("ERC20Detailed")
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
-    BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
+    const exchange = await exchangePromise
     const depositToken = await ERC20.at(tokenAddress)
-    const tokenDecimals = (await depositToken.decimals.call()).toNumber()
+    const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
     const transactions = []
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
-    assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
+    assert.equal(tokenInfo.decimals, 18, "These scripts currently only support tokens with 18 decimals.")
     // Get data to move funds from master to bracket
     const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({
