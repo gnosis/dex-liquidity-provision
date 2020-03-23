@@ -3,7 +3,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const lightwallet = require("eth-lightwallet")
   const assert = require("assert")
 
+  const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const MultiSend = artifacts.require("MultiSend")
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
 
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
@@ -79,15 +81,13 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
-    const GnosisSafe = artifacts.require("GnosisSafe.sol")
-
-    const initData = await gnosisSafeMasterCopy.contract.methods
+    const initData = gnosisSafeMasterCopy.contract.methods
       .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
       .encodeABI()
     const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
     // waiting two second to make sure infura can catch up
     await sleep(1000)
-    return await getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
+    return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
   }
 
   const sleep = function(milliseconds) {
@@ -211,8 +211,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Transaction calling execTransaction; should be executed by master
    */
   const buildExecTransaction = async function(masterAddress, bracketAddress, transaction) {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise // TODO: do we need the master copy instance?
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
     const execTransaction = {
