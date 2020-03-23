@@ -372,24 +372,20 @@ withdrawal of or to withdraw the desired funds
    */
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const ERC20 = artifacts.require("ERC20Detailed")
 
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
-    // TODO - make deposit list easier so that we dont' have to query the token every time.
     for (const deposit of depositList) {
       assert(
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const depositToken = await ERC20.at(deposit.tokenAddress)
-      const tokenSymbol = await depositToken.symbol.call()
-      const tokenDecimals = await depositToken.decimals.call()
-      const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
+      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)[deposit.tokenAddress]
+      const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
-          masterAddress
-        )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
+          tokenInfo.symbol
+        } into BatchExchange`
       )
 
       transactions = transactions.concat(
@@ -499,11 +495,11 @@ withdrawal of or to withdraw the desired funds
     BatchExchange.setNetwork(web3.network_id)
     const exchange = await BatchExchange.deployed()
     const depositToken = await ERC20.at(tokenAddress)
-    const tokenDecimals = (await depositToken.decimals.call()).toNumber()
+    const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
     const transactions = []
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
-    assert.equal(tokenDecimals, 18, "These scripts currently only support tokens with 18 decimals.")
+    assert.equal(tokenInfo.decimals, 18, "These scripts currently only support tokens with 18 decimals.")
     // Get data to move funds from master to bracket
     const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({
