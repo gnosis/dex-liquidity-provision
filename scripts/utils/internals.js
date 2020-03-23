@@ -2,6 +2,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
   const assert = require("assert")
+
+  const MultiSend = artifacts.require("MultiSend")
+  const multiSendPromise = MultiSend.deployed()
+
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const CALL = 0
   const DELEGATECALL = 1
@@ -164,8 +168,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Multisend transaction bundling all input transactions
    */
   const buildBundledTransaction = async function(transactions) {
-    const MultiSend = artifacts.require("MultiSend")
-    const multiSend = await MultiSend.deployed()
+    const multiSend = await multiSendPromise
     const transactionData = encodeMultiSend(multiSend, transactions, web3)
     const bundledTransaction = {
       operation: DELEGATECALL,
