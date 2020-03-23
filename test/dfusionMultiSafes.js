@@ -131,7 +131,9 @@ contract("GnosisSafe", function(accounts) {
   })
   describe("Gnosis Safe deployments:", async function() {
     it("Deploys Fleet of Gnosis Safes", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleet = await deployFleetOfSafes(masterSafe.address, 10)
       assert.equal(fleet.length, 10)
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
@@ -139,7 +141,9 @@ contract("GnosisSafe", function(accounts) {
   })
   describe("transfer tests:", async function() {
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = 1000
       await testToken.mint(accounts[0], depositAmount * bracketAddresses.length)
@@ -168,7 +172,9 @@ contract("GnosisSafe", function(accounts) {
     })
 
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleetSize = 4
       const lowestLimit = 100
       const highestLimit = 121
@@ -232,7 +238,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleetSize = 4
       const lowestLimit = 0.09
       const highestLimit = 0.12
@@ -296,7 +304,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleetSize = 4
       const lowestLimit = 0.8
       const highestLimit = 1.2
@@ -360,7 +370,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleetSize = 4
       const lowestLimit = 0.8
       const highestLimit = 1.2
@@ -427,7 +439,9 @@ contract("GnosisSafe", function(accounts) {
 
   describe("bracket order placement test:", async function() {
     it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -467,7 +481,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -497,7 +513,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -527,7 +545,9 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -619,7 +639,9 @@ contract("GnosisSafe", function(accounts) {
     }
 
     it("Withdraw full amount, three steps", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
@@ -693,7 +715,9 @@ contract("GnosisSafe", function(accounts) {
     })
 
     it("Withdraw full amount, two steps", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
