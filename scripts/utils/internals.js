@@ -144,7 +144,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return signatureBytes
   }
 
-  const encodeMultiSend = function(multiSend, txs, web3 = web3) {
+  const encodeMultiSend = function(multiSend, txs) {
     return multiSend.contract.methods
       .multiSend(
         `0x${txs
