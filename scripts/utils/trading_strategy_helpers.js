@@ -14,6 +14,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const fs = require("fs")
   const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
   const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  const { allElementsOnlyOnce } = require("./utils/js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -164,6 +165,25 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       tokenPromises[id] = globalTokenPromisesFromId[id]
     }
     return tokenPromises
+  }
+
+  /**
+   * Retrieves token information foll all tokens involved in the deposits.
+   * @param {Deposit[]} depositList List of {@link Deposit}
+   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   */
+  const fetchTokenInfoFromDeposits = function(deposits, debug = false) {
+    const tokensInvolved = allElementsOnlyOnce(deposits.map(deposit => deposit.tokenAddress))
+    return fetchTokenInfoAtAddresses(tokensInvolved, debug)
+  }
+
+  /**
+   * Retrieves token information foll all tokens involved in the deposits.
+   * @param {Withdrawal[]} depositList List of {@link Withdrawals}
+   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   */
+  const fetchTokenInfoFromWithdrawals = function(withdrawals, debug = false) {
+    return fetchTokenInfoFromDeposits(withdrawals, debug)
   }
 
   /**
@@ -540,8 +560,6 @@ withdrawal of the desired funds
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
-    const ERC20 = artifacts.require("ERC20Mintable")
-
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
       withdrawals.map(async withdrawal => {
@@ -598,6 +616,8 @@ withdrawal of the desired funds
     buildWithdraw,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
+    fetchTokenInfoFromDeposits,
+    fetchTokenInfoFromWithdrawals,
     isOnlySafeOwner,
     max128,
     maxU32,
