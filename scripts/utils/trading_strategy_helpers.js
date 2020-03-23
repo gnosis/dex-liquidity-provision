@@ -3,7 +3,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
   const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
-  const exchangePromise = getExchange(web3)
+  BatchExchange.setNetwork(web3.network_id)
+  BatchExchange.setProvider(web3.currentProvider)
+  const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const proxyFactoryPromise = ProxyFactory.deployed()
 
