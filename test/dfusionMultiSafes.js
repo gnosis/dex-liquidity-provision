@@ -138,7 +138,7 @@ contract("GnosisSafe", function(accounts) {
     })
   })
   describe("transfer tests:", async function() {
-    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
+    it.only("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
       const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = 1000

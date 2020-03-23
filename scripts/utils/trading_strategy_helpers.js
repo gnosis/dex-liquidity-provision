@@ -380,7 +380,7 @@ withdrawal of or to withdraw the desired funds
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)
+      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)[deposit.tokenAddress]
       const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
         `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
@@ -495,7 +495,7 @@ withdrawal of or to withdraw the desired funds
     BatchExchange.setNetwork(web3.network_id)
     const exchange = await BatchExchange.deployed()
     const depositToken = await ERC20.at(tokenAddress)
-    const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)
+    const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
     const transactions = []
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
