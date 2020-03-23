@@ -372,24 +372,20 @@ withdrawal of or to withdraw the desired funds
    */
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const ERC20 = artifacts.require("ERC20Detailed")
 
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
-    // TODO - make deposit list easier so that we dont' have to query the token every time.
     for (const deposit of depositList) {
       assert(
         await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
         "All depositors must be owned only by the master Safe"
       )
-      const depositToken = await ERC20.at(deposit.tokenAddress)
-      const tokenSymbol = await depositToken.symbol.call()
-      const tokenDecimals = await depositToken.decimals.call()
-      const unitAmount = fromErc20Units(deposit.amount, tokenDecimals)
+      const tokenInfo = await fetchTokenInfoAtAddresses([deposit.tokenAddress], debug)
+      const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
       log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(
-          masterAddress
-        )}) and depositing ${unitAmount} ${tokenSymbol} into BatchExchange`
+        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
+          tokenInfo.symbol
+        } into BatchExchange`
       )
 
       transactions = transactions.concat(
