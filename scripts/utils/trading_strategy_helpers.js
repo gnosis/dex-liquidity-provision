@@ -14,7 +14,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const fs = require("fs")
   const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
   const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
-  const { allElementsOnlyOnce } = require("./utils/js_helpers")
+  const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const max128 = new BN(2).pow(new BN(128)).subn(1)
