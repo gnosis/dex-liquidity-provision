@@ -2,8 +2,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
+  const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
   const exchangePromise = getExchange(web3)
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
+  const proxyFactoryPromise = ProxyFactory.deployed()
 
   const assert = require("assert")
   const BN = require("bn.js")
@@ -184,9 +186,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    */
   const deployFleetOfSafes = async function(masterAddress, fleetSize, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
 
-    const proxyFactory = await ProxyFactory.deployed()
+    const proxyFactory = await proxyFactoryPromise
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     // TODO - Batch all of this in a single transaction
