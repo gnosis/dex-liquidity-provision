@@ -561,10 +561,13 @@ withdrawal of the desired funds
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
+    const tokeinInfoPromises = fetchTokenInfoFromWithdrawals(withdrawals)
+
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
       withdrawals.map(async withdrawal => {
-        const token = await ERC20.at(withdrawal.tokenAddress)
+        const tokenInfo = await tokeinInfoPromises[withdrawal.tokenAddresses]
+        const token = tokenInfo.instance
         let amount
         if (limitToMaxWithdrawableAmount) {
           amount = BN.min(new BN(withdrawal.amount), new BN(await token.balanceOf.call(withdrawal.bracketAddress)))
