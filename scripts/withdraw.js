@@ -3,7 +3,7 @@ const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
 const {
   getExchange,
   getSafe,
-  fetchTokenInfoFromWithdrawals,
+  fetchTokenInfoForWithdrawals,
   buildRequestWithdraw,
   buildWithdraw,
   buildTransferFundsToMaster,
@@ -83,7 +83,7 @@ module.exports = async callback => {
     const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
-    const tokenInfoPromises = fetchTokenInfoFromWithdrawals(withdrawals)
+    const tokenInfoPromises = fetchTokenInfoForWithdrawals(withdrawals)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
