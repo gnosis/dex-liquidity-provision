@@ -9,7 +9,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const fs = require("fs")
   const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  // const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  const { toErc20Units } = require("./printing_tools")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const max128 = new BN(2).pow(new BN(128)).subn(1)
@@ -374,8 +375,8 @@ withdrawal of or to withdraw the desired funds
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
-    const log = debug ? (...a) => console.log(...a) : () => {}
-    const ERC20 = artifacts.require("ERC20Detailed")
+    //const log = debug ? (...a) => console.log(...a) : () => {}
+    // const ERC20 = artifacts.require("ERC20Detailed")
 
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
