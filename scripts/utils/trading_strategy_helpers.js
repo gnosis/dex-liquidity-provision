@@ -1,6 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  const exchangePromise = getExchange(web3)
 
   const assert = require("assert")
   const BN = require("bn.js")
@@ -224,7 +225,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const exchange = await getExchange(web3)
+    const exchange = await exchangePromise
     log("Batch Exchange", exchange.address)
 
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
@@ -325,7 +326,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 withdrawal of or to withdraw the desired funds
 */
   const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName) {
-    const exchange = await getExchange(web3)
+    const exchange = await exchangePromise
 
     // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
     const masterTransactionsPromises = withdrawals.map(withdrawal => {
@@ -493,11 +494,8 @@ withdrawal of or to withdraw the desired funds
    */
   const buildBracketTransactionForTransferApproveDeposit = async (masterAddress, tokenAddress, bracketAddress, amount) => {
     const ERC20 = artifacts.require("ERC20Detailed")
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 
-    BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
+    const exchange = await exchangePromise
     const depositToken = await ERC20.at(tokenAddress)
     const tokenDecimals = (await depositToken.decimals.call()).toNumber()
     const transactions = []
