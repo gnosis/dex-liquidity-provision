@@ -242,9 +242,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]
-    // TODO - handle other cases later.
-    assert(stableToken.decimals === 18, "Target token must have 18 decimals")
-    assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
@@ -258,10 +255,16 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(
+          upperLimit,
+          18 + stableToken.decimals - targetToken.decimals
+        )
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
+        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(
+          lowerLimit,
+          18 + stableToken.decimals - targetToken.decimals
+        )
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
@@ -294,7 +297,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
-  const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
+  const calculateBuyAndSellAmountsFromPrice = function(price, decimals) {
     // Sell targetToken for stableToken at price with unlimited orders
     // Example:
     // Sell 1 ETH at for 102 DAI (unlimited)
@@ -302,7 +305,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // x = max256 / 102
     // priceFormatted = 102000000000000000000
     price = price.toFixed(18)
-    const priceFormatted = toErc20Units(price, targetToken.decimals)
+    const priceFormatted = toErc20Units(price, decimals)
     let sellAmount
     let buyAmount
     if (priceFormatted.gt(toErc20Units(1, 18))) {
