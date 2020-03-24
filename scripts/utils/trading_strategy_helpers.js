@@ -169,21 +169,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   /**
    * Retrieves token information foll all tokens involved in the deposits.
-   * @param {Deposit[]} depositList List of {@link Deposit}
+   * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
-  const fetchTokenInfoForDeposits = function(deposits, debug = false) {
-    const tokensInvolved = allElementsOnlyOnce(deposits.map(deposit => deposit.tokenAddress))
+  const fetchTokenInfoForFlux = function(flux, debug = false) {
+    const tokensInvolved = allElementsOnlyOnce(flux.map(entry => entry.tokenAddress))
     return fetchTokenInfoAtAddresses(tokensInvolved, debug)
-  }
-
-  /**
-   * Retrieves token information foll all tokens involved in the deposits.
-   * @param {Withdrawal[]} depositList List of {@link Withdrawals}
-   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
-   */
-  const fetchTokenInfoForWithdrawals = function(withdrawals, debug = false) {
-    return fetchTokenInfoForDeposits(withdrawals, debug)
   }
 
   /**
@@ -383,7 +374,7 @@ withdrawal of or to withdraw the desired funds
   const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const tokenInfoPromises = fetchTokenInfoForDeposits(depositList)
+    const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
     let transactions = []
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     for (const deposit of depositList) {
@@ -561,7 +552,7 @@ withdrawal of the desired funds
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
-    const tokeinInfoPromises = fetchTokenInfoForWithdrawals(withdrawals)
+    const tokeinInfoPromises = fetchTokenInfoForFlux(withdrawals)
 
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
@@ -620,8 +611,7 @@ withdrawal of the desired funds
     buildWithdraw,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
-    fetchTokenInfoForDeposits,
-    fetchTokenInfoForWithdrawals,
+    fetchTokenInfoForFlux,
     isOnlySafeOwner,
     max128,
     maxU32,
