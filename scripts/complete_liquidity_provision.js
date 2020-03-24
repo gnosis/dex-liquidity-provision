@@ -95,14 +95,14 @@ module.exports = async callback => {
       }
     }
     if (argv.fleetSize > 23) {
-      callback("Error: Choose a smaller fleetSize, otherwise your payload will be to big for Metamask")
+      callback("Error: Choose a smaller fleetSize, otherwise your payload will be to big for Infura nodes")
     }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
 
-    // Sleeping for 5 seconds to make sure Metamask has processed all new deployed contracts so that
+    // Sleeping for 5 seconds to make sure Infura nodes have processed all newly deployed contracts so that
     // they can be awaited.
     sleep(5000)
 
