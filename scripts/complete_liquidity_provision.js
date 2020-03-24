@@ -1,5 +1,7 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price-utils")(web3, artifacts)
+const { sleep } = require("./utils/js_helpers")
+
 const Contract = require("@truffle/contract")
 const {
   buildTransferApproveDepositFromOrders,
@@ -92,10 +94,17 @@ module.exports = async callback => {
         callback("Error: Bound checks did not pass")
       }
     }
+    if (argv.fleetSize > 23) {
+      callback("Error: Choose a smaller fleetSize, otherwise your payload will be to big for Metamask")
+    }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("Following bracket-traders have been deployed", bracketAddresses.join())
+
+    // Sleeping for 5 seconds to make sure Metamask has processed all new deployed contracts so that
+    // they can be awaited.
+    sleep(5000)
 
     console.log("3. Building orders and deposits")
     const orderTransaction = await buildOrders(
