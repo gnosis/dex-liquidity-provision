@@ -8,7 +8,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { prepareTokenRegistration } = require("./test-utils")
+const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -190,24 +190,21 @@ contract("GnosisSafe", function(accounts) {
       const highestLimit = 121
       const currentPrice = 110
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
-      const depositAmountStableToken = new BN(1000)
 
       //Create  stableToken and add it to the exchange
-      const stableToken = await TestToken.new("DAI", 18)
-      await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(stableToken.address, { from: accounts[0] })
-      const depositAmountTargetToken = new BN(2000)
-      const stableTokenId = (await exchange.tokenAddressToIdMap.call(stableToken.address)).toNumber()
+      const stableTokenDecimals = 18
+      const {id: stableTokenId, token: stableToken} = await addCustomMintableTokenToExchange(exchange, "DAI", stableTokenDecimals, accounts[0])
+      const depositAmountStableToken = new BN(1000)
+      const totalStableTokenNeeded = depositAmountStableToken.mul(new BN(bracketAddresses.length))
+      await stableToken.mint(masterSafe.address, totalStableTokenNeeded, {from: accounts[0]})
 
-      //Create targetToken and add it to the exchange
-      const targetToken = await TestToken.new("ETH", 18)
-      await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
-      await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(targetToken.address, { from: accounts[0] })
-      const targetTokenId = (await exchange.tokenAddressToIdMap.call(targetToken.address)).toNumber()
+      //Create  targetToken and add it to the exchange
+      const targetTokenDecimals = 18
+      const {id: targetTokenId, token: targetToken} = await addCustomMintableTokenToExchange(exchange, "WETH", targetTokenDecimals, accounts[0])
+      const depositAmountTargetToken = new BN(2000)
+      const totalTargetTokenNeeded = depositAmountStableToken.mul(new BN(bracketAddresses.length))
+      await targetToken.mint(masterSafe.address, totalTargetTokenNeeded, {from: accounts[0]})
+
       // Build orders
       const orderTransaction = await buildOrders(
         masterSafe.address,
