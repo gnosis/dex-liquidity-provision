@@ -175,17 +175,28 @@ contract("GnosisSafe", function(accounts) {
       }
     }
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
-      const testEntries = [
-        { decimals: 18, amount: "0.000000000000001" },
-      ]
+      const testEntries = [{ decimals: 18, amount: "0.000000000000001" }]
       await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
     const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
-      const {fleetSize, lowestLimit, highestLimit, currentPrice, amountStableToken, amountTargetToken, stableTokenInfo, targetTokenInfo} = tradeInfo
-      const {decimals: stableTokenDecimals, symbol: stableTokenSymbol} = stableTokenInfo
-      const {decimals: targetTokenDecimals, symbol: targetTokenSymbol} = targetTokenInfo
-      const {bracketsWithStableTokenDeposit, bracketsWithTargetTokenDeposit} = expectedDistribution
-      assert.equal(bracketsWithStableTokenDeposit + bracketsWithTargetTokenDeposit, fleetSize, "Malformed test case, sum of expected distribution should be equal to the fleet size")
+      const {
+        fleetSize,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        amountStableToken,
+        amountTargetToken,
+        stableTokenInfo,
+        targetTokenInfo,
+      } = tradeInfo
+      const { decimals: stableTokenDecimals, symbol: stableTokenSymbol } = stableTokenInfo
+      const { decimals: targetTokenDecimals, symbol: targetTokenSymbol } = targetTokenInfo
+      const { bracketsWithStableTokenDeposit, bracketsWithTargetTokenDeposit } = expectedDistribution
+      assert.equal(
+        bracketsWithStableTokenDeposit + bracketsWithTargetTokenDeposit,
+        fleetSize,
+        "Malformed test case, sum of expected distribution should be equal to the fleet size"
+      )
 
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -193,14 +204,24 @@ contract("GnosisSafe", function(accounts) {
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
 
       //Create  stableToken and add it to the exchange
-      const {id: stableTokenId, token: stableToken} = await addCustomMintableTokenToExchange(exchange, stableTokenSymbol, stableTokenDecimals, accounts[0])
+      const { id: stableTokenId, token: stableToken } = await addCustomMintableTokenToExchange(
+        exchange,
+        stableTokenSymbol,
+        stableTokenDecimals,
+        accounts[0]
+      )
       const depositAmountStableToken = new BN(amountStableToken)
-      await stableToken.mint(masterSafe.address, depositAmountStableToken, {from: accounts[0]})
+      await stableToken.mint(masterSafe.address, depositAmountStableToken, { from: accounts[0] })
 
       //Create  targetToken and add it to the exchange
-      const {id: targetTokenId, token: targetToken} = await addCustomMintableTokenToExchange(exchange, targetTokenSymbol, targetTokenDecimals, accounts[0])
+      const { id: targetTokenId, token: targetToken } = await addCustomMintableTokenToExchange(
+        exchange,
+        targetTokenSymbol,
+        targetTokenDecimals,
+        accounts[0]
+      )
       const depositAmountTargetToken = new BN(amountTargetToken)
-      await targetToken.mint(masterSafe.address, depositAmountTargetToken, {from: accounts[0]})
+      await targetToken.mint(masterSafe.address, depositAmountTargetToken, { from: accounts[0] })
 
       // Build orders
       const orderTransaction = await buildOrders(
@@ -251,8 +272,8 @@ contract("GnosisSafe", function(accounts) {
             currentPrice: 110,
             amountStableToken: "0.000000000000001",
             amountTargetToken: "0.000000000000002",
-            stableTokenInfo: {decimals: 18, symbol: "DAI"},
-            targetTokenInfo : {decimals: 18, symbol: "WETH"}
+            stableTokenInfo: { decimals: 18, symbol: "DAI" },
+            targetTokenInfo: { decimals: 18, symbol: "WETH" },
           },
           expectedDistribution: {
             bracketsWithStableTokenDeposit: 2,
@@ -260,7 +281,9 @@ contract("GnosisSafe", function(accounts) {
           },
         },
       ]
-      await Promise.all(testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution)))
+      await Promise.all(
+        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const testEntries = [
@@ -272,8 +295,8 @@ contract("GnosisSafe", function(accounts) {
             currentPrice: 0.105,
             amountStableToken: "0.000000000000001",
             amountTargetToken: "0.000000000000002",
-            stableTokenInfo: {decimals: 18, symbol: "WETH"},
-            targetTokenInfo : {decimals: 18, symbol: "DAI"}
+            stableTokenInfo: { decimals: 18, symbol: "WETH" },
+            targetTokenInfo: { decimals: 18, symbol: "DAI" },
           },
           expectedDistribution: {
             bracketsWithStableTokenDeposit: 2,
@@ -281,7 +304,9 @@ contract("GnosisSafe", function(accounts) {
           },
         },
       ]
-      await Promise.all(testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution)))
+      await Promise.all(
+        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
       const testEntries = [
@@ -293,8 +318,8 @@ contract("GnosisSafe", function(accounts) {
             currentPrice: 0.9,
             amountStableToken: "0.000000000000001",
             amountTargetToken: "0.000000000000002",
-            stableTokenInfo: {decimals: 18, symbol: "DAI"},
-            targetTokenInfo : {decimals: 18, symbol: "sUSD"}
+            stableTokenInfo: { decimals: 18, symbol: "DAI" },
+            targetTokenInfo: { decimals: 18, symbol: "sUSD" },
           },
           expectedDistribution: {
             bracketsWithStableTokenDeposit: 1,
@@ -302,7 +327,9 @@ contract("GnosisSafe", function(accounts) {
           },
         },
       ]
-      await Promise.all(testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution)))
+      await Promise.all(
+        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
       const testEntries = [
@@ -314,8 +341,8 @@ contract("GnosisSafe", function(accounts) {
             currentPrice: 0.7,
             amountStableToken: "0.000000000000001",
             amountTargetToken: "0.000000000000002",
-            stableTokenInfo: {decimals: 18, symbol: "DAI"},
-            targetTokenInfo : {decimals: 18, symbol: "sUSD"}
+            stableTokenInfo: { decimals: 18, symbol: "DAI" },
+            targetTokenInfo: { decimals: 18, symbol: "sUSD" },
           },
           expectedDistribution: {
             bracketsWithStableTokenDeposit: 0,
@@ -323,7 +350,9 @@ contract("GnosisSafe", function(accounts) {
           },
         },
       ]
-      await Promise.all(testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution)))
+      await Promise.all(
+        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
+      )
     })
   })
 
