@@ -180,30 +180,27 @@ contract("GnosisSafe", function(accounts) {
       ]
       await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
+    const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
+      const {fleetSize, lowestLimit, highestLimit, currentPrice, amountStableToken, amountTargetToken, stableTokenInfo, targetTokenInfo} = tradeInfo
+      const {decimals: stableTokenDecimals, symbol: stableTokenSymbol} = stableTokenInfo
+      const {decimals: targetTokenDecimals, symbol: targetTokenSymbol} = targetTokenInfo
+      const {bracketsWithStableTokenDeposit, bracketsWithTargetTokenDeposit} = expectedDistribution
+      assert.equal(bracketsWithStableTokenDeposit + bracketsWithTargetTokenDeposit, fleetSize, "Malformed test case, sum of expected distribution should be equal to the fleet size")
 
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
-      const fleetSize = 4
-      const lowestLimit = 100
-      const highestLimit = 121
-      const currentPrice = 110
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
 
       //Create  stableToken and add it to the exchange
-      const stableTokenDecimals = 18
-      const {id: stableTokenId, token: stableToken} = await addCustomMintableTokenToExchange(exchange, "DAI", stableTokenDecimals, accounts[0])
-      const depositAmountStableToken = new BN(1000)
-      const totalStableTokenNeeded = depositAmountStableToken.mul(new BN(bracketAddresses.length))
-      await stableToken.mint(masterSafe.address, totalStableTokenNeeded, {from: accounts[0]})
+      const {id: stableTokenId, token: stableToken} = await addCustomMintableTokenToExchange(exchange, stableTokenSymbol, stableTokenDecimals, accounts[0])
+      const depositAmountStableToken = new BN(amountStableToken)
+      await stableToken.mint(masterSafe.address, depositAmountStableToken, {from: accounts[0]})
 
       //Create  targetToken and add it to the exchange
-      const targetTokenDecimals = 18
-      const {id: targetTokenId, token: targetToken} = await addCustomMintableTokenToExchange(exchange, "WETH", targetTokenDecimals, accounts[0])
-      const depositAmountTargetToken = new BN(2000)
-      const totalTargetTokenNeeded = depositAmountStableToken.mul(new BN(bracketAddresses.length))
-      await targetToken.mint(masterSafe.address, totalTargetTokenNeeded, {from: accounts[0]})
+      const {id: targetTokenId, token: targetToken} = await addCustomMintableTokenToExchange(exchange, targetTokenSymbol, targetTokenDecimals, accounts[0])
+      const depositAmountTargetToken = new BN(amountTargetToken)
+      await targetToken.mint(masterSafe.address, depositAmountTargetToken, {from: accounts[0]})
 
       // Build orders
       const orderTransaction = await buildOrders(
@@ -239,10 +236,31 @@ contract("GnosisSafe", function(accounts) {
           exchange,
           stableToken,
           targetToken,
-          depositAmountStableToken.div(new BN(2)),
-          depositAmountTargetToken.div(new BN(2))
+          depositAmountStableToken.div(new BN(bracketsWithStableTokenDeposit)),
+          depositAmountTargetToken.div(new BN(bracketsWithTargetTokenDeposit))
         )
       }
+    }
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
+      const testEntries = [
+        {
+          tradeInfo: {
+            fleetSize: 4,
+            lowestLimit: 100,
+            highestLimit: 121,
+            currentPrice: 110,
+            amountStableToken: "0.000000000000001",
+            amountTargetToken: "0.000000000000002",
+            stableTokenInfo: {decimals: 18, symbol: "DAI"},
+            targetTokenInfo : {decimals: 18, symbol: "WETH"}
+          },
+          expectedDistribution: {
+            bracketsWithStableTokenDeposit: 2,
+            bracketsWithTargetTokenDeposit: 2,
+          },
+        },
+      ]
+      await Promise.all(testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution)))
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const masterSafe = await GnosisSafe.at(
