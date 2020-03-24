@@ -88,10 +88,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
   }
 
-  const sleep = function(milliseconds) {
-    return new Promise(r => setTimeout(r, milliseconds))
-  }
-
   // Need some small adjustments to default implementation for web3js 1.x
   async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
     // assert.isObject(transaction)
@@ -227,7 +223,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     signTransaction,
     buildBundledTransaction,
     buildExecTransaction,
-    sleep,
     CALL,
     ADDRESS_0,
   }
