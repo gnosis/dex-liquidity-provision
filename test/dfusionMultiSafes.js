@@ -33,10 +33,10 @@ const TEN = new BN(10)
 
 const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
+  const multiplicator = new BN("100000000")
 
   // Correctness assertions
   for (const [index, bracketAddress] of bracketSafes.entries()) {
-    const multiplicator = new BN("100000000")
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements

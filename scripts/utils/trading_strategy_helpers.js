@@ -294,7 +294,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken, maximalRoundingErrorInPercent = 0.1) {
     // decimalsForPrice: Decimals of reference price (OWL Price) + stableToken.decimals - targetToken.decimals
     const decimalsForPrice = 18 + stableToken.decimals - targetToken.decimals
-    if (decimalsForPrice < 0 || decimalsForPrice > 30) {
+    if (decimalsForPrice < 0 || decimalsForPrice > 36) {
       throw "decimalsForPrice is not reasonable. Don't apply the bracket-strategy for this token pair!"
     }
     const roundedPrice = price.toFixed(decimalsForPrice)
