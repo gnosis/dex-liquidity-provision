@@ -166,16 +166,6 @@ describe("toErc20Units", () => {
         decimals: 2,
       },
       {
-        user: "0.000",
-        machine: "0",
-        decimals: 2,
-      },
-      {
-        user: "0.0",
-        machine: "0",
-        decimals: 0,
-      },
-      {
         user: "0.210",
         machine: "2100",
         decimals: 4,
@@ -199,16 +189,6 @@ describe("toErc20Units", () => {
         user: "000000",
         machine: "0",
         decimals: 0,
-      },
-      {
-        user: "0." + "".padEnd(256, "0"),
-        machine: "0",
-        decimals: 255,
-      },
-      {
-        user: "0.345",
-        machine: "34",
-        decimals: 2,
       },
     ]
     testGoodEntries(strangeEntries)
@@ -274,6 +254,26 @@ describe("toErc20Units", () => {
         user: "2.2.2",
         decimals: 12,
         error: "invalidNumber",
+      },
+      {
+        user: "0.333",
+        decimals: 2,
+        error: "tooManyDecimals",
+      },
+      {
+        user: "0.000",
+        decimals: 2,
+        error: "tooManyDecimals",
+      },
+      {
+        user: "0.0",
+        decimals: 0,
+        error: "tooManyDecimals",
+      },
+      {
+        user: "0." + "".padEnd(256, "0"),
+        decimals: 255,
+        error: "tooManyDecimals",
       },
       {
         user: bnMaxUint.add(bnOne).toString(),

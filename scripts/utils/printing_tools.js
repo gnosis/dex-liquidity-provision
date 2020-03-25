@@ -22,9 +22,8 @@ const toErc20Units = function(amount, decimals, debug = false) {
   const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
   const match = re.exec(amount)
   if (match == null) throw Error("Failed to parse decimal representation of " + amount)
-  if ((match[3] || "").length > decimals)
-    log("Too many decimals for the token in input string. Small precision loss is inevitable")
-  const decimalString = (match[3] || "").substring(0, decimals).padEnd(decimals, "0")
+  const decimalString = (match[3] || "").padEnd(decimals, "0")
+  if (decimalString.length != decimals) throw Error("Too many decimals for the token in input string")
   const integerPart = new BN(match[1])
   const decimalPart = new BN(decimalString)
   const representation = integerPart.mul(bnTen.pow(new BN(decimals))).add(decimalPart)
