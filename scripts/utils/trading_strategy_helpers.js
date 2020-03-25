@@ -289,7 +289,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // Sell x ETH for max256 DAI
     // x = max256 / 102
     // priceFormatted = 102000000000000000000
-    price = price.toFixed(18)
+    price = price.toFixed(targetToken.decimals)
     const priceFormatted = toErc20Units(price, targetToken.decimals)
     let sellAmount
     let buyAmount
