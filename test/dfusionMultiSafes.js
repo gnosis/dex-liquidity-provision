@@ -343,25 +343,25 @@ contract("GnosisSafe", function(accounts) {
     })
     describe("can use automatic deposits to transfer tokens with arbitrary amount of decimals", () => {
       const tokenSetups = [
-        { 
+        {
           amountStableToken: "10000",
           amountTargetToken: "100",
           stableTokenInfo: { decimals: 6, symbol: "USDC" },
           targetTokenInfo: { decimals: 18, symbol: "WETH" },
         },
-        { 
+        {
           amountStableToken: "100",
           amountTargetToken: "10000",
           stableTokenInfo: { decimals: 18, symbol: "WETH" },
           targetTokenInfo: { decimals: 6, symbol: "USDC" },
         },
-        { 
+        {
           amountStableToken: "3333",
           amountTargetToken: "100.000001",
           stableTokenInfo: { decimals: 0, symbol: "nodecimals" },
           targetTokenInfo: { decimals: 6, symbol: "USDC" },
         },
-        { 
+        {
           amountStableToken: "0.00000000000000000000001",
           amountTargetToken: "3.14159265",
           stableTokenInfo: { decimals: 100, symbol: "manydecimals" },
@@ -381,10 +381,8 @@ contract("GnosisSafe", function(accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens)
-            tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup)
-            tradeInfo[key] = tokenSetup[key]
+          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
+          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -401,10 +399,8 @@ contract("GnosisSafe", function(accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens)
-            tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup)
-            tradeInfo[key] = tokenSetup[key]
+          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
+          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -421,10 +417,8 @@ contract("GnosisSafe", function(accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens)
-            tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup)
-            tradeInfo[key] = tokenSetup[key]
+          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
+          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -441,10 +435,8 @@ contract("GnosisSafe", function(accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens)
-            tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup)
-            tradeInfo[key] = tokenSetup[key]
+          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
+          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
