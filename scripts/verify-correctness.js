@@ -1,8 +1,10 @@
 const Contract = require("@truffle/contract")
 const { getOrdersPaginated } = require("./utils/to_be_imported_from_dex_contracts.js")
-const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")
-const { getMasterCopy } = require("./utils/internals")
+const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
+const assert = require("assert")
+
 const argv = require("yargs")
   .option("brackets", {
     type: "string",
@@ -12,7 +14,14 @@ const argv = require("yargs")
       return str.split(",")
     },
   })
-  .demand(["brackets"])
+  .option("masterSafe", {
+    type: "string",
+    describe: "The masterSafe in control of the bracket-traders",
+    coerce: str => {
+      return str.split(",")
+    },
+  })
+  .demand(["brackets", "masterSafe"])
   .help(
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
@@ -31,7 +40,7 @@ module.exports = async callback => {
     // 1. verify that the owner of the brackets is the masterSafe
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        await isOnlySafeOwner(argv.masterSafe, bracketTrader, artifacts)
+        assert(await isOnlySafeOwner(argv.masterSafe, bracketTrader, artifacts))
       })
     )
 
