@@ -64,6 +64,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
+    console.log("Remember to increase the gas limit!")
   }
 
   return {

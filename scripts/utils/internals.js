@@ -2,6 +2,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
   const assert = require("assert")
+
+  const GnosisSafe = artifacts.require("GnosisSafe.sol")
+  const MultiSend = artifacts.require("MultiSend")
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
+  const multiSendPromise = MultiSend.deployed()
+
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const CALL = 0
   const DELEGATECALL = 1
@@ -75,19 +81,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
-    const GnosisSafe = artifacts.require("GnosisSafe.sol")
-
-    const initData = await gnosisSafeMasterCopy.contract.methods
+    const initData = gnosisSafeMasterCopy.contract.methods
       .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
       .encodeABI()
     const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
-    // waiting two second to make sure infura can catch up
-    await sleep(1000)
-    return await getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
-  }
-
-  const sleep = function(milliseconds) {
-    return new Promise(r => setTimeout(r, milliseconds))
+    return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
   }
 
   // Need some small adjustments to default implementation for web3js 1.x
@@ -101,15 +99,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       logs = logs.filter(l => l.event === eventName && l.address === contract)
     }
     assert.equal(logs.length, 1, "too many logs found!")
-    const param = logs[0].args[paramName]
-    if (contractFactory != null) {
-      // Adjustment: add await
-      const contract = await contractFactory.at(param)
-      // assert.isObject(contract, `getting ${paramName} failed for ${param}`)
-      return contract
-    } else {
-      return param
-    }
+    return logs[0].args[paramName]
   }
 
   async function createLightwallet() {
@@ -140,7 +130,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return signatureBytes
   }
 
-  const encodeMultiSend = function(multiSend, txs, web3 = web3) {
+  const encodeMultiSend = function(multiSend, txs) {
     return multiSend.contract.methods
       .multiSend(
         `0x${txs
@@ -164,8 +154,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Multisend transaction bundling all input transactions
    */
   const buildBundledTransaction = async function(transactions) {
-    const MultiSend = artifacts.require("MultiSend")
-    const multiSend = await MultiSend.deployed()
+    // TODO: do we really need to await the concrete instance of multiSend, since we are only using it to compute the data of a transaction?
+    const multiSend = await multiSendPromise
     const transactionData = encodeMultiSend(multiSend, transactions, web3)
     const bundledTransaction = {
       operation: DELEGATECALL,
@@ -207,8 +197,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {Transaction} Transaction calling execTransaction; should be executed by master
    */
   const buildExecTransaction = async function(masterAddress, bracketAddress, transaction) {
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise // TODO: do we need the master copy instance?
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
     const execTransaction = {

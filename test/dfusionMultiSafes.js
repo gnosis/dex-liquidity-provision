@@ -8,7 +8,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { prepareTokenRegistration } = require("./test-utils")
+const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -25,14 +25,14 @@ const {
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price-utils")(web3, artifacts)
+
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
-const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, exchange) {
-  const rangePercentage = 0.2
-  const stepSizeAsMultiplier = Math.pow(1 + rangePercentage, 2 / bracketSafes.length)
-  const minimalPrice = targetPrice / (1 + rangePercentage)
+const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
+  const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
   let multiplicator = new BN("10")
-  if (targetPrice < 10) {
+  if ((lowestLimit + highestLimit) / 2 < 10) {
     multiplicator = new BN("10000000")
   }
   // Correctness assertions
@@ -47,7 +47,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(buyOrder.priceNumerator)
           .toNumber() -
-          minimalPrice * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
+          lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
       ),
       2
     )
@@ -58,7 +58,7 @@ const checkPricesOfBracketStrategy = async function(targetPrice, bracketSafes, e
           .mul(multiplicator)
           .div(sellOrder.priceDenominator)
           .toNumber() -
-          minimalPrice * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
+          lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
       ),
       2
     )
@@ -131,7 +131,9 @@ contract("GnosisSafe", function(accounts) {
   })
   describe("Gnosis Safe deployments:", async function() {
     it("Deploys Fleet of Gnosis Safes", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const fleet = await deployFleetOfSafes(masterSafe.address, 10)
       assert.equal(fleet.length, 10)
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
@@ -139,7 +141,9 @@ contract("GnosisSafe", function(accounts) {
   })
   describe("transfer tests:", async function() {
     const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(readableDepositAmount, tokenDecimals)
       const totalTokenNeeded = depositAmount.muln(bracketAddresses.length)
@@ -171,98 +175,197 @@ contract("GnosisSafe", function(accounts) {
       }
     }
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
+      const decimals = 18
+      const amount = "0.000000000000001"
+      await testManualDeposits(decimals, amount)
+    })
+    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic with arbitrary number of decimals", async () => {
       const testEntries = [
         { decimals: 6, amount: "100" },
-        { decimals: 18, amount: "0.000000000000001" },
         { decimals: 50, amount: "0.1" },
-        { decimals: 0, amount: "2" },
+        { decimals: 100, amount: "0.00000000000000000000000001" },
+        { decimals: 0, amount: "30" },
+        { decimals: 2, amount: "0.01" },
       ]
       await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
+    const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
+      const {
+        fleetSize,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        amountStableToken,
+        amountTargetToken,
+        stableTokenInfo,
+        targetTokenInfo,
+      } = tradeInfo
+      const { decimals: stableTokenDecimals, symbol: stableTokenSymbol } = stableTokenInfo
+      const { decimals: targetTokenDecimals, symbol: targetTokenSymbol } = targetTokenInfo
+      const { bracketsWithStableTokenDeposit, bracketsWithTargetTokenDeposit } = expectedDistribution
+      assert.equal(
+        bracketsWithStableTokenDeposit + bracketsWithTargetTokenDeposit,
+        fleetSize,
+        "Malformed test case, sum of expected distribution should be equal to the fleet size"
+      )
 
-    const testAutomaticDeposits = async function(
-      stableTokenDecimals,
-      readableDepositAmountStableToken,
-      targetTokenDecimals,
-      readableDepositAmountTargetToken
-    ) {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      const fleetSize = 2
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
-      const depositAmountStableToken = toErc20Units(readableDepositAmountStableToken, stableTokenDecimals)
-      const stableToken = await TestToken.new("TEST", stableTokenDecimals)
-      await stableToken.mint(accounts[0], depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      await stableToken.transfer(masterSafe.address, depositAmountStableToken.mul(new BN(bracketAddresses.length)))
-      const depositAmountTargetToken = toErc20Units(readableDepositAmountTargetToken, targetTokenDecimals)
-      const targetToken = await TestToken.new("TEST", targetTokenDecimals)
-      await targetToken.mint(accounts[0], depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
-      await targetToken.transfer(masterSafe.address, depositAmountTargetToken.mul(new BN(bracketAddresses.length)))
 
+      //Create  stableToken and add it to the exchange
+      const { id: stableTokenId, token: stableToken } = await addCustomMintableTokenToExchange(
+        exchange,
+        stableTokenSymbol,
+        stableTokenDecimals,
+        accounts[0]
+      )
+      const depositAmountStableToken = new BN(amountStableToken)
+      await stableToken.mint(masterSafe.address, depositAmountStableToken, { from: accounts[0] })
+
+      //Create  targetToken and add it to the exchange
+      const { id: targetTokenId, token: targetToken } = await addCustomMintableTokenToExchange(
+        exchange,
+        targetTokenSymbol,
+        targetTokenDecimals,
+        accounts[0]
+      )
+      const depositAmountTargetToken = new BN(amountTargetToken)
+      await targetToken.mint(masterSafe.address, depositAmountTargetToken, { from: accounts[0] })
+
+      // Build orders
+      const orderTransaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetTokenId,
+        stableTokenId,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, orderTransaction)
+
+      // Make transfers
       const batchTransaction = await buildTransferApproveDepositFromOrders(
         masterSafe.address,
         bracketAddresses,
-        stableToken.address,
-        depositAmountStableToken,
         targetToken.address,
+        stableToken.address,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        depositAmountStableToken,
         depositAmountTargetToken
       )
-
       await execTransaction(masterSafe, lw, batchTransaction)
-      // Close auction for deposits to be refelcted in exchange balance
+      // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
 
-      for (const bracketAddress of bracketAddresses.slice(0, fleetSize / 2)) {
-        let bracketExchangeBalance = await exchange.getBalance(bracketAddress, stableToken.address)
-        assert.equal(bracketExchangeBalance.toString(), depositAmountStableToken.toString())
-        assert.equal(fromErc20Units(bracketExchangeBalance, stableTokenDecimals), readableDepositAmountStableToken)
-        bracketExchangeBalance = await exchange.getBalance(bracketAddress, targetToken.address)
-        assert.equal(bracketExchangeBalance.toString(), "0")
-        const bracketPersonalTokenBalance = (await testToken.balanceOf(bracketAddress)).toNumber()
-        // This should always output 0 as the brackets should never directly hold funds
-        assert.equal(bracketPersonalTokenBalance.toString(), "0")
-      }
-      for (const bracketAddress of bracketAddresses.slice(fleetSize / 2 + 1, fleetSize / 2)) {
-        let bracketExchangeBalance = await exchange.getBalance(bracketAddress, targetToken.address)
-        assert.equal(bracketExchangeBalance.toString(), depositAmountTargetToken.toString())
-        assert.equal(fromErc20Units(bracketExchangeBalance, stableTokenDecimals), readableDepositAmountTargetToken)
-        bracketExchangeBalance = await exchange.getBalance(bracketAddress, stableToken.address)
-        assert.equal(bracketExchangeBalance.toString(), "0")
-        const bracketPersonalTokenBalance = await testToken.balanceOf(bracketAddress)
-        // This should always output 0 as the brackets should never directly hold funds
-        assert.equal(bracketPersonalTokenBalance.toString(), "0")
+      for (const bracketAddress of bracketAddresses) {
+        await checkCorrectnessOfDeposits(
+          currentPrice,
+          bracketAddress,
+          exchange,
+          stableToken,
+          targetToken,
+          bracketsWithStableTokenDeposit == 0 ? 0 : depositAmountStableToken.div(new BN(bracketsWithStableTokenDeposit)),
+          bracketsWithTargetTokenDeposit == 0 ? 0 : depositAmountTargetToken.div(new BN(bracketsWithTargetTokenDeposit))
+        )
       }
     }
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic", async () => {
-      const testEntries = [
-        {
-          stableTokenDecimals: 18,
-          stableTokenAmount: "0.000000000000001",
-          targetTokenDecimals: 18,
-          targetTokenAmount: "0.000000000000001",
-        },
-        { stableTokenDecimals: 6, stableTokenAmount: "100.101", targetTokenDecimals: 18, targetTokenAmount: "0.1" },
-        { stableTokenDecimals: 18, stableTokenAmount: "0.1", targetTokenDecimals: 6, targetTokenAmount: "100.101" },
-        { stableTokenDecimals: 4, stableTokenAmount: "100.0001", targetTokenDecimals: 0, targetTokenAmount: "2" },
-      ]
-      await Promise.all(
-        testEntries.map(({ stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount }) =>
-          testAutomaticDeposits(stableTokenDecimals, stableTokenAmount, targetTokenDecimals, targetTokenAmount)
-        )
-      )
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 100,
+        highestLimit: 121,
+        currentPrice: 110,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "WETH" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 2,
+        bracketsWithTargetTokenDeposit: 2,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+    })
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.09,
+        highestLimit: 0.12,
+        currentPrice: 0.105,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "WETH" },
+        targetTokenInfo: { decimals: 18, symbol: "DAI" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 2,
+        bracketsWithTargetTokenDeposit: 2,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+    })
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.8,
+        highestLimit: 1.2,
+        currentPrice: 0.9,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 1,
+        bracketsWithTargetTokenDeposit: 3,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+    })
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.8,
+        highestLimit: 1.2,
+        currentPrice: 0.7,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 0,
+        bracketsWithTargetTokenDeposit: 4,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
   })
+
   describe("bracket order placement test:", async function() {
     it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 100
+      const lowestLimit = 90
+      const highestLimit = 120
       await prepareTokenRegistration(accounts[0], exchange)
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketAddresses, targetToken, stableToken, targetPrice)
+      const currentBatch = (await exchange.getCurrentBatchId.call()).toNumber()
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
       // Correctness assertions
@@ -279,22 +382,34 @@ contract("GnosisSafe", function(accounts) {
 
         assert.equal(buyOrder.validUntil, maxU32, `Got ${sellOrder}`)
         assert.equal(sellOrder.validUntil, maxU32, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validFrom, currentBatch + 3)
+        assert.equal(buyOrder.validFrom, currentBatch + 3)
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 1 / 100
+      const lowestLimit = 0.09
+      const highestLimit = 0.12
       await prepareTokenRegistration(accounts[0], exchange)
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
-      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
@@ -304,18 +419,28 @@ contract("GnosisSafe", function(accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
-      const targetPrice = 100
+      const lowestLimit = 80
+      const highestLimit = 110
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, targetPrice)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
       await execTransaction(masterSafe, lw, transaction)
 
-      await checkPricesOfBracketStrategy(targetPrice, bracketSafes, exchange)
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
@@ -324,6 +449,30 @@ contract("GnosisSafe", function(accounts) {
         assert(buyOrder.priceDenominator.eq(max128))
         assert(sellOrder.priceNumerator.eq(max128))
       }
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // DAI
+      const lowestLimit = 0.8
+      const highestLimit = 1.1
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
   })
 
@@ -396,7 +545,9 @@ contract("GnosisSafe", function(accounts) {
     }
 
     it("Withdraw full amount, three steps", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
@@ -470,7 +621,9 @@ contract("GnosisSafe", function(accounts) {
     })
 
     it("Withdraw full amount, two steps", async () => {
-      const masterSafe = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length

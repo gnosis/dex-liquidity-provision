@@ -18,7 +18,7 @@ const addCustomMintableTokenToExchange = async function(exchange, symbol, decima
   await exchange.addToken(token.address, { from: account })
   const id = await exchange.tokenAddressToIdMap(token.address)
   return {
-    id: id,
+    id: id.toNumber(),
     token: token,
   }
 }

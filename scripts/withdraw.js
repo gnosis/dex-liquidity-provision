@@ -1,10 +1,9 @@
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
-const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const {
   getExchange,
   getSafe,
-  fetchTokenInfoAtAddresses,
+  fetchTokenInfoForFlux,
   buildRequestWithdraw,
   buildWithdraw,
   buildTransferFundsToMaster,
@@ -84,8 +83,7 @@ module.exports = async callback => {
     const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
-    const tokensInvolved = allElementsOnlyOnce(withdrawals.map(withdrawal => withdrawal.tokenAddress))
-    const tokenInfoPromises = fetchTokenInfoAtAddresses(tokensInvolved)
+    const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
@@ -143,7 +141,7 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(await masterSafePromise, await transactionPromise, web3, argv.network)
+      await signAndSend(await masterSafePromise, await transactionPromise, argv.network)
     }
 
     callback()

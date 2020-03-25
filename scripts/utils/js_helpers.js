@@ -7,6 +7,14 @@ const allElementsOnlyOnce = function(array) {
   return array.filter((value, index, self) => self.indexOf(value) === index)
 }
 
+/**
+ * js-sleep promise to pause scripts
+ */
+const sleep = function(milliseconds) {
+  return new Promise(r => setTimeout(r, milliseconds))
+}
+
 module.exports = {
   allElementsOnlyOnce,
+  sleep,
 }
