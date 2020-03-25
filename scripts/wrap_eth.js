@@ -1,8 +1,8 @@
 const Contract = require("@truffle/contract")
 
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
-const { CALL } = require("./utils/internals")
-const {  toErc20Units, fromErc20Units } = require("./utils/printing_tools")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
+const { CALL } = require("./utils/internals")(web3, artifacts)
+const { toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -46,7 +46,7 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, transaction, web3, argv.network)
+      await signAndSend(masterSafe, transaction, argv.network)
     }
 
     callback()

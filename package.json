@@ -6,7 +6,7 @@
     "@gnosis.pm/mock-contract": "^3.0.0",
     "eslint": "^6.8.0",
     "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.18.3",
+    "eslint-plugin-react": "^7.19.0",
     "eth-lightwallet": "^4.0.0",
     "ethereumjs-abi": "^0.6.5",
     "ganache-cli": "6.9.0",
@@ -16,24 +16,26 @@
   },
   "scripts": {
     "lint": "eslint .",
+    "prettier": "prettier --write './**/*.js'",
+    "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.2.3",
+    "@gnosis.pm/dex-contracts": "^0.2.4",
     "@gnosis.pm/owl-token": "^3.1.0",
-    "@gnosis.pm/safe-contracts": "gnosis/safe-contracts#v1.1.1-dev.1",
+    "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#v1.1.1-dev.1",
     "@gnosis.pm/solidity-data-structures": "^1.2.2",
     "@gnosis.pm/util-contracts": "^2.0.6",
-    "@truffle/contract": "^4.1.6",
+    "@truffle/contract": "^4.1.13",
     "axios": "^0.19.2",
     "canonical-weth": "^1.4.0",
     "dotenv": "^8.0.0",
     "eslint": "^6.8.0",
-    "eth-gas-reporter": "^0.2.15",
+    "eth-gas-reporter": "^0.2.16",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
-    "truffle": "^5.0.34",
-    "truffle-plugin-verify": "^0.3.9"
+    "truffle": "^5.1.18",
+    "truffle-plugin-verify": "^0.3.10"
   }
 }

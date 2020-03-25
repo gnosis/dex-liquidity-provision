@@ -1,14 +1,14 @@
-const Contract = require("@truffle/contract")
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-
-const { signAndSend, promptUser } = require("./utils/sign_and_send")
+const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
 const {
+  getExchange,
+  getSafe,
+  fetchTokenInfoForFlux,
   buildRequestWithdraw,
   buildWithdraw,
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
-} = require("./utils/trading_strategy_helpers")
+} = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const argv = require("yargs")
   .option("masterSafe", {
@@ -79,13 +79,11 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
 
 module.exports = async callback => {
   try {
-    await BatchExchange.setProvider(web3.currentProvider)
-    await BatchExchange.setNetwork(web3.network_id)
-    const exchange = await BatchExchange.deployed()
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+    const masterSafePromise = getSafe(argv.masterSafe)
+    const exchange = await getExchange(web3)
 
     let withdrawals = require(argv.withdrawalFile)
+    const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
@@ -100,23 +98,19 @@ module.exports = async callback => {
     }
 
     console.log("Started building withdraw transaction.")
-    let transaction
-    if (argv.requestWithdraw) transaction = await buildRequestWithdraw(masterSafe.address, withdrawals, web3, artifacts)
-    else if (argv.withdraw && !argv.transferBackToMaster)
-      transaction = await buildWithdraw(masterSafe.address, withdrawals, web3, artifacts)
+    let transactionPromise
+    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
+    else if (argv.withdraw && !argv.transferBackToMaster) transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
     else if (!argv.withdraw && argv.transferBackToMaster)
-      transaction = await buildTransferFundsToMaster(masterSafe.address, withdrawals, true, web3, artifacts)
+      transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
     else if (argv.withdraw && argv.transferBackToMaster)
-      transaction = await buildWithdrawAndTransferFundsToMaster(masterSafe.address, withdrawals, web3, artifacts)
+      transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
     else {
       throw new Error("No operation specified")
     }
 
     for (const withdrawal of withdrawals) {
-      const ERC20 = artifacts.require("ERC20Detailed")
-      const token = await ERC20.at(withdrawal.tokenAddress)
-      const tokenDecimals = (await token.decimals.call()).toNumber()
-      const tokenSymbol = await token.symbol.call()
+      const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 
@@ -129,7 +123,7 @@ module.exports = async callback => {
       else if (!argv.withdraw && argv.transferBackToMaster)
         console.log(
           `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
-            masterSafe.address
+            argv.masterSafe
           )}`
         )
       else if (argv.withdraw && argv.transferBackToMaster)
@@ -137,7 +131,7 @@ module.exports = async callback => {
           `Safe ${
             withdrawal.bracketAddress
           } withdrawing ${userAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
-            masterSafe.address
+            argv.masterSafe
           )})`
         )
       else {
@@ -147,7 +141,7 @@ module.exports = async callback => {
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, transaction, web3, argv.network)
+      await signAndSend(await masterSafePromise, await transactionPromise, argv.network)
     }
 
     callback()
