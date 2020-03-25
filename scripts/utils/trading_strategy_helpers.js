@@ -291,10 +291,16 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
-  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
+  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken, maximalRoundingErrorInPercent = 0.1) {
     // decimalsForPrice: Decimals of reference price (OWL Price) + stableToken.decimals - targetToken.decimals
     const decimalsForPrice = 18 + stableToken.decimals - targetToken.decimals
-    price = price.toFixed(decimalsForPrice)
+    if (decimalsForPrice < 0 || decimalsForPrice > 30) {
+      throw "decimalsForPrice is not reasonable. Don't apply the bracket-strategy for this token pair!"
+    }
+    const roundedPrice = price.toFixed(decimalsForPrice)
+    if ((Math.abs(roundedPrice - price) / price) * 100 > maximalRoundingErrorInPercent) {
+      throw "Token decimals will introduce unreasonable rounding error!"
+    }
     const priceFormatted = toErc20Units(price, decimalsForPrice)
     let sellAmount
     let buyAmount
@@ -313,6 +319,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     }
     return [sellAmount, buyAmount]
   }
+
   const checkSufficiencyOfBalance = async function(token, owner, amount) {
     const depositor_balance = await token.balanceOf.call(owner)
     return depositor_balance.gte(amount)

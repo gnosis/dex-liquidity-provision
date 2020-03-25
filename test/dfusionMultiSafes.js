@@ -36,10 +36,7 @@ const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, b
 
   // Correctness assertions
   for (const [index, bracketAddress] of bracketSafes.entries()) {
-    let multiplicator = new BN("100")
-    if (lowestLimit * Math.pow(stepSizeAsMultiplier, index) < 10) {
-      multiplicator = new BN("1000000")
-    }
+    const multiplicator = new BN("100000000")
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements
@@ -48,28 +45,26 @@ const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, b
 
     // Check buy order prices
     assert.isBelow(
-      Math.abs(
-        buyOrder.priceDenominator
-          .mul(multiplicator)
-          .mul(TEN.pow(decimalsOfBuyToken))
-          .div(TEN.pow(decimalsOfSellToken))
-          .div(buyOrder.priceNumerator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
-      ),
+      buyOrder.priceDenominator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(buyOrder.priceNumerator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
     // Check sell order prices
     assert.isBelow(
-      Math.abs(
-        sellOrder.priceNumerator
-          .mul(multiplicator)
-          .mul(TEN.pow(decimalsOfBuyToken))
-          .div(TEN.pow(decimalsOfSellToken))
-          .div(sellOrder.priceDenominator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
-      ),
+      sellOrder.priceNumerator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(sellOrder.priceDenominator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
   }
