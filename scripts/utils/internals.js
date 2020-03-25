@@ -214,8 +214,17 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
   }
 
+  const getMasterCopy = async function(safeAddress) {
+    return new Promise(function(resolve, reject) {
+      web3.eth.getStorageAt(safeAddress, 0, (err, resp) => {
+        if (err) return reject(err)
+        resolve("0x" + resp.slice(26))
+      })
+    })
+  }
   return {
     waitForNSeconds,
+    getMasterCopy,
     execTransaction,
     deploySafe,
     encodeMultiSend,
