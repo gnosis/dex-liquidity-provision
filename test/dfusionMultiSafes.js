@@ -175,8 +175,9 @@ contract("GnosisSafe", function(accounts) {
       }
     }
     it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic", async () => {
-      const testEntries = [{ decimals: 18, amount: "0.000000000000001" }]
-      await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
+      const decimals = 18
+      const amount = "0.000000000000001"
+      await testManualDeposits(decimals, amount)
     })
     const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
       const {
@@ -263,96 +264,72 @@ contract("GnosisSafe", function(accounts) {
       }
     }
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
-      const testEntries = [
-        {
-          tradeInfo: {
-            fleetSize: 4,
-            lowestLimit: 100,
-            highestLimit: 121,
-            currentPrice: 110,
-            amountStableToken: "0.000000000000001",
-            amountTargetToken: "0.000000000000002",
-            stableTokenInfo: { decimals: 18, symbol: "DAI" },
-            targetTokenInfo: { decimals: 18, symbol: "WETH" },
-          },
-          expectedDistribution: {
-            bracketsWithStableTokenDeposit: 2,
-            bracketsWithTargetTokenDeposit: 2,
-          },
-        },
-      ]
-      await Promise.all(
-        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
-      )
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 100,
+        highestLimit: 121,
+        currentPrice: 110,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "WETH" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 2,
+        bracketsWithTargetTokenDeposit: 2,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
-      const testEntries = [
-        {
-          tradeInfo: {
-            fleetSize: 4,
-            lowestLimit: 0.09,
-            highestLimit: 0.12,
-            currentPrice: 0.105,
-            amountStableToken: "0.000000000000001",
-            amountTargetToken: "0.000000000000002",
-            stableTokenInfo: { decimals: 18, symbol: "WETH" },
-            targetTokenInfo: { decimals: 18, symbol: "DAI" },
-          },
-          expectedDistribution: {
-            bracketsWithStableTokenDeposit: 2,
-            bracketsWithTargetTokenDeposit: 2,
-          },
-        },
-      ]
-      await Promise.all(
-        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
-      )
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.09,
+        highestLimit: 0.12,
+        currentPrice: 0.105,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "WETH" },
+        targetTokenInfo: { decimals: 18, symbol: "DAI" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 2,
+        bracketsWithTargetTokenDeposit: 2,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
-      const testEntries = [
-        {
-          tradeInfo: {
-            fleetSize: 4,
-            lowestLimit: 0.8,
-            highestLimit: 1.2,
-            currentPrice: 0.9,
-            amountStableToken: "0.000000000000001",
-            amountTargetToken: "0.000000000000002",
-            stableTokenInfo: { decimals: 18, symbol: "DAI" },
-            targetTokenInfo: { decimals: 18, symbol: "sUSD" },
-          },
-          expectedDistribution: {
-            bracketsWithStableTokenDeposit: 1,
-            bracketsWithTargetTokenDeposit: 3,
-          },
-        },
-      ]
-      await Promise.all(
-        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
-      )
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.8,
+        highestLimit: 1.2,
+        currentPrice: 0.9,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 1,
+        bracketsWithTargetTokenDeposit: 3,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
-      const testEntries = [
-        {
-          tradeInfo: {
-            fleetSize: 4,
-            lowestLimit: 0.8,
-            highestLimit: 1.2,
-            currentPrice: 0.7,
-            amountStableToken: "0.000000000000001",
-            amountTargetToken: "0.000000000000002",
-            stableTokenInfo: { decimals: 18, symbol: "DAI" },
-            targetTokenInfo: { decimals: 18, symbol: "sUSD" },
-          },
-          expectedDistribution: {
-            bracketsWithStableTokenDeposit: 0,
-            bracketsWithTargetTokenDeposit: 4,
-          },
-        },
-      ]
-      await Promise.all(
-        testEntries.map(({ tradeInfo, expectedDistribution }) => testAutomaticDeposits(tradeInfo, expectedDistribution))
-      )
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 0.8,
+        highestLimit: 1.2,
+        currentPrice: 0.7,
+        amountStableToken: "0.000000000000001",
+        amountTargetToken: "0.000000000000002",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 0,
+        bracketsWithTargetTokenDeposit: 4,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
   })
 
