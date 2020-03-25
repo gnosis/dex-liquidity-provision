@@ -312,7 +312,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     if ((Math.abs(roundedPrice - price) / price) * 100 > maximalRoundingErrorInPercent) {
       throw "Token decimals will introduce unreasonable rounding error!"
     }
-    const priceFormatted = toErc20Units(price, decimalsForPrice)
+    const priceFormatted = toErc20Units(roundedPrice, decimalsForPrice)
     let sellAmount
     let buyAmount
     if (priceFormatted.gt(toErc20Units(1, 18))) {
