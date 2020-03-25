@@ -13,8 +13,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  * @param {(number|string|BN)} decimals Maximum number of decimals of the token
  * @return {BN} number of token units corresponding to the input amount
  */
-const toErc20Units = function(amount, decimals, debug = false) {
-  const log = debug ? (...a) => console.log(...a) : () => {}
+const toErc20Units = function(amount, decimals) {
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion
   if (bnDecimals.lt(bnZero) || bnDecimals.gte(bn256))
     throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
