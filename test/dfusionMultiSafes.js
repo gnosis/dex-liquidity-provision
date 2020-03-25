@@ -380,9 +380,7 @@ contract("GnosisSafe", function(accounts) {
           bracketsWithTargetTokenDeposit: 2,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -398,9 +396,7 @@ contract("GnosisSafe", function(accounts) {
           bracketsWithTargetTokenDeposit: 5,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -416,9 +412,7 @@ contract("GnosisSafe", function(accounts) {
           bracketsWithTargetTokenDeposit: 0,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
@@ -434,9 +428,7 @@ contract("GnosisSafe", function(accounts) {
           bracketsWithTargetTokenDeposit: 4,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = {}
-          for (const key in tradeInfoWithoutTokens) tradeInfo[key] = tradeInfoWithoutTokens[key]
-          for (const key in tokenSetup) tradeInfo[key] = tokenSetup[key]
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
