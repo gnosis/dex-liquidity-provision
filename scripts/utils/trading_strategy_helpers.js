@@ -254,11 +254,22 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
+        const stepSize = upperLimit - lowerLimit
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, stableToken, targetToken)
+        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(
+          upperLimit,
+          stableToken,
+          targetToken,
+          stepSize / upperLimit / 2
+        )
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, stableToken, targetToken)
+        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(
+          lowerLimit,
+          stableToken,
+          targetToken,
+          stepSize / lowerLimit / 2
+        )
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
