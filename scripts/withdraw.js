@@ -53,16 +53,15 @@ const argv = require("yargs")
   })
   .version(false).argv
 
-const getAmount = async function(bracketAddress, tokenAddress, exchange) {
+const getAmount = async function(bracketAddress, tokenInfo, exchange) {
   let amount
-  const ERC20 = artifacts.require("ERC20Detailed")
-  const token = await ERC20.at(tokenAddress)
-  if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenAddress)).toString()
+  const token = tokenInfo.instance
+  if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenInfo.address)).toString()
   else if (argv.withdraw) {
     const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
-    const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenAddress)
+    const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenInfo.address)
     if (pendingWithdrawal[1].toNumber() == 0) {
-      console.log("Warning: no withdrawal was requested for address", bracketAddress, "and token", await token.name())
+      console.log("Warning: no withdrawal was requested for address", bracketAddress, "and token", tokenInfo.symbol)
       amount = "0"
     }
     if (amount != "0" && pendingWithdrawal[1].toNumber() >= currentBatchId) {
@@ -73,17 +72,17 @@ const getAmount = async function(bracketAddress, tokenAddress, exchange) {
   } else {
     amount = (await token.balanceOf(bracketAddress)).toString()
   }
-  if (amount == "0") console.log("Warning: address", bracketAddress, "has no balance to withdraw for token", await token.name())
+  if (amount == "0") console.log("Warning: address", bracketAddress, "has no balance to withdraw for token", tokenInfo.symbol)
   return amount
 }
 
 module.exports = async callback => {
   try {
-    const masterSafePromise = getSafe(argv.masterSafe)
-    const exchange = await getExchange(web3)
-
     let withdrawals = require(argv.withdrawalFile)
     const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
+
+    const masterSafePromise = getSafe(argv.masterSafe)
+    const exchange = await getExchange(web3)
 
     if (argv.allTokens) {
       console.log("Retrieving amount of tokens to withdraw.")
@@ -92,7 +91,7 @@ module.exports = async callback => {
         withdrawals.map(async withdrawal => ({
           bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
-          amount: await getAmount(withdrawal.bracketAddress, withdrawal.tokenAddress, exchange),
+          amount: await getAmount(withdrawal.bracketAddress, await tokenInfoPromises[withdrawal.tokenAddress], exchange),
         }))
       )
     }
