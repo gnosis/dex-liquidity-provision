@@ -561,7 +561,7 @@ contract("GnosisSafe", function(accounts) {
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       testToken = await TestToken.new("TEST6", 6)
       const testToken2 = await TestToken.new("TEST4", 4)
-      const targetToken = 0 // "TEST4"
+      const targetToken = 2 // "TEST4"
       const stableToken = 1 // "TEST6"
       const lowestLimit = 0.8
       const highestLimit = 1.1
