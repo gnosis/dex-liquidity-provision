@@ -233,9 +233,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]
-    // TODO - handle other cases later.
-    assert(stableToken.decimals === 18, "Target token must have 18 decimals")
-    assert(targetToken.decimals === 18, "Stable tokens must have 18 decimals")
 
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
