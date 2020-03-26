@@ -293,7 +293,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
     // decimalsForPrice: This number defines the rounding errors,
-    // Since we can accept similar rounding error as witthin the smart contract
+    // Since we can accept similar rounding error as within the smart contract
     // we set it to 38 = amount of digits of max128
     const decimalsForPrice = 38
     const roundedPrice = price.toFixed(decimalsForPrice)
