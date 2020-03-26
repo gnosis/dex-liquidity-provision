@@ -211,7 +211,7 @@ contract("GnosisSafe", function(accounts) {
         stableTokenDecimals,
         accounts[0]
       )
-      const depositAmountStableToken = new BN(amountStableToken)
+      const depositAmountStableToken = toErc20Units(amountStableToken, stableTokenDecimals)
       await stableToken.mint(masterSafe.address, depositAmountStableToken, { from: accounts[0] })
 
       //Create  targetToken and add it to the exchange
@@ -221,7 +221,7 @@ contract("GnosisSafe", function(accounts) {
         targetTokenDecimals,
         accounts[0]
       )
-      const depositAmountTargetToken = new BN(amountTargetToken)
+      const depositAmountTargetToken = toErc20Units(amountTargetToken, targetTokenDecimals)
       await targetToken.mint(masterSafe.address, depositAmountTargetToken, { from: accounts[0] })
 
       // Build orders
