@@ -330,12 +330,23 @@ describe("toErc20Units", () => {
 describe("fromErc20Units", () => {
   // takes an entry and produces an array containing the same entry expressed in all accepted input types
   const allTypesForEntry = function(entry) {
-    let entriesToTest = []
+    const entriesToTest = []
     decimalTypesToTest(entry.decimals).map(decimals => {
-      entriesToTest = entriesToTest.concat(
-        { user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine },
-        { user: entry.user, error: entry.error, decimals: decimals, machine: new BN(entry.machine) }
+      entriesToTest.push(
+        { user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine }
       )
+      let machineToBn = null
+      try {
+        machineToBn = new BN(entry.machine)
+      } catch (ignored) {
+        // if the string cannot be made into a BN, then there is no need to test for this BN input
+      } finally {
+        if (machineToBn != null) {
+          entriesToTest.push(
+            { user: entry.user, error: entry.error, decimals: decimals, machine: machineToBn }
+          )
+        }
+      }
     })
     return entriesToTest
   }
