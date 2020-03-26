@@ -332,9 +332,7 @@ describe("fromErc20Units", () => {
   const allTypesForEntry = function(entry) {
     const entriesToTest = []
     decimalTypesToTest(entry.decimals).map(decimals => {
-      entriesToTest.push(
-        { user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine }
-      )
+      entriesToTest.push({ user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine })
       let machineToBn = null
       try {
         machineToBn = new BN(entry.machine)
@@ -342,9 +340,7 @@ describe("fromErc20Units", () => {
         // if the string cannot be made into a BN, then there is no need to test for this BN input
       } finally {
         if (machineToBn != null) {
-          entriesToTest.push(
-            { user: entry.user, error: entry.error, decimals: decimals, machine: machineToBn }
-          )
+          entriesToTest.push({ user: entry.user, error: entry.error, decimals: decimals, machine: machineToBn })
         }
       }
     })
