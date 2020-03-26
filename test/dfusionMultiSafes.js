@@ -369,7 +369,7 @@ contract("GnosisSafe", function(accounts) {
         {
           amountStableToken: "0.00000000000000000000001",
           amountTargetToken: "3.14159265",
-          stableTokenInfo: { decimals: 100, symbol: "manydecimals" },
+          stableTokenInfo: { decimals: 40, symbol: "manydecimals" }, // above 38 decimals one token unit does not fit a uint128
           targetTokenInfo: { decimals: 8, symbol: "WBTC" },
         },
       ]
