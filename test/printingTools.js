@@ -102,6 +102,9 @@ const invalidNumber = function(amount) {
 const tooManyDecimals = function() {
   return "Too many decimals for the token in input string"
 }
+const invalidCharacter = function() {
+  return "Invalid character"
+}
 
 // takes an integer and produces an array containing the same value expressed in all types accepted for "decimals"
 const decimalTypesToTest = function(decimals) {
@@ -256,6 +259,21 @@ describe("toErc20Units", () => {
         error: "invalidNumber",
       },
       {
+        user: "1e-1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
+        user: "1e1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
+        user: "1e+1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
         user: "0.333",
         decimals: 2,
         error: "tooManyDecimals",
@@ -343,6 +361,9 @@ describe("fromErc20Units", () => {
           case "tooLargeNumber":
             errorMessage = tooLargeNumber()
             break
+          case "invalidCharacter":
+            errorMessage = invalidCharacter()
+            break
           default:
             throw Error("Invalid error to test")
         }
@@ -425,6 +446,21 @@ describe("fromErc20Units", () => {
         machine: bnMaxUint.add(bnOne).toString(),
         decimals: 255,
         error: "tooLargeNumber",
+      },
+      {
+        machine: "1e+1",
+        decimals: 2,
+        error: "invalidCharacter",
+      },
+      {
+        machine: "1e1",
+        decimals: 2,
+        error: "invalidCharacter",
+      },
+      {
+        machine: "1e-1",
+        decimals: 2,
+        error: "invalidCharacter",
       },
     ]
     testBadEntries(badEntries)
