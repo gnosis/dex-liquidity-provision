@@ -29,37 +29,42 @@ const { checkCorrectnessOfDeposits } = require("../scripts/utils/price-utils")(w
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
+const TEN = new BN(10)
+
 const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
-  let multiplicator = new BN("10")
-  if ((lowestLimit + highestLimit) / 2 < 10) {
-    multiplicator = new BN("10000000")
-  }
+  const multiplicator = new BN("100000000")
+
   // Correctness assertions
   for (const [index, bracketAddress] of bracketSafes.entries()) {
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements
+    const decimalsOfSellToken = await (await ERC20.at(await exchange.tokenIdToAddressMap.call(buyOrder.sellToken))).decimals()
+    const decimalsOfBuyToken = await (await ERC20.at(await exchange.tokenIdToAddressMap.call(buyOrder.buyToken))).decimals()
+
     // Check buy order prices
     assert.isBelow(
-      Math.abs(
-        buyOrder.priceDenominator
-          .mul(multiplicator)
-          .div(buyOrder.priceNumerator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
-      ),
+      buyOrder.priceDenominator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(buyOrder.priceNumerator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
     // Check sell order prices
     assert.isBelow(
-      Math.abs(
-        sellOrder.priceNumerator
-          .mul(multiplicator)
-          .div(sellOrder.priceDenominator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
-      ),
+      sellOrder.priceNumerator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(sellOrder.priceDenominator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
   }
@@ -439,6 +444,59 @@ contract("GnosisSafe", function(accounts) {
         assert(buyOrder.priceDenominator.eq(max128))
         assert(sellOrder.priceNumerator.eq(max128))
       }
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      testToken = await TestToken.new("TEST6", 6)
+      const testToken2 = await TestToken.new("TEST4", 4)
+      const targetToken = 2 // "TEST4"
+      const stableToken = 1 // "TEST6"
+      const lowestLimit = 0.8
+      const highestLimit = 1.1
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken2.address, { from: accounts[0] })
+      await exchange.tokenIdToAddressMap.call(2)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1, with different decimals than 18", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      testToken = await TestToken.new("TEST6", 6)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // "TEST6"
+      const lowestLimit = 80
+      const highestLimit = 110
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
       const masterSafe = await GnosisSafe.at(
