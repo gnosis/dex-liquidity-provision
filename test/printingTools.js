@@ -429,17 +429,17 @@ describe("fromErc20Units", () => {
   it("fails with bad input", () => {
     const badEntries = [
       {
-        user: "0",
+        machine: "0",
         decimals: -1,
         error: "invalidDecimals",
       },
       {
-        user: "0",
+        machine: "0",
         decimals: 256,
         error: "invalidDecimals",
       },
       {
-        user: "0",
+        machine: "0",
         decimals: 1000,
         error: "invalidDecimals",
       },
