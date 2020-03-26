@@ -246,10 +246,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, targetToken)
+        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, stableToken, targetToken)
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, targetToken)
+        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, stableToken, targetToken)
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
@@ -282,32 +282,34 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
-  const calculateBuyAndSellAmountsFromPrice = function(price, targetToken) {
-    // Sell targetToken for stableToken at price with unlimited orders
-    // Example:
-    // Sell 1 ETH at for 102 DAI (unlimited)
-    // Sell x ETH for max256 DAI
-    // x = max256 / 102
-    // priceFormatted = 102000000000000000000
-    price = price.toFixed(targetToken.decimals)
-    const priceFormatted = toErc20Units(price, targetToken.decimals)
+  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
+    // decimalsForPrice: This number defines the rounding errors,
+    // Since we can accept similar rounding error as within the smart contract
+    // we set it to 38 = amount of digits of max128
+    const decimalsForPrice = 38
+    const roundedPrice = price.toFixed(decimalsForPrice)
+    const priceFormatted = toErc20Units(roundedPrice, decimalsForPrice)
+
+    const decimalsForOne = decimalsForPrice - stableToken.decimals + targetToken.decimals
+    const ONE = toErc20Units(1, decimalsForOne)
     let sellAmount
     let buyAmount
-    if (priceFormatted.gt(toErc20Units(1, 18))) {
+    if (priceFormatted.gt(ONE)) {
       sellAmount = max128
-        .mul(toErc20Units(1, 18))
+        .mul(ONE)
         .div(priceFormatted)
         .toString()
       buyAmount = max128.toString()
     } else {
       buyAmount = max128
         .mul(priceFormatted)
-        .div(toErc20Units(1, 18))
+        .div(ONE)
         .toString()
       sellAmount = max128.toString()
     }
     return [sellAmount, buyAmount]
   }
+
   const checkSufficiencyOfBalance = async function(token, owner, amount) {
     const depositor_balance = await token.balanceOf.call(owner)
     return depositor_balance.gte(amount)

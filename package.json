@@ -29,6 +29,7 @@
     "@gnosis.pm/util-contracts": "^2.0.6",
     "@truffle/contract": "^4.1.13",
     "axios": "^0.19.2",
+    "bn.js": "^5.1.1",
     "canonical-weth": "^1.4.0",
     "dotenv": "^8.0.0",
     "eslint": "^6.8.0",
