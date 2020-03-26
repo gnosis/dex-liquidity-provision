@@ -254,22 +254,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
-        const stepSize = upperLimit - lowerLimit
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(
-          upperLimit,
-          stableToken,
-          targetToken,
-          stepSize / upperLimit / 2
-        )
+        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, stableToken, targetToken)
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(
-          lowerLimit,
-          stableToken,
-          targetToken,
-          stepSize / lowerLimit / 2
-        )
+        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, stableToken, targetToken)
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
@@ -302,29 +291,28 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
-  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken, maximalRoundingErrorInPercent = 0.1) {
-    // decimalsForPrice: Decimals of reference price (OWL Price) + stableToken.decimals - targetToken.decimals
-    const decimalsForPrice = 18 + stableToken.decimals - targetToken.decimals
-    if (decimalsForPrice < 0 || decimalsForPrice > 36) {
-      throw "decimalsForPrice is not reasonable. Don't apply the bracket-strategy for this token pair!"
-    }
+  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
+    // decimalsForPrice: This number defines the rounding errors,
+    // Since we can accept similar rounding error as witthin the smart contract
+    // we set it to 38 = amount of digits of max128
+    const decimalsForPrice = 38
     const roundedPrice = price.toFixed(decimalsForPrice)
-    if ((Math.abs(roundedPrice - price) / price) * 100 > maximalRoundingErrorInPercent) {
-      throw "Token decimals will introduce unreasonable rounding error!"
-    }
     const priceFormatted = toErc20Units(roundedPrice, decimalsForPrice)
+
+    const decimalsForOne = decimalsForPrice - stableToken.decimals + targetToken.decimals
+    const ONE = toErc20Units(1, decimalsForOne)
     let sellAmount
     let buyAmount
-    if (priceFormatted.gt(toErc20Units(1, 18))) {
+    if (priceFormatted.gt(ONE)) {
       sellAmount = max128
-        .mul(toErc20Units(1, 18))
+        .mul(ONE)
         .div(priceFormatted)
         .toString()
       buyAmount = max128.toString()
     } else {
       buyAmount = max128
         .mul(priceFormatted)
-        .div(toErc20Units(1, 18))
+        .div(ONE)
         .toString()
       sellAmount = max128.toString()
     }
