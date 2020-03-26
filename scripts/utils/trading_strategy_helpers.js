@@ -495,7 +495,6 @@ withdrawal of or to withdraw the desired funds
     const transactions = []
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
-    assert.equal(tokenInfo.decimals, 18, "These scripts currently only support tokens with 18 decimals.")
     // Get data to move funds from master to bracket
     const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({

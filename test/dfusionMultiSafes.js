@@ -184,6 +184,16 @@ contract("GnosisSafe", function(accounts) {
       const amount = "0.000000000000001"
       await testManualDeposits(decimals, amount)
     })
+    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic with arbitrary number of decimals", async () => {
+      const testEntries = [
+        { decimals: 6, amount: "100" },
+        { decimals: 50, amount: "0.1" },
+        { decimals: 100, amount: "0.00000000000000000000000001" },
+        { decimals: 0, amount: "30" },
+        { decimals: 2, amount: "0.01" },
+      ]
+      await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
+    })
     const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
       const {
         fleetSize,
@@ -335,6 +345,98 @@ contract("GnosisSafe", function(accounts) {
         bracketsWithTargetTokenDeposit: 4,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
+    })
+    describe("can use automatic deposits to transfer tokens with arbitrary amount of decimals", () => {
+      const tokenSetups = [
+        {
+          amountStableToken: "10000",
+          amountTargetToken: "100",
+          stableTokenInfo: { decimals: 6, symbol: "USDC" },
+          targetTokenInfo: { decimals: 18, symbol: "WETH" },
+        },
+        {
+          amountStableToken: "100",
+          amountTargetToken: "10000",
+          stableTokenInfo: { decimals: 18, symbol: "WETH" },
+          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+        },
+        {
+          amountStableToken: "3333",
+          amountTargetToken: "100.000001",
+          stableTokenInfo: { decimals: 0, symbol: "nodecimals" },
+          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+        },
+        {
+          amountStableToken: "0.00000000000000000000001",
+          amountTargetToken: "3.14159265",
+          stableTokenInfo: { decimals: 40, symbol: "manydecimals" }, // above 38 decimals one token unit does not fit a uint128
+          targetTokenInfo: { decimals: 8, symbol: "WBTC" },
+        },
+      ]
+      it("when p is in the middle of the brackets", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 121,
+          currentPrice: 110,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 2,
+          bracketsWithTargetTokenDeposit: 2,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is not in the middle but still inside the brackets", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 8,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 110,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 3,
+          bracketsWithTargetTokenDeposit: 5,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is outside the brackets and only stable token is deposited", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 150,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 4,
+          bracketsWithTargetTokenDeposit: 0,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is outside the brackets and only target token is deposited", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 80,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 0,
+          bracketsWithTargetTokenDeposit: 4,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
     })
   })
 
