@@ -19,11 +19,12 @@ contract FleetFactory {
   }
 
   function deployFleetFromTemplate(address owner, uint256 size, address template) public returns (address[] memory) {
+    GnosisSafeProxyFactory _proxyFactory = proxyFactory;
     address[] memory fleet = new address[](size);
     address[] memory ownerList = new address[](1);
     ownerList[0] = owner;
     for (uint i = 0; i < size; i++) {
-      address payable proxy = address(proxyFactory.createProxy(template, ""));
+      address payable proxy = address(_proxyFactory.createProxy(template, ""));
       fleet[i] = proxy;
       GnosisSafe safe = GnosisSafe(proxy);
       safe.setup(
