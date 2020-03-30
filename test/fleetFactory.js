@@ -39,6 +39,12 @@ contract("FleetFactory", function(accounts) {
     master = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterController], 1))
   })
 
+  it("is deployed with the right factory", async () => {
+    const deployedFleetFactory = await FleetFactory.deployed()
+    const retrievedProxyFactory = await deployedFleetFactory.proxyFactory()
+    assert.equal(retrievedProxyFactory, ProxyFactory.address, "Wrong proxy factory after deployment")
+  })
+
   it("creates and logs new safes", async () => {
     const numberOfSafes = 20
     const transcript = await fleetFactory.deployFleet(master.address, numberOfSafes, gnosisSafeMasterCopy.address)
