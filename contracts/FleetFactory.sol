@@ -21,6 +21,7 @@ contract FleetFactory {
       address payable proxy = address(_proxyFactory.createProxy(template, ""));
       fleet[i] = proxy;
       GnosisSafe safe = GnosisSafe(proxy);
+      // safe is set up to have a single owner
       safe.setup(
         ownerList,
         1,
