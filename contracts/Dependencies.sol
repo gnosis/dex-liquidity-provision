@@ -15,3 +15,4 @@ import "@gnosis.pm/solidity-data-structures/contracts/libraries/IdToAddressBiMap
 import "@gnosis.pm/solidity-data-structures/contracts/libraries/IterableAppendOnlySet.sol";
 // Gnosis Safe dependencies
 import "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol";
+import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";

@@ -1,7 +1,6 @@
 pragma solidity >= 0.5.0 < 0.7.0;
 
 import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
-import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
 import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 
 contract FleetFactory {
@@ -13,12 +12,7 @@ contract FleetFactory {
     proxyFactory = _proxyFactory;
   }
 
-  function deployFleet(address owner, uint256 size) public returns (address[] memory) {
-    IProxy ownerProxyReader = IProxy(owner);
-    return deployFleetFromTemplate(owner, size, ownerProxyReader.masterCopy());
-  }
-
-  function deployFleetFromTemplate(address owner, uint256 size, address template) public returns (address[] memory) {
+  function deployFleet(address owner, uint256 size, address template) public returns (address[] memory) {
     GnosisSafeProxyFactory _proxyFactory = proxyFactory;
     address[] memory fleet = new address[](size);
     address[] memory ownerList = new address[](1);
