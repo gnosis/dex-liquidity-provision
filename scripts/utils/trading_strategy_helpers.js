@@ -400,8 +400,7 @@ withdrawal of or to withdraw the desired funds
     )
 
     let transactions = []
-    for (const transactionList of transactionLists)
-      transactions = transactions.concat(transactionList)
+    for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
     return buildBundledTransaction(transactions)
   }
