@@ -28,11 +28,11 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
     .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
     .encodeABI()
   const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
-  return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, GnosisSafe, null)
+  return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, null)
 }
 
 // Need some small adjustments to default implementation for web3js 1.x
-async function getParamFromTxEvent(transaction, eventName, paramName, contract, contractFactory, subject) {
+async function getParamFromTxEvent(transaction, eventName, paramName, contract, subject) {
   // assert.isObject(transaction)
   if (subject != null) {
     logGasUsage(subject, transaction)
