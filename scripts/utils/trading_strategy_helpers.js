@@ -482,7 +482,7 @@ withdrawal of or to withdraw the desired funds
         }
       })
     }
-    return await buildTransferApproveDepositFromList(masterAddress, deposits)
+    return buildTransferApproveDepositFromList(masterAddress, deposits)
   }
 
   /**
@@ -501,7 +501,7 @@ withdrawal of or to withdraw the desired funds
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
     // Get data to move funds from master to bracket
-    const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
+    const transferData = depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -509,9 +509,9 @@ withdrawal of or to withdraw the desired funds
       data: transferData,
     })
     // Get data to approve funds from bracket to exchange
-    const approveData = await depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
+    const approveData = depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
     // Get data to deposit funds from bracket to exchange
-    const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
+    const depositData = exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
     // Get transaction for approve and deposit multisend on bracket
     const bracketBundledTransaction = await buildBundledTransaction([
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
