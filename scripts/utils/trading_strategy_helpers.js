@@ -374,31 +374,36 @@ withdrawal of or to withdraw the desired funds
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
-    let transactions = []
-    // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
-    for (const deposit of depositList) {
-      assert(
-        await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-        "All depositors must be owned only by the master Safe"
-      )
-      const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
-      const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
-      log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
-          tokenInfo.symbol
-        } into BatchExchange`
-      )
 
-      transactions = transactions.concat(
-        await buildBracketTransactionForTransferApproveDeposit(
+    // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
+    const transactionLists = await Promise.all(
+      depositList.map(async deposit => {
+        assert(
+          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
+          "All depositors must be owned only by the master Safe"
+        )
+        const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
+        const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
+        log(
+          `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
+            tokenInfo.symbol
+          } into BatchExchange`
+        )
+
+        return buildBracketTransactionForTransferApproveDeposit(
           masterAddress,
           deposit.tokenAddress,
           deposit.bracketAddress,
           deposit.amount
         )
-      )
-    }
-    return await buildBundledTransaction(transactions)
+      })
+    )
+
+    let transactions = []
+    for (const transactionList of transactionLists)
+      transactions = transactions.concat(transactionList)
+
+    return buildBundledTransaction(transactions)
   }
 
   const formatDepositString = function(depositsAsJsonString) {
