@@ -2,6 +2,7 @@ const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts
 const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
+const { checkNoProfitableOffer } = require("./utils/price-utils")(web3, artifacts)
 const assert = require("assert")
 
 const argv = require("yargs")
@@ -74,6 +75,15 @@ module.exports = async callback => {
         // If the last equation holds, the inverse trade must be profitable as well
       })
     )
+
+    // 5. verify that no bracket-trader offers profitable orders
+    await Promise.all(
+      bracketTraderAddresses.map(async bracketTrader => {
+        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
+        relevantOrders.forEach(async order => assert.equal(await checkNoProfitableOffer(order, BatchExchange), true))
+      })
+    )
+
     callback()
   } catch (error) {
     callback(error)

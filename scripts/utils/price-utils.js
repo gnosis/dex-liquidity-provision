@@ -139,9 +139,52 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return true
   }
 
+  const checkNoProfitableOffer = async (order, exchange, currentMarketPrice) => {
+    const tokenInfo = fetchTokenInfoFromExchange(exchange, [order.buyToken, order.sellToken])
+
+    if (currentMarketPrice === undefined) {
+      currentMarketPrice = await getDexagPrice(
+        (await tokenInfo[order.buyToken]).symbol,
+        (await tokenInfo[order.sellToken]).symbol
+      )
+    }
+    // checks whether the order amount is negligible
+    if ((await valueInUSD(order, tokenInfo)) < 10) {
+      return true
+    }
+
+    // multiplicator is used to counter rounding errors
+    const multiplicator = 1000000000
+    const marketPrice = new BN(currentMarketPrice * multiplicator)
+    const orderPrice = order.priceNumerator
+      .mul(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
+      .div(new BN(10).pow(new BN((await tokenInfo[order.buyToken]).decimals)))
+      .mul(new BN(multiplicator))
+      .div(order.priceDenominator)
+
+    return marketPrice.lt(orderPrice)
+  }
+
+  const valueInUSD = async (order, tokenInfo, currentMarketPrice) => {
+    if (currentMarketPrice === undefined) {
+      currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol)
+    }
+    const multiplicator = 100000.0
+    return (
+      (currentMarketPrice *
+        order.sellTokenBalance
+          .mul(new BN(multiplicator))
+          .div(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
+          .toNumber()) /
+      multiplicator
+    )
+  }
+
   return {
     isPriceReasonable,
     areBoundsReasonable,
     checkCorrectnessOfDeposits,
+    getDexagPrice,
+    checkNoProfitableOffer,
   }
 }
