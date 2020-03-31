@@ -74,7 +74,7 @@ truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --w
 ```
 
 ```js
-truffle exec scripts/withdraw.js --withdraw --transferBackToMaster --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
+truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
 ```
 
 The latter instruction can be split into two independent units, if needed: withdrawing from the exchange to the bracket and transferring funds from the bracket to the master Safe.
@@ -84,7 +84,7 @@ truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdraw
 ```
 
 ```js
-truffle exec scripts/withdraw.js --transferBackToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
+truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
 ```
 
 ### Full Cycle Test

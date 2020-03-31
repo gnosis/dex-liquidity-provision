@@ -34,7 +34,7 @@ const argv = require("yargs")
     default: false,
     describe: "withdraw from the exchange. A withdraw request must always be made before withdrawing funds from the exchange.",
   })
-  .option("transferBackToMaster", {
+  .option("transferFundsToMaster", {
     type: "boolean",
     default: false,
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
@@ -44,10 +44,10 @@ const argv = require("yargs")
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
   .check(function(argv) {
-    if (!argv.requestWithdraw && !argv.withdraw && !argv.transferBackToMaster) {
-      throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferBackToMaster must be given")
-    } else if (argv.requestWithdraw && (argv.transferBackToMaster || argv.withdraw)) {
-      throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferBackToMaster")
+    if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
+      throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
+    } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
+      throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
     return true
   })
@@ -99,10 +99,10 @@ module.exports = async callback => {
     console.log("Started building withdraw transaction.")
     let transactionPromise
     if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
-    else if (argv.withdraw && !argv.transferBackToMaster) transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
-    else if (!argv.withdraw && argv.transferBackToMaster)
+    else if (argv.withdraw && !argv.transferFundsToMaster) transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
+    else if (!argv.withdraw && argv.transferFundsToMaster)
       transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
-    else if (argv.withdraw && argv.transferBackToMaster)
+    else if (argv.withdraw && argv.transferFundsToMaster)
       transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
     else {
       throw new Error("No operation specified")
@@ -117,15 +117,15 @@ module.exports = async callback => {
         console.log(
           `Requesting withdrawal of ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
         )
-      else if (argv.withdraw && !argv.transferBackToMaster)
+      else if (argv.withdraw && !argv.transferFundsToMaster)
         console.log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
-      else if (!argv.withdraw && argv.transferBackToMaster)
+      else if (!argv.withdraw && argv.transferFundsToMaster)
         console.log(
           `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
             argv.masterSafe
           )}`
         )
-      else if (argv.withdraw && argv.transferBackToMaster)
+      else if (argv.withdraw && argv.transferFundsToMaster)
         console.log(
           `Safe ${
             withdrawal.bracketAddress
