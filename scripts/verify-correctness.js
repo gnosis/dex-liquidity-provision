@@ -1,5 +1,4 @@
-const Contract = require("@truffle/contract")
-const { getOrdersPaginated } = require("./utils/to_be_imported_from_dex_contracts.js")
+const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts/src/onchain_reading")
 const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
@@ -29,13 +28,12 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
+    const BatchExchangeArtifact = require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange")
+    const networkId = await web3.eth.net.getId()
+    const BatchExchange = new web3.eth.Contract(BatchExchangeArtifact.abi, BatchExchangeArtifact.networks[networkId].address)
 
+    const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, 100)
     const bracketTraderAddresses = argv.brackets.map(address => address.toLowerCase())
-    const exchange = await BatchExchange.deployed()
-    const auctionElementsDecoded = await getOrdersPaginated(exchange, 100)
 
     // 1. verify that the owner of the brackets is the masterSafe
     await Promise.all(
