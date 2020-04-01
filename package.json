@@ -19,7 +19,11 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
-    "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js"
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "verify": "truffle run verify",
+    "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
+    "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "dependencies": {
     "@gnosis.pm/dex-contracts": "^0.2.4",
