@@ -22,6 +22,7 @@
     "compile": "truffle compile",
     "migrate": "truffle migrate",
     "verify": "truffle run verify",
+    "flatten": "export FLATTENED_DIR=\"./build/flattenedContracts\" && mkdir -p $FLATTENED_DIR && npx sol-merger \"contracts/*.sol\" $FLATTENED_DIR && echo \"Flattened contracts stored in $FLATTENED_DIR\" && unset FLATTENED_DIR",
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
@@ -40,6 +41,7 @@
     "eth-gas-reporter": "^0.2.16",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
+    "sol-merger": "^2.0.1",
     "truffle": "^5.1.18",
     "truffle-plugin-verify": "^0.3.10"
   }
