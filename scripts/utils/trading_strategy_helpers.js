@@ -371,31 +371,35 @@ withdrawal of or to withdraw the desired funds
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
-    let transactions = []
-    // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
-    for (const deposit of depositList) {
-      assert(
-        await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-        "All depositors must be owned only by the master Safe"
-      )
-      const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
-      const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
-      log(
-        `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
-          tokenInfo.symbol
-        } into BatchExchange`
-      )
 
-      transactions = transactions.concat(
-        await buildBracketTransactionForTransferApproveDeposit(
+    // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
+    const transactionLists = await Promise.all(
+      depositList.map(async deposit => {
+        assert(
+          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
+          "All depositors must be owned only by the master Safe"
+        )
+        const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
+        const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
+        log(
+          `Safe ${deposit.bracketAddress} receiving (from ${shortenedAddress(masterAddress)}) and depositing ${unitAmount} ${
+            tokenInfo.symbol
+          } into BatchExchange`
+        )
+
+        return buildBracketTransactionForTransferApproveDeposit(
           masterAddress,
           deposit.tokenAddress,
           deposit.bracketAddress,
           deposit.amount
         )
-      )
-    }
-    return await buildBundledTransaction(transactions)
+      })
+    )
+
+    let transactions = []
+    for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
+
+    return buildBundledTransaction(transactions)
   }
 
   const formatDepositString = function(depositsAsJsonString) {
@@ -474,7 +478,7 @@ withdrawal of or to withdraw the desired funds
         }
       })
     }
-    return await buildTransferApproveDepositFromList(masterAddress, deposits)
+    return buildTransferApproveDepositFromList(masterAddress, deposits)
   }
 
   /**
@@ -493,7 +497,7 @@ withdrawal of or to withdraw the desired funds
 
     // log(`Deposit Token at ${depositToken.address}: ${tokenSymbol}`)
     // Get data to move funds from master to bracket
-    const transferData = await depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
+    const transferData = depositToken.contract.methods.transfer(bracketAddress, amount.toString()).encodeABI()
     transactions.push({
       operation: CALL,
       to: depositToken.address,
@@ -501,9 +505,9 @@ withdrawal of or to withdraw the desired funds
       data: transferData,
     })
     // Get data to approve funds from bracket to exchange
-    const approveData = await depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
+    const approveData = depositToken.contract.methods.approve(exchange.address, amount.toString()).encodeABI()
     // Get data to deposit funds from bracket to exchange
-    const depositData = await exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
+    const depositData = exchange.contract.methods.deposit(tokenAddress, amount.toString()).encodeABI()
     // Get transaction for approve and deposit multisend on bracket
     const bracketBundledTransaction = await buildBundledTransaction([
       { operation: CALL, to: tokenAddress, value: 0, data: approveData },
