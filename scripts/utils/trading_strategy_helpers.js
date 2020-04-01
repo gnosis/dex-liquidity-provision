@@ -191,7 +191,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
     const createdSafes = transcript.logs[0].args.fleet
-    log("New Safes created", createdSafes)
+    log("New Safes created:")
+    createdSafes.forEach((safeAddress, index) => {log("Safe " + index + ":", safeAddress)})
 
     return createdSafes
   }

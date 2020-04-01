@@ -103,7 +103,7 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-    console.log("Following bracket-traders have been deployed", bracketAddresses.join())
+    console.log("List of bracket traders in one line:", bracketAddresses.join())
 
     // Sleeping for 5 seconds to make sure Infura nodes have processed all newly deployed contracts so that
     // they can be awaited.
