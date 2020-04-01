@@ -12,7 +12,7 @@ contract FleetFactory {
     proxyFactory = _proxyFactory;
   }
 
-  function deployFleet(address owner, uint256 size, address template) public returns (address[] memory) {
+  function deployFleet(address owner, uint256 size, address template) external {
     GnosisSafeProxyFactory _proxyFactory = proxyFactory;
     address[] memory fleet = new address[](size);
     address[] memory ownerList = new address[](1);
@@ -34,6 +34,5 @@ contract FleetFactory {
       );
     }
     emit FleetDeployed(owner, fleet);
-    return fleet;
   }
 }
