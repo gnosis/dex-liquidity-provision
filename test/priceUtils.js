@@ -100,7 +100,7 @@ contract("PriceOracle", function(accounts) {
       assert.equal(await checkNoProfitableOffer(orders[0], exchange, 1.0), true)
       assert.equal(await checkNoProfitableOffer(orders[1], exchange, 1.0), true)
     })
-    it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
+    it("detects unprofitable orders for tokens with different decimals", async () => {
       const ERC20 = artifacts.require("DetailedMintableToken")
       const token1 = await ERC20.new("WETH", 18)
       const token2 = await ERC20.new("USDC", 6)
@@ -115,7 +115,7 @@ contract("PriceOracle", function(accounts) {
           // order is profitable for others
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
           sellTokenBalance: new BN("10eed9efc"),
-          buyToken: 1,
+          buyToken: 1, // buy and sell tokens are changed in comparison to previous example
           sellToken: USDCtokenId,
           priceNumerator: new BN("99").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(6))),

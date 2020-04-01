@@ -1,7 +1,10 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
+  const precisionDecimals = 50
+
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
+  const { toErc20Units, fromErc20Units } = require("./printing_tools")
 
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
@@ -149,17 +152,15 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       )
     }
     // checks whether the order amount is negligible
-    if ((await valueInUSD(order, tokenInfo)) < 10) {
+    if ((await valueInUSD(order, tokenInfo)) < 1) {
       return true
     }
 
     // multiplicator is used to counter rounding errors
-    const multiplicator = 1000000000
-    const marketPrice = new BN(currentMarketPrice * multiplicator)
-    const orderPrice = order.priceNumerator
+    const marketPrice = toErc20Units(currentMarketPrice, precisionDecimals)
+    const orderPrice = toErc20Units(order.priceNumerator, precisionDecimals)
       .mul(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
       .div(new BN(10).pow(new BN((await tokenInfo[order.buyToken]).decimals)))
-      .mul(new BN(multiplicator))
       .div(order.priceDenominator)
 
     return marketPrice.lt(orderPrice)
@@ -169,14 +170,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     if (currentMarketPrice === undefined) {
       currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol)
     }
-    const multiplicator = 100000.0
-    return (
-      (currentMarketPrice *
-        order.sellTokenBalance
-          .mul(new BN(multiplicator))
-          .div(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
-          .toNumber()) /
-      multiplicator
+    return fromErc20Units(
+      toErc20Units(currentMarketPrice, precisionDecimals)
+        .mul(order.sellTokenBalance)
+        .div(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))),
+      precisionDecimals
     )
   }
 
