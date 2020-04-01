@@ -1,4 +1,11 @@
 {
+  "FleetFactory": {
+    "4": {
+      "links": {},
+      "address": "0x1b94BF378B910e5be70b59e774867a1c919821C7",
+      "transactionHash": "0xf8256a6b6c92a95f9342d0dbb8afee83d1dd6bec8510278893f568ae0114ee3f"
+    }
+  },
   "GnosisSafe": {
     "1": {
       "links": {},
@@ -18,6 +25,13 @@
       "links": {},
       "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
       "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
+    }
+  },
+  "Migrations": {
+    "4": {
+      "links": {},
+      "address": "0xca39A48b3b0C8284bfF8f2299539e2BbaBE714de",
+      "transactionHash": "0x3120664b4b966dc5fa1e13016856d6ef6d39819ed53706a6abee3665f488017b"
     }
   },
   "MultiSend": {
