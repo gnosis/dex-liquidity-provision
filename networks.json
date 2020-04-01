@@ -1,5 +1,10 @@
 {
   "FleetFactory": {
+    "1": {
+      "links": {},
+      "address": "0xc628FB35ca39705CCD0cBDD5080F1b3d267AdC31",
+      "transactionHash": "0xa2125e6e30056c79569d204197df05a3f9fe09103cfde5569209e9b267518317"
+    },
     "4": {
       "links": {},
       "address": "0x1b94BF378B910e5be70b59e774867a1c919821C7",
@@ -28,6 +33,11 @@
     }
   },
   "Migrations": {
+    "1": {
+      "links": {},
+      "address": "0x094419790e6bfD8071902C7DCa7D59F4c489bF0c",
+      "transactionHash": "0x00358b0338b8fe2cf6d4ee02ecfcf197eb45cb01f56738859a3524b88b154812"
+    },
     "4": {
       "links": {},
       "address": "0xca39A48b3b0C8284bfF8f2299539e2BbaBE714de",
