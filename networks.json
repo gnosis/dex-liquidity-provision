@@ -20,17 +20,6 @@
       "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
     }
   },
-  "Migrations": {
-    "1": {
-      "links": {},
-      "address": "0x457c89E69850efEb71701aEfd23Eb20f61Fa6cAC"
-    },
-    "4": {
-      "links": {},
-      "address": "0x457c89E69850efEb71701aEfd23Eb20f61Fa6cAC",
-      "transactionHash": "0xa75f39990aed4dbef074363aeeccef45ba73a063cda1c8bce87f0bbf68ff651d"
-    }
-  },
   "MultiSend": {
     "1": {
       "links": {},
