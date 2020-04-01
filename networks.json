@@ -1,45 +1,58 @@
 {
-    "GnosisSafe": {
-        "1": {
-            "links": {},
-            "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-        },
-        "4": {
-            "links": {},
-            "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-        }
+  "FleetFactory": {
+    "1": {
+      "links": {},
+      "address": "0xc628FB35ca39705CCD0cBDD5080F1b3d267AdC31",
+      "transactionHash": "0xa2125e6e30056c79569d204197df05a3f9fe09103cfde5569209e9b267518317"
     },
-    "GnosisSafeProxyFactory": {
-        "1": {
-            "links": {},
-            "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B"
-        },
-        "4": {
-            "links": {},
-            "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
-            "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
-        }
-    },
-    "MultiSend": {
-        "1": {
-            "links": {},
-            "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
-        },
-        "4": {
-            "links": {},
-            "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
-            "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
-        }
-    },
-    "Migrations": {
-        "1": {
-            "links": {},
-            "address": "0x457c89E69850efEb71701aEfd23Eb20f61Fa6cAC"
-        },
-        "4": {
-            "links": {},
-            "address": "0x457c89E69850efEb71701aEfd23Eb20f61Fa6cAC",
-            "transactionHash": "0xa75f39990aed4dbef074363aeeccef45ba73a063cda1c8bce87f0bbf68ff651d"
-        }
+    "4": {
+      "links": {},
+      "address": "0x1b94BF378B910e5be70b59e774867a1c919821C7",
+      "transactionHash": "0xf8256a6b6c92a95f9342d0dbb8afee83d1dd6bec8510278893f568ae0114ee3f"
     }
+  },
+  "GnosisSafe": {
+    "1": {
+      "links": {},
+      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
+    },
+    "4": {
+      "links": {},
+      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
+    }
+  },
+  "GnosisSafeProxyFactory": {
+    "1": {
+      "links": {},
+      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B"
+    },
+    "4": {
+      "links": {},
+      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
+      "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
+    }
+  },
+  "Migrations": {
+    "1": {
+      "links": {},
+      "address": "0x094419790e6bfD8071902C7DCa7D59F4c489bF0c",
+      "transactionHash": "0x00358b0338b8fe2cf6d4ee02ecfcf197eb45cb01f56738859a3524b88b154812"
+    },
+    "4": {
+      "links": {},
+      "address": "0xca39A48b3b0C8284bfF8f2299539e2BbaBE714de",
+      "transactionHash": "0x3120664b4b966dc5fa1e13016856d6ef6d39819ed53706a6abee3665f488017b"
+    }
+  },
+  "MultiSend": {
+    "1": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
+    },
+    "4": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
+      "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
+    }
+  }
 }
