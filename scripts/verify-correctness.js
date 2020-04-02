@@ -1,7 +1,7 @@
 const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts/src/onchain_reading")
-const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { isOnlySafeOwner, fetchTokenInfoAtAddresses } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
-const { toErc20Units } = require("./utils/printing_tools")
+const { toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const assert = require("assert")
 
@@ -27,7 +27,6 @@ const argv = require("yargs")
   )
   .version(false).argv
 
-
 const getAllowances = async function(owner, tokenInfo) {
   const allowances = {}
   await Promise.all(
@@ -35,7 +34,6 @@ const getAllowances = async function(owner, tokenInfo) {
       const token = (await tokenData).instance
       const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
       const spenders = allElementsOnlyOnce(eventList.map(event => event.returnValues.spender))
-      console.log(spenders)
       const tokenAllowances = {}
       // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
       await Promise.all(
@@ -47,6 +45,26 @@ const getAllowances = async function(owner, tokenInfo) {
     })
   )
   return allowances
+}
+
+const assertNoAllowances = async function(address, tokenInfo) {
+  const allowances = await getAllowances(address, tokenInfo)
+  for (const [tokenAddress, tokenAllowances] of Object.entries(allowances)) {
+    for (const spender in tokenAllowances) {
+      assert.equal(
+        tokenAllowances[spender].toString(),
+        "0",
+        address +
+          " allows address " +
+          spender +
+          " to spend " +
+          (await tokenInfo[tokenAddress]).symbol +
+          " (amount: " +
+          fromErc20Units(tokenAllowances[spender], (await tokenInfo[tokenAddress]).decimals) +
+          ")"
+      )
+    }
+  }
 }
 
 module.exports = async callback => {
@@ -97,6 +115,15 @@ module.exports = async callback => {
         // If the last equation holds, the inverse trade must be profitable as well
       })
     )
+
+    // TODO: extract addresses of traded tokens from previous checks
+    const tradedTokenAddresses = []
+    const tokenInfo = fetchTokenInfoAtAddresses(tradedTokenAddresses)
+    // 5. verify that no allowances are currently set
+    await assertNoAllowances(argv.masterSafe[0], tokenInfo)
+    // TODO: test if following line can be parallelized with Infura
+    for (const bracketTrader of bracketTraderAddresses) await assertNoAllowances(bracketTrader, tokenInfo)
+
     callback()
   } catch (error) {
     callback(error)
