@@ -8,7 +8,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
+const { prepareTokenRegistration, addCustomMintableTokenToExchange, deploySafe } = require("./test-utils")
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -24,7 +24,7 @@ const {
   max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
+const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 const { checkCorrectnessOfDeposits } = require("../scripts/utils/price-utils")(web3, artifacts)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")

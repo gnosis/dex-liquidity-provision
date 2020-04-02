@@ -2,17 +2,17 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
-  const ProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
+  const FleetFactory = artifacts.require("FleetFactory")
   BatchExchange.setNetwork(web3.network_id)
   BatchExchange.setProvider(web3.currentProvider)
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
-  const proxyFactoryPromise = ProxyFactory.deployed()
+  const fleetFactoryPromise = FleetFactory.deployed()
 
   const assert = require("assert")
   const BN = require("bn.js")
   const fs = require("fs")
-  const { deploySafe, buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
+  const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
   const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
@@ -186,16 +186,16 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const deployFleetOfSafes = async function(masterAddress, fleetSize, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const proxyFactory = await proxyFactoryPromise
+    const fleetFactory = await fleetFactoryPromise
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
-    // TODO - Batch all of this in a single transaction
-    const createdSafes = []
-    for (let i = 0; i < fleetSize; i++) {
-      const newSafeAddress = await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterAddress], 1)
-      log("New Safe Created", newSafeAddress)
-      createdSafes.push(newSafeAddress)
-    }
+    const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
+    const createdSafes = transcript.logs[0].args.fleet
+    log("New Safes created:")
+    createdSafes.forEach((safeAddress, index) => {
+      log("Safe " + index + ":", safeAddress)
+    })
+
     return createdSafes
   }
 
