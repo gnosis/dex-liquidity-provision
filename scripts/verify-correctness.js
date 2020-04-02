@@ -2,6 +2,7 @@ const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts
 const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
+const { allElementsOnlyOnce } = require("./utils/js_helpers")
 const assert = require("assert")
 
 const argv = require("yargs")
@@ -25,6 +26,28 @@ const argv = require("yargs")
     "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
   )
   .version(false).argv
+
+
+const getAllowances = async function(owner, tokenInfo) {
+  const allowances = {}
+  await Promise.all(
+    Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
+      const token = (await tokenData).instance
+      const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
+      const spenders = allElementsOnlyOnce(eventList.map(event => event.returnValues.spender))
+      console.log(spenders)
+      const tokenAllowances = {}
+      // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
+      await Promise.all(
+        spenders.map(async spender => {
+          tokenAllowances[spender] = await token.allowance(owner, spender)
+        })
+      )
+      allowances[tokenAddress] = tokenAllowances
+    })
+  )
+  return allowances
+}
 
 module.exports = async callback => {
   try {
