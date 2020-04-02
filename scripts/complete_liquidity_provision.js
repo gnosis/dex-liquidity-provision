@@ -19,6 +19,7 @@ const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning every bracket",
+    demandOption: true,
   })
   .option("fleetSize", {
     type: "int",
@@ -28,19 +29,24 @@ const argv = require("./utils/default_yargs")
   .option("targetToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
+    demandOption: true,
   })
   .option("investmentTargetToken", {
     describe: "Amount to be invested into the targetToken",
+    demandOption: true,
   })
   .option("stableToken", {
     describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
+    demandOption: true,
   })
   .option("investmentStableToken", {
     describe: "Amount to be invested into the stableToken",
+    demandOption: true,
   })
   .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+    demandOption: true,
   })
   .option("lowestLimit", {
     type: "float",
@@ -50,7 +56,6 @@ const argv = require("./utils/default_yargs")
     type: "float",
     describe: "Price for the bracket selling at the highest price",
   })
-  .demand(["masterSafe", "targetToken", "stableToken", "currentPrice", "investmentTargetToken", "investmentStableToken"])
   .argv
 
 module.exports = async callback => {

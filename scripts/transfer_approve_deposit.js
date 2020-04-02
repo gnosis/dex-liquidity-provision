@@ -5,12 +5,13 @@ const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning the brackets",
+    demandOption: true,
   })
   .option("depositFile", {
     type: "string",
     describe: "file name (and path) to the list of deposits.",
+    demandOption: true,
   })
-  .demand(["masterSafe", "depositFile"])
   .argv
 
 module.exports = async callback => {

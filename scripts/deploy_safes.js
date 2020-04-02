@@ -4,12 +4,13 @@ const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "int",
     describe: "Address of Gnosis Safe that is going to own the new fleet",
+    demandOption: true,
   })
   .option("fleetSize", {
     type: "int",
     describe: "Number of (sub)safes to be deployed",
+    demandOption: true,
   })
-  .demand(["masterSafe", "fleetSize"])
   .argv
 
 module.exports = async callback => {

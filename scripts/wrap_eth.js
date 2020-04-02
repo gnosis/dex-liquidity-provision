@@ -8,12 +8,13 @@ const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of the Gnosis Safe that holds the ETH to be wrapped",
+    demandOption: true,
   })
   .option("amount", {
     type: "string",
     describe: "Amount of ETH to convert (in ETH, e.g. 3.14159)",
+    demandOption: true,
   })
-  .demand(["masterSafe", "amount"])
   .argv
 
 module.exports = async callback => {

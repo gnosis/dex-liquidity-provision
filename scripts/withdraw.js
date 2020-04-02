@@ -14,10 +14,12 @@ const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning bracketSafes.",
+    demandOption: true,
   })
   .option("withdrawalFile", {
     type: "string",
     describe: "file name (and path) to the list of withdrawals.",
+    demandOption: true,
   })
   .option("allTokens", {
     type: "boolean",
@@ -39,7 +41,6 @@ const argv = require("./utils/default_yargs")
     default: false,
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   })
-  .demand(["masterSafe", "withdrawalFile"])
   .check(function(argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
