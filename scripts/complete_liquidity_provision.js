@@ -32,14 +32,17 @@ const argv = require("./utils/default_yargs")
     demandOption: true,
   })
   .option("investmentTargetToken", {
+    type: "string",
     describe: "Amount to be invested into the targetToken",
     demandOption: true,
   })
   .option("stableToken", {
+    type: "int",
     describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
     demandOption: true,
   })
   .option("investmentStableToken", {
+    type: "string",
     describe: "Amount to be invested into the stableToken",
     demandOption: true,
   })
