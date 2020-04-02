@@ -104,19 +104,32 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   // returns undefined if the price was not available
-  const getDexagPrice = async function(tokenBought, tokenSold) {
+  const getDexagPrice = async function(tokenBought, tokenSold, globalPriceStorage = null) {
+    if (globalPriceStorage !== null && tokenBought + "-" + tokenSold in globalPriceStorage) {
+      return globalPriceStorage[tokenBought + "-" + tokenSold]
+    }
+    if (globalPriceStorage !== null && tokenSold + "-" + tokenBought in globalPriceStorage) {
+      return 1.0 / globalPriceStorage[tokenSold + "-" + tokenBought]
+    }
     // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
     tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
     tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
     // see https://docs.dex.ag/ for API documentation
     const url = "https://api-v2.dex.ag/price?from=" + tokenSold + "&to=" + tokenBought + "&fromAmount=1&dex=ag"
     let price
-    try {
-      const requestResult = await axios.get(url)
-      price = requestResult.data.price
-    } catch (error) {
-      console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-      console.log(">", error.response.data.error)
+    // try to get price 3 times
+    for (let i = 0; i < 3; i++) {
+      try {
+        const requestResult = await axios.get(url)
+        price = requestResult.data.price
+        break
+      } catch (error) {
+        console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
+        console.log(">", error.response.data.error)
+      }
+    }
+    if (globalPriceStorage !== null) {
+      globalPriceStorage[tokenBought + "-" + tokenSold] = price
     }
     return price
   }
@@ -142,21 +155,19 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return true
   }
 
-  const checkNoProfitableOffer = async (order, exchange, currentMarketPrice) => {
+  const checkNoProfitableOffer = async (order, exchange, globalPriceStorage = null) => {
     const tokenInfo = fetchTokenInfoFromExchange(exchange, [order.buyToken, order.sellToken])
+    const currentMarketPrice = await getDexagPrice(
+      (await tokenInfo[order.buyToken]).symbol,
+      (await tokenInfo[order.sellToken]).symbol,
+      globalPriceStorage
+    )
 
-    if (currentMarketPrice === undefined) {
-      currentMarketPrice = await getDexagPrice(
-        (await tokenInfo[order.buyToken]).symbol,
-        (await tokenInfo[order.sellToken]).symbol
-      )
-    }
     // checks whether the order amount is negligible
-    if ((await valueInUSD(order, tokenInfo)) < 1) {
+    if ((await valueInUSD(order, tokenInfo, globalPriceStorage)) < 1) {
       return true
     }
 
-    // multiplicator is used to counter rounding errors
     const marketPrice = toErc20Units(currentMarketPrice, precisionDecimals)
     const orderPrice = toErc20Units(order.priceNumerator, precisionDecimals)
       .mul(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
@@ -166,10 +177,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return marketPrice.lt(orderPrice)
   }
 
-  const valueInUSD = async (order, tokenInfo, currentMarketPrice) => {
-    if (currentMarketPrice === undefined) {
-      currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol)
-    }
+  const valueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
+    const currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol, globalPriceStorage)
+
     return fromErc20Units(
       toErc20Units(currentMarketPrice, precisionDecimals)
         .mul(order.sellTokenBalance)

@@ -63,8 +63,13 @@ contract("PriceOracle", function(accounts) {
         },
       ]
 
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, 1.0 / 120), true)
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, 120), true)
+      const globalPriceStorage = {}
+      globalPriceStorage["DAI-USDC"] = 1.0
+      globalPriceStorage["WETH-DAI"] = 1 / 120.0
+      globalPriceStorage["WETH-USDC"] = 1 / 120.0
+
+      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
       const ERC20 = artifacts.require("DetailedMintableToken")
@@ -97,8 +102,12 @@ contract("PriceOracle", function(accounts) {
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(18))),
         },
       ]
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, 1.0), true)
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, 1.0), true)
+
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = 1.0
+      globalPriceStorage["WETH-USDC"] = 1.0
+      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
     })
     it("detects unprofitable orders for tokens with different decimals", async () => {
       const ERC20 = artifacts.require("DetailedMintableToken")
@@ -130,8 +139,13 @@ contract("PriceOracle", function(accounts) {
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(6))),
         },
       ]
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, 1), false)
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, 1), true)
+
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = 1.0
+      globalPriceStorage["WETH-USDC"] = 1.0
+
+      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), false)
+      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
     })
   })
 })
