@@ -9,6 +9,7 @@ const argv = require("./utils/default_yargs")
     describe: "Token whose target price is to be specified (i.e. ETH)",
   })
   .option("stableToken", {
+    type: "int",
     describe: "Stable Token for which to open orders (i.e. DAI)",
   })
   .option("currentPrice", {
