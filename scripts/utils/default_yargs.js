@@ -7,6 +7,6 @@ module.exports = require("yargs")
   )
   .option("network", {
     type: "string",
-    describe: "where the scripts are executed (supported networks: rinkeby, mainnet)",
+    describe: "network where the script is executed",
     choices: ["rinkeby", "mainnet"],
   })
