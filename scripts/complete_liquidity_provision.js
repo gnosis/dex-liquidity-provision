@@ -58,8 +58,7 @@ const argv = require("./utils/default_yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
-  })
-  .argv
+  }).argv
 
 module.exports = async callback => {
   try {

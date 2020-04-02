@@ -14,8 +14,7 @@ const argv = require("./utils/default_yargs")
     type: "string",
     describe: "Amount of ETH to convert (in ETH, e.g. 3.14159)",
     demandOption: true,
-  })
-  .argv
+  }).argv
 
 module.exports = async callback => {
   try {

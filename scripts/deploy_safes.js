@@ -10,8 +10,7 @@ const argv = require("./utils/default_yargs")
     type: "int",
     describe: "Number of (sub)safes to be deployed",
     demandOption: true,
-  })
-  .argv
+  }).argv
 
 module.exports = async callback => {
   try {

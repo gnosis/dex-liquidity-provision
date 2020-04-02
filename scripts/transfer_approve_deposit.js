@@ -11,8 +11,7 @@ const argv = require("./utils/default_yargs")
     type: "string",
     describe: "file name (and path) to the list of deposits.",
     demandOption: true,
-  })
-  .argv
+  }).argv
 
 module.exports = async callback => {
   try {

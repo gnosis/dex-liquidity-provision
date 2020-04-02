@@ -49,8 +49,7 @@ const argv = require("./utils/default_yargs")
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
-  })
-  .argv
+  }).argv
 
 module.exports = async callback => {
   try {

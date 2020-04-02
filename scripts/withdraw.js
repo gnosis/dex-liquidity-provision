@@ -48,8 +48,7 @@ const argv = require("./utils/default_yargs")
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
     return true
-  })
-  .argv
+  }).argv
 
 const getAmount = async function(bracketAddress, tokenInfo, exchange) {
   let amount
