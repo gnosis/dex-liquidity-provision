@@ -10,7 +10,7 @@ const {
   buildWithdrawAndTransferFundsToMaster,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning bracketSafes.",
@@ -40,9 +40,6 @@ const argv = require("yargs")
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   })
   .demand(["masterSafe", "withdrawalFile"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
   .check(function(argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
@@ -51,7 +48,7 @@ const argv = require("yargs")
     }
     return true
   })
-  .version(false).argv
+  .argv
 
 const getAmount = async function(bracketAddress, tokenInfo, exchange) {
   let amount

@@ -1,7 +1,7 @@
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { buildTransferApproveDepositFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning the brackets",
@@ -11,10 +11,7 @@ const argv = require("yargs")
     describe: "file name (and path) to the list of deposits.",
   })
   .demand(["masterSafe", "depositFile"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  .argv
 
 module.exports = async callback => {
   try {

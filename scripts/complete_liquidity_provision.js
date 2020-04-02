@@ -15,7 +15,7 @@ const { proceedAnyways } = require("./utils/user-interface-helpers")(web3, artif
 const { toErc20Units } = require("./utils/printing_tools")
 const assert = require("assert")
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning every bracket",
@@ -51,10 +51,7 @@ const argv = require("yargs")
     describe: "Price for the bracket selling at the highest price",
   })
   .demand(["masterSafe", "targetToken", "stableToken", "currentPrice", "investmentTargetToken", "investmentStableToken"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  .argv
 
 module.exports = async callback => {
   try {

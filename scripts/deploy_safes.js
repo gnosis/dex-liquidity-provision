@@ -1,6 +1,6 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "int",
     describe: "Address of Gnosis Safe that is going to own the new fleet",
@@ -10,10 +10,7 @@ const argv = require("yargs")
     describe: "Number of (sub)safes to be deployed",
   })
   .demand(["masterSafe", "fleetSize"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  .argv
 
 module.exports = async callback => {
   try {

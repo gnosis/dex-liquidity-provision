@@ -3,7 +3,7 @@ const { isPriceReasonable, areBoundsReasonable } = require("./utils/price-utils.
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("targetToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
@@ -45,10 +45,7 @@ const argv = require("yargs")
     default: 2 ** 32 - 1,
   })
   .demand(["targetToken", "stableToken", "currentPrice", "masterSafe", "brackets"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  .argv
 
 module.exports = async callback => {
   try {
