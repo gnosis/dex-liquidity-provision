@@ -10,3 +10,4 @@ module.exports = require("yargs")
     describe: "network where the script is executed",
     choices: ["rinkeby", "mainnet"],
   })
+  
