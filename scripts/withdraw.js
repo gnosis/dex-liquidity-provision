@@ -13,28 +13,28 @@ const {
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning bracketSafes.",
+    describe: "Address of Gnosis Safe owning bracketSafes",
     demandOption: true,
   })
   .option("withdrawalFile", {
     type: "string",
-    describe: "file name (and path) to the list of withdrawals.",
+    describe: "file name (and path) to the list of withdrawals",
     demandOption: true,
   })
   .option("allTokens", {
     type: "boolean",
     default: false,
-    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket.",
+    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket",
   })
   .option("requestWithdraw", {
     type: "boolean",
     default: false,
-    describe: "request withdraw from the exchange.",
+    describe: "request withdraw from the exchange",
   })
   .option("withdraw", {
     type: "boolean",
     default: false,
-    describe: "withdraw from the exchange. A withdraw request must always be made before withdrawing funds from the exchange.",
+    describe: "withdraw from the exchange. A withdraw request must always be made before withdrawing funds from the exchange",
   })
   .option("transferFundsToMaster", {
     type: "boolean",

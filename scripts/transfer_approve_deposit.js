@@ -9,7 +9,7 @@ const argv = require("./utils/default_yargs")
   })
   .option("depositFile", {
     type: "string",
-    describe: "file name (and path) to the list of deposits.",
+    describe: "file name (and path) to the list of deposits",
     demandOption: true,
   }).argv
 

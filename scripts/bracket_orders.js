@@ -26,7 +26,7 @@ const argv = require("./utils/default_yargs")
   })
   .option("brackets", {
     type: "string",
-    describe: "Trader account addresses to place orders on behalf of.",
+    describe: "Trader account addresses to place orders on behalf of",
     demandOption: true,
     coerce: str => {
       return str.split(",")
