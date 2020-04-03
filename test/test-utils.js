@@ -23,7 +23,19 @@ const addCustomMintableTokenToExchange = async function(exchange, symbol, decima
   }
 }
 
+const createTokenAndGetData = async function(symbol, decimals) {
+  const tokenData = {
+    decimals: decimals,
+    symbol: symbol,
+  }
+  const token = await TestToken.new(symbol, decimals)
+  tokenData.address = token.address
+  tokenData.instance = token
+  return { address: token.address, tokenData: tokenData }
+}
+
 module.exports = {
   prepareTokenRegistration,
   addCustomMintableTokenToExchange,
+  createTokenAndGetData,
 }

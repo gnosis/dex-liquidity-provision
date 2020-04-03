@@ -1,20 +1,9 @@
-const TestToken = artifacts.require("DetailedMintableToken")
+const { createTokenAndGetData } = require("./test-utils")
 const { getAllowances, assertNoAllowances } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 contract("verification checks", async accounts => {
   describe("allowances", async () => {
     let tokenInfo
-
-    const createToken = async function(symbol, decimals) {
-      const tokenData = {
-        decimals: decimals,
-        symbol: symbol,
-      }
-      const token = await TestToken.new(symbol, decimals)
-      tokenData.address = token.address
-      tokenData.instance = token
-      return { address: token.address, tokenData: tokenData }
-    }
 
     beforeEach(async () => {
       tokenInfo = {}
@@ -23,7 +12,7 @@ contract("verification checks", async accounts => {
         { symbol: "TEST2", decimals: 6 },
       ]
       for (const { symbol, decimals } of newTokens) {
-        const { address, tokenData } = await createToken(symbol, decimals)
+        const { address, tokenData } = await createTokenAndGetData(symbol, decimals)
         tokenInfo[address] = tokenData
       }
     })
