@@ -47,7 +47,7 @@ const fromErc20Units = function(amount, decimals) {
   const paddedAmount = amount.toString().padStart(decimals + 1, "0")
   let decimalPart = paddedAmount.slice(-decimals) // rightmost "decimals" characters of the string
   const integerPart = paddedAmount.slice(0, -decimals) // remaining characters
-  decimalPart = decimalPart.replace(/0+$/, "") // remove trailig zeros
+  decimalPart = decimalPart.replace(/0+$/, "") // remove trailing zeros
   if (decimalPart == "") return integerPart
   return integerPart + "." + decimalPart
 }
