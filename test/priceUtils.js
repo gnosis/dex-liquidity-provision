@@ -73,11 +73,13 @@ contract("PriceOracle", function(accounts) {
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
       const ERC20 = artifacts.require("DetailedMintableToken")
-      const token1 = await ERC20.new("WETH", 18)
+      const token1 = await ERC20.new("DAI", 18)
       const token2 = await ERC20.new("USDC", 6)
 
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(token1.address, { from: accounts[0] })
+      const DAItokenId = (await exchange.numTokens.call()).toNumber() - 1
+
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(token2.address, { from: accounts[0] })
       const USDCtokenId = (await exchange.numTokens.call()).toNumber() - 1
@@ -87,7 +89,7 @@ contract("PriceOracle", function(accounts) {
           // normal order selling for more than 1
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
           sellTokenBalance: new BN("10eed9efc"),
-          buyToken: 1,
+          buyToken: DAItokenId,
           sellToken: USDCtokenId,
           priceNumerator: new BN("101").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(6))),
@@ -97,7 +99,7 @@ contract("PriceOracle", function(accounts) {
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
           sellTokenBalance: new BN("0"),
           buyToken: USDCtokenId,
-          sellToken: 1,
+          sellToken: DAItokenId,
           priceNumerator: new BN("101").mul(new BN(10).pow(new BN(6))),
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(18))),
         },
@@ -105,26 +107,28 @@ contract("PriceOracle", function(accounts) {
 
       const globalPriceStorage = {}
       globalPriceStorage["USDC-USDC"] = 1.0
-      globalPriceStorage["WETH-USDC"] = 1.0
+      globalPriceStorage["DAI-USDC"] = 1.0
       assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
       assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
     })
     it("detects unprofitable orders for tokens with different decimals", async () => {
       const ERC20 = artifacts.require("DetailedMintableToken")
-      const token1 = await ERC20.new("WETH", 18)
+      const token1 = await ERC20.new("DAI", 18)
       const token2 = await ERC20.new("USDC", 6)
 
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(token1.address, { from: accounts[0] })
+      const DAItokenId = (await exchange.numTokens.call()).toNumber() - 1
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(token2.address, { from: accounts[0] })
       const USDCtokenId = (await exchange.numTokens.call()).toNumber() - 1
+
       const orders = [
         {
           // order is profitable for others
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
           sellTokenBalance: new BN("10eed9efc"),
-          buyToken: 1, // buy and sell tokens are changed in comparison to previous example
+          buyToken: DAItokenId, // buy and sell tokens are changed in comparison to previous example
           sellToken: USDCtokenId,
           priceNumerator: new BN("99").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(6))),
@@ -133,7 +137,7 @@ contract("PriceOracle", function(accounts) {
           // order is profitable for others, but balance is 0
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
           sellTokenBalance: new BN("0"),
-          buyToken: 1,
+          buyToken: DAItokenId,
           sellToken: USDCtokenId,
           priceNumerator: new BN("101").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("100").mul(new BN(10).pow(new BN(6))),
@@ -142,7 +146,7 @@ contract("PriceOracle", function(accounts) {
 
       const globalPriceStorage = {}
       globalPriceStorage["USDC-USDC"] = 1.0
-      globalPriceStorage["WETH-USDC"] = 1.0
+      globalPriceStorage["DAI-USDC"] = 1.0
 
       assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), false)
       assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)

@@ -124,8 +124,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         price = requestResult.data.price
         break
       } catch (error) {
-        console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-        console.log(">", error.response.data.error)
+        if (i == 2) {
+          console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
+          console.log(">", error.response.data.error)
+        }
       }
     }
     if (globalPriceStorage !== null) {
