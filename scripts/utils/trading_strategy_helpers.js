@@ -614,23 +614,24 @@ withdrawal of the desired funds
     )
     return allowances
   }
-  
-  const assertNoAllowances = async function(address, tokenInfo) {
+
+  const assertNoAllowances = async function(address, tokenInfo, exceptions = []) {
     const allowances = await getAllowances(address, tokenInfo)
     for (const [tokenAddress, tokenAllowances] of Object.entries(allowances)) {
       for (const spender in tokenAllowances) {
-        assert.equal(
-          tokenAllowances[spender].toString(),
-          "0",
-          address +
-            " allows address " +
-            spender +
-            " to spend " +
-            (await tokenInfo[tokenAddress]).symbol +
-            " (amount: " +
-            fromErc20Units(tokenAllowances[spender], (await tokenInfo[tokenAddress]).decimals) +
-            ")"
-        )
+        if (!exceptions.includes(spender))
+          assert.equal(
+            tokenAllowances[spender].toString(),
+            "0",
+            address +
+              " allows address " +
+              spender +
+              " to spend " +
+              (await tokenInfo[tokenAddress]).symbol +
+              " (amount: " +
+              fromErc20Units(tokenAllowances[spender], (await tokenInfo[tokenAddress]).decimals) +
+              ")"
+          )
       }
     }
   }
