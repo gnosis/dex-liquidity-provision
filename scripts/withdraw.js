@@ -10,39 +10,37 @@ const {
   buildWithdrawAndTransferFundsToMaster,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning bracketSafes.",
+    describe: "Address of Gnosis Safe owning bracketSafes",
+    demandOption: true,
   })
   .option("withdrawalFile", {
     type: "string",
-    describe: "file name (and path) to the list of withdrawals.",
+    describe: "file name (and path) to the list of withdrawals",
+    demandOption: true,
   })
   .option("allTokens", {
     type: "boolean",
     default: false,
-    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket.",
+    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket",
   })
   .option("requestWithdraw", {
     type: "boolean",
     default: false,
-    describe: "request withdraw from the exchange.",
+    describe: "request withdraw from the exchange",
   })
   .option("withdraw", {
     type: "boolean",
     default: false,
-    describe: "withdraw from the exchange. A withdraw request must always be made before withdrawing funds from the exchange.",
+    describe: "withdraw from the exchange. A withdraw request must always be made before withdrawing funds from the exchange",
   })
   .option("transferFundsToMaster", {
     type: "boolean",
     default: false,
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   })
-  .demand(["masterSafe", "withdrawalFile"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
   .check(function(argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
@@ -50,8 +48,7 @@ const argv = require("yargs")
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
     return true
-  })
-  .version(false).argv
+  }).argv
 
 const getAmount = async function(bracketAddress, tokenInfo, exchange) {
   let amount

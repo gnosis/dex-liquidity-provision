@@ -3,25 +3,31 @@ const { isPriceReasonable, areBoundsReasonable } = require("./utils/price-utils.
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("targetToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
+    demandOption: true,
   })
   .option("stableToken", {
+    type: "int",
     describe: "Stable Token for which to open orders (i.e. DAI)",
+    demandOption: true,
   })
   .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+    demandOption: true,
   })
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning all brackets",
+    demandOption: true,
   })
   .option("brackets", {
     type: "string",
-    describe: "Trader account addresses to place orders on behalf of.",
+    describe: "Trader account addresses to place orders on behalf of",
+    demandOption: true,
     coerce: str => {
       return str.split(",")
     },
@@ -43,12 +49,7 @@ const argv = require("yargs")
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
-  })
-  .demand(["targetToken", "stableToken", "currentPrice", "masterSafe", "brackets"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  }).argv
 
 module.exports = async callback => {
   try {
