@@ -1,9 +1,19 @@
-const BatchExchange = artifacts.require("BatchExchange")
-const BN = require("bn.js")
+const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { SynthetixJs } = require("synthetix-js")
-const { calculateBuyAndSellAmountsFromPrice } = require("../utils/trading_strategy_helpers")
+const { calculateBuyAndSellAmountsFromPrice, fetchTokenInfoFromExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
-const { sendTxAndGetReturnValue } = require("../test/utilities.js")
+// TODO - put this somewhere more generic. Copied from dex-contracts
+const sendTxAndGetReturnValue = async function (method, ...args) {
+  const result = await method.call(...args)
+  await method(...args)
+  return result
+}
+
+// truffle uses network by name and SynthetixJS uses network by ID
+const networkMap = {
+  "mainnet": 1,
+  "rinkeby": 4,
+}
 
 const argv = require("yargs")
   .option("spread", {
@@ -20,9 +30,9 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    const snxjs = new SynthetixJs({ network: argv.network })
+    const snxjs = new SynthetixJs({ networkId: networkMap[argv.network] })
 
-    const batchExchange = await BatchExchange.deployed()
+    const exchange = await getExchange(web3)
     const account = (await web3.eth.getAccounts())[0]
 
     // Both of these hardcoded tokens have 18 decimal places.
@@ -34,31 +44,34 @@ module.exports = async callback => {
 
     const sETHAddress = await snxjs.Synthetix.synths(sETHKey)
     const sUSDAddress = await snxjs.Synthetix.synths(sUSDKey)
+    console.log("sETH Address", sETHAddress)
+    console.log("sUSD Address", sUSDAddress)
+    const referenceTokenId = (await exchange.tokenAddressToIdMap.call(sUSDAddress)).toNumber()
+    const etherTokenId = (await exchange.tokenAddressToIdMap.call(sETHAddress)).toNumber()
 
-    const referenceTokenId = (await batchExchange.tokenAddressToIdMap.call(sUSDAddress)).toNumber()
-    const etherTokenId = (await batchExchange.tokenAddressToIdMap.call(sETHAddress)).toNumber()
-
-    const tokenInfoPromises = fetchTokenInfoFromExchange(batchExchange, [referenceTokenId, etherTokenId])
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [referenceTokenId, etherTokenId])
 
     const stableToken = await tokenInfoPromises[referenceTokenId]
     const targetToken = await tokenInfoPromises[etherTokenId]
 
     // Note that sUSD is always 1 with synthetix
     const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETHKey)
-    console.log("Current price of sETH", exchangeRate)
+    const formatedRate = snxjs.utils.formatEther(exchangeRate)
+    console.log("sETH Price", snxjs.utils.formatEther(exchangeRate))
 
-    const batch_index = (await batchExchange.getCurrentBatchId.call()).toNumber()
+
+    const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
 
     const buyTokens = [etherTokenId, referenceTokenId]
     const sellTokens = [referenceTokenId, etherTokenId]
 
     const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(
-      exchangeRate * (1 + argv.spread),
+      formatedRate * (1 + argv.spread / 100),
       stableToken,
       targetToken
     )
     const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(
-      exchangeRate * (1 - argv.spread),
+      formatedRate * (1 - argv.spread / 100),
       stableToken,
       targetToken
     )
@@ -68,10 +81,10 @@ module.exports = async callback => {
 
     const validFroms = Array(2).fill(batch_index)
     const validTos = Array(2).fill(batch_index + 1)
-
-    // TODO - use replaceOrder
+    
+    // TODO - use replaceOrder if possible.
     await sendTxAndGetReturnValue(
-      batchExchange.placeValidFromOrders,
+      exchange.placeValidFromOrders,
       buyTokens,
       sellTokens,
       validFroms,

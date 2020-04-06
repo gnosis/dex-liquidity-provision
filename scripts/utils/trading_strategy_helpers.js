@@ -608,6 +608,7 @@ withdrawal of the desired funds
     buildWithdrawAndTransferFundsToMaster,
     buildBracketTransactionForTransferApproveDeposit,
     buildTransferApproveDepositFromOrders,
+    calculateBuyAndSellAmountsFromPrice,
     checkSufficiencyOfBalance,
     buildRequestWithdraw,
     buildWithdraw,
