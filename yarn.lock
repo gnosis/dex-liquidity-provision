@@ -1194,7 +1194,7 @@ bitcore-mnemonic@8.1.1:
   resolved "https://registry.yarnpkg.com/bitcore-mnemonic/-/bitcore-mnemonic-8.1.1.tgz#f3d970e0e6f20e32708060960806ae630a6bd722"
   integrity sha512-F9R+PKN6m8jDikmNbuD7yp47vdyWcNYGdu9jokiNW46VOm5E+HJM41BiIJdUIVeY9mf+U8T7URq6Knr985NVTg==
   dependencies:
-    bitcore-lib "^8.1.1"
+    bitcore-lib "8.1.1"
     unorm "^1.4.1"
 
 bl@^1.0.0:
