@@ -9,7 +9,6 @@ const { checkNoProfitableOffer } = require("./utils/price-utils")(web3, artifact
 const { fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const assert = require("assert")
-const BN = require("bn.js")
 const argv = require("yargs")
   .option("brackets", {
     type: "string",
