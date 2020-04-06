@@ -39,6 +39,7 @@ module.exports = async callback => {
 
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, 100)
     const bracketTraderAddresses = argv.brackets.map(address => address.toLowerCase())
+
     // fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const globalPriceStorage = {}
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
@@ -50,7 +51,7 @@ module.exports = async callback => {
       const tokenInfo = await fetchTokenInfoFromExchange(exchange, [order.sellToken, order.buyToken])
       await getDexagPrice(
         (await tokenInfo[order.sellToken]).symbol,
-        (await tokenInfo[order.sellToken]).symbol,
+        (await tokenInfo[order.buyToken]).symbol,
         globalPriceStorage
       )
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
