@@ -21,11 +21,6 @@ const argv = require("yargs")
     describe: "Percentage increase required for trade (fees not accounted)",
     default: 0.2,
   })
-  .option("sellAmount", {
-    type: "int",
-    describe: "Maximum sell amount in sUSD (sETH amount will be determined from price).",
-    default: 1000,
-  })
   .version(false).argv
 
 module.exports = async callback => {
@@ -58,7 +53,6 @@ module.exports = async callback => {
     const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETHKey)
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("sETH Price", snxjs.utils.formatEther(exchangeRate))
-
 
     const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
 
