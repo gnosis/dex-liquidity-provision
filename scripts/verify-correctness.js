@@ -1,12 +1,14 @@
 const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts/src/onchain_reading")
 const Contract = require("@truffle/contract")
 
-const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances } = require("./utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
 const { getDexagPrice } = require("./utils/price-utils")(web3, artifacts)
 const { checkNoProfitableOffer } = require("./utils/price-utils")(web3, artifacts)
-const { fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const assert = require("assert")
 const argv = require("yargs")
@@ -21,6 +23,14 @@ const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
     describe: "The masterSafe in control of the bracket-traders",
+    default: [],
+    coerce: str => {
+      return str.split(",")
+    },
+  })
+  .option("allowanceExceptions", {
+    type: "string",
+    describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
     coerce: str => {
       return str.split(",")
     },
@@ -47,8 +57,15 @@ module.exports = async callback => {
     BatchExchangeContract.setNetwork(web3.network_id)
     BatchExchangeContract.setProvider(web3.currentProvider)
     const exchange = await BatchExchangeContract.deployed()
+
+    const tradedTokenIds = new Set()
     for (const order of relevantOrders) {
-      const tokenInfo = await fetchTokenInfoFromExchange(exchange, [order.sellToken, order.buyToken])
+      tradedTokenIds.add(order.sellToken)
+      tradedTokenIds.add(order.buyToken)
+    }
+    const tokenInfo = fetchTokenInfoFromExchange(exchange, Array.from(tradedTokenIds))
+
+    for (const order of relevantOrders) {
       await getDexagPrice(
         (await tokenInfo[order.sellToken]).symbol,
         (await tokenInfo[order.buyToken]).symbol,
@@ -108,6 +125,11 @@ module.exports = async callback => {
         )
       }
     }
+
+    // 6. verify that no allowances are currently set
+    await assertNoAllowances(argv.masterSafe[0], tokenInfo, argv.allowanceExceptions)
+    // TODO: test if following line can be parallelized with Infura
+    for (const bracketTrader of bracketTraderAddresses) await assertNoAllowances(bracketTrader, tokenInfo)
 
     callback()
   } catch (error) {
