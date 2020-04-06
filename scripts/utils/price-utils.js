@@ -1,7 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
-  const precisionDecimals = 50
+  const precisionDecimals = 20
 
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { toErc20Units, fromErc20Units } = require("./printing_tools")
@@ -166,7 +166,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
 
     // checks whether the order amount is negligible
-    if ((await valueInUSD(order, tokenInfo, globalPriceStorage)) < 1) {
+    if (Math.floor(await valueInUSD(order, tokenInfo, globalPriceStorage)) < 1) {
       return true
     }
 

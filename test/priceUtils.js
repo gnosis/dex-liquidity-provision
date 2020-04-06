@@ -2,10 +2,9 @@ const assert = require("assert")
 const BN = require("bn.js")
 
 const Contract = require("@truffle/contract")
-const { prepareTokenRegistration } = require("./test-utils")
+const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
 const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price-utils")(web3, artifacts)
 const ERC20 = artifacts.require("DetailedMintableToken")
-
 contract("PriceOracle", function(accounts) {
   let exchange
   beforeEach(async function() {
@@ -34,21 +33,16 @@ contract("PriceOracle", function(accounts) {
       assert(await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
-      const ERC20 = artifacts.require("DetailedMintableToken")
-      const token1 = await ERC20.new("WETH", 18)
-      const token2 = await ERC20.new("DAI", 18)
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token1.address, { from: accounts[0] })
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token2.address, { from: accounts[0] })
+      const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
 
       const orders = [
         {
           // normal order selling for more than 120 DAI per WETH
           user: "0xf888243aacb5626b520d0028371bad672a477fd8",
           sellTokenBalance: new BN(0),
-          buyToken: 1,
-          sellToken: 2,
+          buyToken: WETHtokenId,
+          sellToken: DAItokenId,
           priceNumerator: new BN("1").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("115").mul(new BN(10).pow(new BN(18))),
         },
@@ -56,8 +50,8 @@ contract("PriceOracle", function(accounts) {
           // normal order selling for more than 120 DAI per WETH
           user: "0xf888243aacb5626b520d0028371bad672a477fd8",
           sellTokenBalance: new BN("125").mul(new BN(10).pow(new BN(18))),
-          buyToken: 2,
-          sellToken: 1,
+          buyToken: DAItokenId,
+          sellToken: WETHtokenId,
           priceNumerator: new BN("132").mul(new BN(10).pow(new BN(18))),
           priceDenominator: new BN("1").mul(new BN(10).pow(new BN(18))),
         },
@@ -68,27 +62,22 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["WETH-DAI"] = 1 / 120.0
       globalPriceStorage["WETH-USDC"] = 1 / 120.0
 
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
+      assert.equal(
+        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        true,
+        "Amount should have been negligible"
+      )
       assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
-      const ERC20 = artifacts.require("DetailedMintableToken")
-      const token1 = await ERC20.new("DAI", 18)
-      const token2 = await ERC20.new("USDC", 6)
-
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token1.address, { from: accounts[0] })
-      const DAItokenId = (await exchange.numTokens.call()).toNumber() - 1
-
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token2.address, { from: accounts[0] })
-      const USDCtokenId = (await exchange.numTokens.call()).toNumber() - 1
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+      const USDCtokenId = (await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])).id
 
       const orders = [
         {
           // normal order selling for more than 1
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
-          sellTokenBalance: new BN("10eed9efc"),
+          sellTokenBalance: new BN("24719283572357"),
           buyToken: DAItokenId,
           sellToken: USDCtokenId,
           priceNumerator: new BN("101").mul(new BN(10).pow(new BN(18))),
@@ -109,19 +98,15 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
       assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
+      assert.equal(
+        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        true,
+        "Amount should have been negligible"
+      )
     })
     it("detects unprofitable orders for tokens with different decimals", async () => {
-      const ERC20 = artifacts.require("DetailedMintableToken")
-      const token1 = await ERC20.new("DAI", 18)
-      const token2 = await ERC20.new("USDC", 6)
-
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token1.address, { from: accounts[0] })
-      const DAItokenId = (await exchange.numTokens.call()).toNumber() - 1
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token2.address, { from: accounts[0] })
-      const USDCtokenId = (await exchange.numTokens.call()).toNumber() - 1
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+      const USDCtokenId = (await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])).id
 
       const orders = [
         {
@@ -148,8 +133,16 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
 
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), false)
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
+      assert.equal(
+        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        false,
+        "Price should have been profitable for others"
+      )
+      assert.equal(
+        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        true,
+        "Amount should have been negligible"
+      )
     })
   })
 })

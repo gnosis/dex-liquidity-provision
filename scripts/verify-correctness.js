@@ -1,13 +1,15 @@
 const { getOrdersPaginated } = require("../node_modules/@gnosis.pm/dex-contracts/src/onchain_reading")
+const Contract = require("@truffle/contract")
+
 const { isOnlySafeOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { getMasterCopy } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
-const { getDexagPrice } = require("./utils/price-utils")
+const { getDexagPrice } = require("./utils/price-utils")(web3, artifacts)
 const { checkNoProfitableOffer } = require("./utils/price-utils")(web3, artifacts)
 const { fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
 const assert = require("assert")
-
+const BN = require("bn.js")
 const argv = require("yargs")
   .option("brackets", {
     type: "string",
@@ -38,15 +40,22 @@ module.exports = async callback => {
 
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, 100)
     const bracketTraderAddresses = argv.brackets.map(address => address.toLowerCase())
-
     // fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const globalPriceStorage = {}
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
-    relevantOrders.forEach(async order => {
-      const tokenInfo = await fetchTokenInfoFromExchange([order.sellToken, order.buyToken])
-      await getDexagPrice(tokenInfo[order.sellToken].symbol, tokenInfo[order.sellToken].symbol, globalPriceStorage)
-      await getDexagPrice(tokenInfo[order.sellToken].symbol, "USDC", globalPriceStorage)
-    })
+    const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+    BatchExchangeContract.setNetwork(web3.network_id)
+    BatchExchangeContract.setProvider(web3.currentProvider)
+    const exchange = await BatchExchangeContract.deployed()
+    for (const order of relevantOrders) {
+      const tokenInfo = await fetchTokenInfoFromExchange(exchange, [order.sellToken, order.buyToken])
+      await getDexagPrice(
+        (await tokenInfo[order.sellToken]).symbol,
+        (await tokenInfo[order.sellToken]).symbol,
+        globalPriceStorage
+      )
+      await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
+    }
 
     // 1. verify that the owner of the brackets is the masterSafe
     await Promise.all(
@@ -89,14 +98,16 @@ module.exports = async callback => {
     )
 
     // 5. verify that no bracket-trader offers profitable orders
-    await Promise.all(
-      bracketTraderAddresses.map(async bracketTrader => {
-        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
-        relevantOrders.forEach(async order =>
-          assert.equal(await checkNoProfitableOffer(order, BatchExchange, globalPriceStorage), true)
+    for (const bracketTrader of bracketTraderAddresses) {
+      const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
+      for (const order of relevantOrders) {
+        assert.equal(
+          await checkNoProfitableOffer(order, exchange, globalPriceStorage),
+          true,
+          `The order ${order} of the bracket ${bracketTrader} is profitable`
         )
-      })
-    )
+      }
+    }
 
     callback()
   } catch (error) {
