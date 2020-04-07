@@ -73,9 +73,10 @@ module.exports = async callback => {
     const sellAmounts = [lowerSellAmount, upperSellAmount]
 
     // Fetch auction index and declare validity interval for orders.
+    // Note that order validity interval is inclusive on both sides.
     const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
     const validFroms = Array(2).fill(batch_index)
-    const validTos = Array(2).fill(batch_index + 1)
+    const validTos = Array(2).fill(batch_index)
 
     // TODO - use replaceOrder if possible.
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
