@@ -282,6 +282,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
+  // TODO - pass stableTokenDecmials and targetTokenDecimals since these are the only attributes used here.
   const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
     // decimalsForPrice: This number defines the rounding errors,
     // Since we can accept similar rounding error as within the smart contract
