@@ -27,7 +27,7 @@
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.2.4",
+    "@gnosis.pm/dex-contracts": "^0.2.8",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#v1.1.1-dev.1",
     "@gnosis.pm/solidity-data-structures": "^1.2.2",
