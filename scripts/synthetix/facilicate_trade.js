@@ -40,16 +40,13 @@ module.exports = async callback => {
 
     const sETH = sETHByNetwork[networkId]
     const sUSD = sUSDByNetwork[networkId]
+
     // Both of these hardcoded tokens are assumed to have 18 decimal places.
     // We "trust" that this will always be the case although it seems
     // that synthetix reserves the authority to upgrade their token
     // This could mean issuing a new one with a different number of decimals.
     const sETHKey = ethers.utils.formatBytes32String("sETH")
     const sUSDKey = ethers.utils.formatBytes32String("sUSD")
-
-    // Avoid querying exchange by tokenAddress for fixed tokenId
-    const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
-    const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
     // Compute Rates and Fees based on price of sETH.
     // Note that sUSD always has a price of 1 within synthetix protocol.
@@ -73,6 +70,10 @@ module.exports = async callback => {
     const batchId = (await exchange.getCurrentBatchId.call()).toNumber()
     const validFroms = Array(2).fill(batchId)
     const validTos = Array(2).fill(batchId)
+
+    // Avoid querying exchange by tokenAddress for fixed tokenId
+    const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
+    const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: defaultAccount,
