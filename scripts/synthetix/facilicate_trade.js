@@ -8,12 +8,12 @@ const sETHByNetwork = {
   1: {
     address: "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
     exchangeId: 8,
-    decmials: 18,
+    decimals: 18,
   },
   4: {
     address: "0x0647b2C7a2a818276154b0fC79557F512B165bc1",
     exchangeId: 12,
-    decmials: 18,
+    decimals: 18,
   },
 }
 
@@ -21,12 +21,12 @@ const sUSDByNetwork = {
   1: {
     address: "0x57Ab1E02fEE23774580C119740129eAC7081e9D3",
     exchangeId: 9,
-    decmials: 18,
+    decimals: 18,
   },
   4: {
     address: "0x1b642a124CDFa1E5835276A6ddAA6CFC4B35d52c",
     exchangeId: 13,
-    decmials: 18,
+    decimals: 18,
   },
 }
 
