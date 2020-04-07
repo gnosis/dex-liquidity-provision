@@ -1,82 +1,78 @@
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { SynthetixJs } = require("synthetix-js")
-const { calculateBuyAndSellAmountsFromPrice, fetchTokenInfoFromExchange } = require("../utils/trading_strategy_helpers")(
-  web3,
-  artifacts
-)
+const ethers = require("ethers")
+const { calculateBuyAndSellAmountsFromPrice } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
-const sUSDAddress = {
-  mainnet: "0xAe38b81459d74A8C16eAa968c792207603D84480",
-  rinkeby: "0x1b642a124CDFa1E5835276A6ddAA6CFC4B35d52c",
+// These are fixed constants for the current version of the dex-contracts
+const sETHByNetwork = {
+  1: {
+    address: "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
+    exchangeId: 8,
+    decmials: 18,
+  },
+  4: {
+    address: "0x0647b2C7a2a818276154b0fC79557F512B165bc1",
+    exchangeId: 12,
+    decmials: 18,
+  },
 }
 
-const sETHAddress = {
-  mainnet: "0xD0DC005d31C2979CC0d38718e23c82D1A50004C0",
-  rinkeby: "0x0647b2C7a2a818276154b0fC79557F512B165bc1",
+const sUSDByNetwork = {
+  1: {
+    address: "0x57Ab1E02fEE23774580C119740129eAC7081e9D3",
+    exchangeId: 9,
+    decmials: 18,
+  },
+  4: {
+    address: "0x1b642a124CDFa1E5835276A6ddAA6CFC4B35d52c",
+    exchangeId: 13,
+    decmials: 18,
+  },
 }
 
 module.exports = async callback => {
   try {
-    const snxjs = new SynthetixJs({ networkId: await web3.eth.net.getId() })
-    const exchange = await getExchange(web3)
+    const networkId = await web3.eth.net.getId()
     const defaultAccount = (await web3.eth.getAccounts())[0]
 
+    const snxjs = new SynthetixJs({ networkId: networkId })
+    const exchange = await getExchange(web3)
+
+    const sETH = sETHByNetwork[networkId]
+    const sUSD = sUSDByNetwork[networkId]
     // Both of these hardcoded tokens are assumed to have 18 decimal places.
     // We "trust" that this will always be the case although it seems
     // that synthetix reserves the authority to upgrade their token
     // This could mean issuing a new one with a different number of decimals.
-    const sETHKey = await snxjs.sETH.currencyKey()
-    const sUSDKey = await snxjs.sUSD.currencyKey()
+    const sETHKey = ethers.utils.formatBytes32String("sETH")
+    const sUSDKey = ethers.utils.formatBytes32String("sUSD")
 
-    // Fetch token IDs and other relevant token information for order placement.
-    const referenceTokenId = (await exchange.tokenAddressToIdMap.call(sUSDAddress[process.env.NETWORK_NAME])).toNumber()
-    const etherTokenId = (await exchange.tokenAddressToIdMap.call(sETHAddress[process.env.NETWORK_NAME])).toNumber()
-
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [referenceTokenId, etherTokenId])
-    const stableToken = await tokenInfoPromises[referenceTokenId]
-    const targetToken = await tokenInfoPromises[etherTokenId]
-
-    const buyTokens = [etherTokenId, referenceTokenId]
-    const sellTokens = [referenceTokenId, etherTokenId]
+    // Avoid querying exchange by tokenAddress for fixed tokenId
+    const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
+    const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
     // Compute Rates and Fees based on price of sETH.
     // Note that sUSD always has a price of 1 within synthetix protocol.
     const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETHKey)
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("sETH Price", snxjs.utils.formatEther(exchangeRate))
-    
+
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
-    const sETHTosUSDFee = parseFloat(
-      snxjs.utils.formatEther(
-        await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)
-      )
-    )
-    const sUSDTosETHFee = parseFloat(
-      snxjs.utils.formatEther(
-        await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)
-      )
-    )
+    const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)))
+    const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(
-      formatedRate * (1 - sUSDTosETHFee),
-      stableToken,
-      targetToken
-    )
+    const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
+    const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
 
-    const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(
-      formatedRate * (1 + sETHTosUSDFee),
-      stableToken,
-      targetToken
-    )
     const buyAmounts = [lowerBuyAmount, upperBuyAmount]
     const sellAmounts = [lowerSellAmount, upperSellAmount]
 
     // Fetch auction index and declare validity interval for orders.
     // Note that order validity interval is inclusive on both sides.
-    const batch_index = (await exchange.getCurrentBatchId.call()).toNumber()
-    const validFroms = Array(2).fill(batch_index)
-    const validTos = Array(2).fill(batch_index)
+    const batchId = (await exchange.getCurrentBatchId.call()).toNumber()
+    const validFroms = Array(2).fill(batchId)
+    const validTos = Array(2).fill(batchId)
 
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: defaultAccount,
