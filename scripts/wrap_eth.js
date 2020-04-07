@@ -4,20 +4,17 @@ const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artif
 const { CALL } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of the Gnosis Safe that holds the ETH to be wrapped",
+    demandOption: true,
   })
   .option("amount", {
     type: "string",
     describe: "Amount of ETH to convert (in ETH, e.g. 3.14159)",
-  })
-  .demand(["masterSafe", "amount"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+    demandOption: true,
+  }).argv
 
 module.exports = async callback => {
   try {

@@ -15,10 +15,11 @@ const { proceedAnyways } = require("./utils/user-interface-helpers")(web3, artif
 const { toErc20Units } = require("./utils/printing_tools")
 const assert = require("assert")
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning every bracket",
+    demandOption: true,
   })
   .option("fleetSize", {
     type: "int",
@@ -28,19 +29,27 @@ const argv = require("yargs")
   .option("targetToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
+    demandOption: true,
   })
   .option("investmentTargetToken", {
+    type: "string",
     describe: "Amount to be invested into the targetToken",
+    demandOption: true,
   })
   .option("stableToken", {
+    type: "int",
     describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
+    demandOption: true,
   })
   .option("investmentStableToken", {
+    type: "string",
     describe: "Amount to be invested into the stableToken",
+    demandOption: true,
   })
   .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+    demandOption: true,
   })
   .option("lowestLimit", {
     type: "float",
@@ -49,12 +58,7 @@ const argv = require("yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
-  })
-  .demand(["masterSafe", "targetToken", "stableToken", "currentPrice", "investmentTargetToken", "investmentStableToken"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  }).argv
 
 module.exports = async callback => {
   try {
@@ -103,7 +107,7 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-    console.log("Following bracket-traders have been deployed", bracketAddresses.join())
+    console.log("List of bracket traders in one line:", bracketAddresses.join())
 
     // Sleeping for 5 seconds to make sure Infura nodes have processed all newly deployed contracts so that
     // they can be awaited.
