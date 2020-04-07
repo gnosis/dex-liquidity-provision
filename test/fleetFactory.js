@@ -2,7 +2,7 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
 const FleetFactory = artifacts.require("FleetFactory")
-const { deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
+const { deploySafe } = require("./test-utils")
 
 /**
  * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
