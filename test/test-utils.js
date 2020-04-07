@@ -1,7 +1,6 @@
 const TokenOWL = artifacts.require("TokenOWL")
 const TestToken = artifacts.require("DetailedMintableToken")
 const { toErc20Units } = require("../scripts/utils/printing_tools")
-const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
 const prepareTokenRegistration = async function(account, exchange) {
   const owlToken = await TokenOWL.at(await exchange.feeToken())
@@ -22,13 +21,6 @@ const addCustomMintableTokenToExchange = async function(exchange, symbol, decima
     id: id.toNumber(),
     token: token,
   }
-}
-const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
-  const initData = gnosisSafeMasterCopy.contract.methods
-    .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
-    .encodeABI()
-  const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
-  return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, null)
 }
 
 // Need some small adjustments to default implementation for web3js 1.x
@@ -62,6 +54,8 @@ const createTokenAndGetData = async function(symbol, decimals) {
 }
 
 module.exports = {
+  getParamFromTxEvent,
+  createTokenAndGetData,
   prepareTokenRegistration,
   addCustomMintableTokenToExchange,
 }

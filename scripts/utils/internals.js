@@ -186,11 +186,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return execTransaction
   }
 
-  function logGasUsage(subject, transactionOrReceipt) {
-    const receipt = transactionOrReceipt.receipt || transactionOrReceipt
-    console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
-  }
-
   const getMasterCopy = async function(safeAddress) {
     return new Promise(function(resolve, reject) {
       web3.eth.getStorageAt(safeAddress, 0, (err, resp) => {
