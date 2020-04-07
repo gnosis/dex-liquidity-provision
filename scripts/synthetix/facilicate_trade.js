@@ -78,7 +78,6 @@ module.exports = async callback => {
     const validFroms = Array(2).fill(batch_index)
     const validTos = Array(2).fill(batch_index)
 
-    // TODO - use replaceOrder if possible.
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: defaultAccount,
     })
