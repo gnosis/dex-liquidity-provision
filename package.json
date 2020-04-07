@@ -19,22 +19,29 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
-    "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js"
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "verify": "truffle run verify",
+    "flatten": "export FLATTENED_DIR=\"./build/flattenedContracts\" && mkdir -p $FLATTENED_DIR && npx sol-merger \"contracts/*.sol\" $FLATTENED_DIR && echo \"Flattened contracts stored in $FLATTENED_DIR\" && unset FLATTENED_DIR",
+    "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
+    "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.2.6",
+    "@gnosis.pm/dex-contracts": "^0.2.8",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#v1.1.1-dev.1",
     "@gnosis.pm/solidity-data-structures": "^1.2.2",
     "@gnosis.pm/util-contracts": "^2.0.6",
     "@truffle/contract": "^4.1.13",
     "axios": "^0.19.2",
+    "bn.js": "^5.1.1",
     "canonical-weth": "^1.4.0",
     "dotenv": "^8.0.0",
     "eslint": "^6.8.0",
     "eth-gas-reporter": "^0.2.16",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
+    "sol-merger": "^2.0.1",
     "truffle": "^5.1.18",
     "truffle-plugin-verify": "^0.3.10"
   }

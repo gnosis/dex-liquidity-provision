@@ -102,6 +102,9 @@ const invalidNumber = function(amount) {
 const tooManyDecimals = function() {
   return "Too many decimals for the token in input string"
 }
+const invalidCharacter = function() {
+  return "Invalid character"
+}
 
 // takes an integer and produces an array containing the same value expressed in all types accepted for "decimals"
 const decimalTypesToTest = function(decimals) {
@@ -256,6 +259,21 @@ describe("toErc20Units", () => {
         error: "invalidNumber",
       },
       {
+        user: "1e-1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
+        user: "1e1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
+        user: "1e+1",
+        decimals: 2,
+        error: "invalidNumber",
+      },
+      {
         user: "0.333",
         decimals: 2,
         error: "tooManyDecimals",
@@ -312,12 +330,19 @@ describe("toErc20Units", () => {
 describe("fromErc20Units", () => {
   // takes an entry and produces an array containing the same entry expressed in all accepted input types
   const allTypesForEntry = function(entry) {
-    let entriesToTest = []
+    const entriesToTest = []
     decimalTypesToTest(entry.decimals).map(decimals => {
-      entriesToTest = entriesToTest.concat(
-        { user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine },
-        { user: entry.user, error: entry.error, decimals: decimals, machine: new BN(entry.machine) }
-      )
+      entriesToTest.push({ user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine })
+      let machineToBn = null
+      try {
+        machineToBn = new BN(entry.machine)
+      } catch (ignored) {
+        // if the string cannot be made into a BN, then there is no need to test for this BN input
+      } finally {
+        if (machineToBn != null) {
+          entriesToTest.push({ user: entry.user, error: entry.error, decimals: decimals, machine: machineToBn })
+        }
+      }
     })
     return entriesToTest
   }
@@ -342,6 +367,9 @@ describe("fromErc20Units", () => {
             break
           case "tooLargeNumber":
             errorMessage = tooLargeNumber()
+            break
+          case "invalidCharacter":
+            errorMessage = invalidCharacter()
             break
           default:
             throw Error("Invalid error to test")
@@ -397,17 +425,17 @@ describe("fromErc20Units", () => {
   it("fails with bad input", () => {
     const badEntries = [
       {
-        user: "0",
+        machine: "0",
         decimals: -1,
         error: "invalidDecimals",
       },
       {
-        user: "0",
+        machine: "0",
         decimals: 256,
         error: "invalidDecimals",
       },
       {
-        user: "0",
+        machine: "0",
         decimals: 1000,
         error: "invalidDecimals",
       },
@@ -425,6 +453,21 @@ describe("fromErc20Units", () => {
         machine: bnMaxUint.add(bnOne).toString(),
         decimals: 255,
         error: "tooLargeNumber",
+      },
+      {
+        machine: "1e+1",
+        decimals: 2,
+        error: "invalidCharacter",
+      },
+      {
+        machine: "1e1",
+        decimals: 2,
+        error: "invalidCharacter",
+      },
+      {
+        machine: "1e-1",
+        decimals: 2,
+        error: "invalidCharacter",
       },
     ]
     testBadEntries(badEntries)

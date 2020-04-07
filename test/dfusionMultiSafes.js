@@ -8,7 +8,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
+const { prepareTokenRegistration, addCustomMintableTokenToExchange, deploySafe } = require("./test-utils")
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -24,42 +24,47 @@ const {
   max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const { waitForNSeconds, execTransaction, deploySafe } = require("../scripts/utils/internals")(web3, artifacts)
+const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 const { checkCorrectnessOfDeposits } = require("../scripts/utils/price-utils")(web3, artifacts)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
+const TEN = new BN(10)
+
 const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
-  let multiplicator = new BN("10")
-  if ((lowestLimit + highestLimit) / 2 < 10) {
-    multiplicator = new BN("10000000")
-  }
+  const multiplicator = new BN("100000000")
+
   // Correctness assertions
   for (const [index, bracketAddress] of bracketSafes.entries()) {
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements
+    const decimalsOfSellToken = await (await ERC20.at(await exchange.tokenIdToAddressMap.call(buyOrder.sellToken))).decimals()
+    const decimalsOfBuyToken = await (await ERC20.at(await exchange.tokenIdToAddressMap.call(buyOrder.buyToken))).decimals()
+
     // Check buy order prices
     assert.isBelow(
-      Math.abs(
-        buyOrder.priceDenominator
-          .mul(multiplicator)
-          .div(buyOrder.priceNumerator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator.toNumber()
-      ),
+      buyOrder.priceDenominator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(buyOrder.priceNumerator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
     // Check sell order prices
     assert.isBelow(
-      Math.abs(
-        sellOrder.priceNumerator
-          .mul(multiplicator)
-          .div(sellOrder.priceDenominator)
-          .toNumber() -
-          lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator.toNumber()
-      ),
+      sellOrder.priceNumerator
+        .mul(multiplicator)
+        .mul(TEN.pow(decimalsOfBuyToken))
+        .div(TEN.pow(decimalsOfSellToken))
+        .div(sellOrder.priceDenominator)
+        .sub(new BN(lowestLimit * Math.pow(stepSizeAsMultiplier, index + 1) * multiplicator))
+        .abs()
+        .toNumber(),
       2
     )
   }
@@ -179,6 +184,16 @@ contract("GnosisSafe", function(accounts) {
       const amount = "0.000000000000001"
       await testManualDeposits(decimals, amount)
     })
+    it("transfers tokens from fund account through trader accounts and into exchange via manual deposit logic with arbitrary number of decimals", async () => {
+      const testEntries = [
+        { decimals: 6, amount: "100" },
+        { decimals: 50, amount: "0.1" },
+        { decimals: 100, amount: "0.00000000000000000000000001" },
+        { decimals: 0, amount: "30" },
+        { decimals: 2, amount: "0.01" },
+      ]
+      await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
+    })
     const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
       const {
         fleetSize,
@@ -211,7 +226,7 @@ contract("GnosisSafe", function(accounts) {
         stableTokenDecimals,
         accounts[0]
       )
-      const depositAmountStableToken = new BN(amountStableToken)
+      const depositAmountStableToken = toErc20Units(amountStableToken, stableTokenDecimals)
       await stableToken.mint(masterSafe.address, depositAmountStableToken, { from: accounts[0] })
 
       //Create  targetToken and add it to the exchange
@@ -221,7 +236,7 @@ contract("GnosisSafe", function(accounts) {
         targetTokenDecimals,
         accounts[0]
       )
-      const depositAmountTargetToken = new BN(amountTargetToken)
+      const depositAmountTargetToken = toErc20Units(amountTargetToken, targetTokenDecimals)
       await targetToken.mint(masterSafe.address, depositAmountTargetToken, { from: accounts[0] })
 
       // Build orders
@@ -331,6 +346,98 @@ contract("GnosisSafe", function(accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
+    describe("can use automatic deposits to transfer tokens with arbitrary amount of decimals", () => {
+      const tokenSetups = [
+        {
+          amountStableToken: "10000",
+          amountTargetToken: "100",
+          stableTokenInfo: { decimals: 6, symbol: "USDC" },
+          targetTokenInfo: { decimals: 18, symbol: "WETH" },
+        },
+        {
+          amountStableToken: "100",
+          amountTargetToken: "10000",
+          stableTokenInfo: { decimals: 18, symbol: "WETH" },
+          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+        },
+        {
+          amountStableToken: "3333",
+          amountTargetToken: "100.000001",
+          stableTokenInfo: { decimals: 0, symbol: "nodecimals" },
+          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+        },
+        {
+          amountStableToken: "0.00000000000000000000001",
+          amountTargetToken: "3.14159265",
+          stableTokenInfo: { decimals: 40, symbol: "manydecimals" }, // above 38 decimals one token unit does not fit a uint128
+          targetTokenInfo: { decimals: 8, symbol: "WBTC" },
+        },
+      ]
+      it("when p is in the middle of the brackets", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 121,
+          currentPrice: 110,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 2,
+          bracketsWithTargetTokenDeposit: 2,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is not in the middle but still inside the brackets", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 8,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 110,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 3,
+          bracketsWithTargetTokenDeposit: 5,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is outside the brackets and only stable token is deposited", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 150,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 4,
+          bracketsWithTargetTokenDeposit: 0,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is outside the brackets and only target token is deposited", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 100,
+          highestLimit: 130,
+          currentPrice: 80,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 0,
+          bracketsWithTargetTokenDeposit: 4,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+    })
   })
 
   describe("bracket order placement test:", async function() {
@@ -439,6 +546,59 @@ contract("GnosisSafe", function(accounts) {
         assert(buyOrder.priceDenominator.eq(max128))
         assert(sellOrder.priceNumerator.eq(max128))
       }
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      testToken = await TestToken.new("TEST6", 6)
+      const testToken2 = await TestToken.new("TEST4", 4)
+      const targetToken = 2 // "TEST4"
+      const stableToken = 1 // "TEST6"
+      const lowestLimit = 0.8
+      const highestLimit = 1.1
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken2.address, { from: accounts[0] })
+      await exchange.tokenIdToAddressMap.call(2)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
+    })
+    it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1, with different decimals than 18", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      testToken = await TestToken.new("TEST6", 6)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // "TEST6"
+      const lowestLimit = 80
+      const highestLimit = 110
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
       const masterSafe = await GnosisSafe.at(

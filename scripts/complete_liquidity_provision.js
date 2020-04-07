@@ -4,6 +4,7 @@ const { sleep } = require("./utils/js_helpers")
 
 const Contract = require("@truffle/contract")
 const {
+  fetchTokenInfoFromExchange,
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
@@ -14,10 +15,11 @@ const { proceedAnyways } = require("./utils/user-interface-helpers")(web3, artif
 const { toErc20Units } = require("./utils/printing_tools")
 const assert = require("assert")
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning every bracket",
+    demandOption: true,
   })
   .option("fleetSize", {
     type: "int",
@@ -27,19 +29,27 @@ const argv = require("yargs")
   .option("targetToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
+    demandOption: true,
   })
   .option("investmentTargetToken", {
+    type: "string",
     describe: "Amount to be invested into the targetToken",
+    demandOption: true,
   })
   .option("stableToken", {
+    type: "int",
     describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
+    demandOption: true,
   })
   .option("investmentStableToken", {
+    type: "string",
     describe: "Amount to be invested into the stableToken",
+    demandOption: true,
   })
   .option("currentPrice", {
     type: "float",
     describe: "Price at which the brackets will be centered (e.g. current price of ETH in USD)",
+    demandOption: true,
   })
   .option("lowestLimit", {
     type: "float",
@@ -48,27 +58,26 @@ const argv = require("yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
-  })
-  .demand(["masterSafe", "targetToken", "stableToken", "currentPrice", "investmentTargetToken", "investmentStableToken"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  }).argv
 
 module.exports = async callback => {
   try {
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
-    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, 18)
-    const investmentStableToken = toErc20Units(argv.investmentStableToken, 18)
-    const ERC20Detailed = artifacts.require("ERC20Detailed")
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     const exchange = await BatchExchange.deployed()
-    const targetToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.targetToken))
-    const stableToken = await ERC20Detailed.at(await exchange.tokenIdToAddressMap.call(argv.stableToken))
+
+    const targetTokenId = argv.targetToken
+    const stableTokenId = argv.stableToken
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
+    const { instance: targetToken, decimals: targetTokenDecimals } = await tokenInfoPromises[targetTokenId]
+    const { instance: stableToken, decimals: stableTokenDecimals } = await tokenInfoPromises[stableTokenId]
+
+    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
+    const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
     assert(argv.fleetSize % 2 == 0, "Fleet size must be a even number for easy deployment script")
 
@@ -80,8 +89,6 @@ module.exports = async callback => {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
-    const targetTokenId = argv.targetToken
-    const stableTokenId = argv.stableToken
     const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
@@ -100,7 +107,7 @@ module.exports = async callback => {
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-    console.log("Following bracket-traders have been deployed", bracketAddresses.join())
+    console.log("List of bracket traders in one line:", bracketAddresses.join())
 
     // Sleeping for 5 seconds to make sure Infura nodes have processed all newly deployed contracts so that
     // they can be awaited.

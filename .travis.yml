@@ -11,9 +11,7 @@ before_install:
 before_script:
   - ganache-cli -l 8e6 > /dev/null &
 script:
-  - yarn run lint
-  - yarn run pretty-check
-  - yarn run test test/dfusionMultiSafes.js
-  - yarn run test test/priceUtils.js
-  - yarn run test test/verification_script.js
+  - yarn lint
+  - yarn pretty-check
+  - yarn test
   - npx mocha test/printingTools.js
