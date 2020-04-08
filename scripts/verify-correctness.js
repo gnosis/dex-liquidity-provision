@@ -12,10 +12,6 @@ const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
     describe: "The masterSafe in control of the bracket-traders",
-    default: [],
-    coerce: str => {
-      return str.split(",")
-    },
   })
   .option("allowanceExceptions", {
     type: "string",
