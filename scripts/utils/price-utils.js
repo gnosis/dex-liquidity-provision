@@ -3,8 +3,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
 
-  const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
-
   const checkCorrectnessOfDeposits = async (
     currentPrice,
     bracketAddress,
@@ -118,11 +116,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return price
   }
 
-  const isPriceReasonable = async (exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage = 2) => {
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const targetToken = await tokenInfoPromises[targetTokenId]
-    const stableToken = await tokenInfoPromises[stableTokenId]
-    const dexagPrice = await getDexagPrice(stableToken.symbol, targetToken.symbol)
+  const isPriceReasonable = async (targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
+    const dexagPrice = await getDexagPrice(stableTokenData.symbol, targetTokenData.symbol)
     if (dexagPrice === undefined) {
       console.log("Warning: could not perform price check against dex.ag.")
       return false
@@ -132,8 +127,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         acceptedPriceDeviationInPercentage,
         "percent from the price found on dex.ag."
       )
-      console.log("         chosen price:", price, stableToken.symbol, "bought for 1", targetToken.symbol)
-      console.log("         dex.ag price:", dexagPrice, stableToken.symbol, "bought for 1", targetToken.symbol)
+      console.log("         chosen price:", price, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
+      console.log("         dex.ag price:", dexagPrice, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
       return false
     }
     return true
