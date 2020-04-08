@@ -7,4 +7,4 @@ RUN yarn && yarn global add truffle && yarn cache clean
 
 COPY . .
 
-CMD ["sh", "-c"]
+ENTRYPOINT ["bash", "-c"]

@@ -33,5 +33,5 @@ This service requires a service that runs a script every 5 minutes. We have conf
 
 ```sh
 docker build -t gnosispm/dex-liquidity-provision .
-docker run -e PK=$YOUR_PRIVATE_KEY -t gnosispm/dex-liquidity-provision:latest truffle exec scripts/synthetix/facilicate_trade.js --network rinkeby
+docker run -e PK=$YOUR_PRIVATE_KEY -t gnosispm/dex-liquidity-provision:latest "truffle exec scripts/synthetix/facilicate_trade.js --network rinkeby"
 ```
