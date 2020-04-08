@@ -45,5 +45,8 @@
     "synthetix-js": "^2.21.6",
     "truffle": "^5.1.18",
     "truffle-plugin-verify": "^0.3.10"
+  },
+  "resolutions": {
+    "bitcore-lib": "8.1.1"
   }
 }
