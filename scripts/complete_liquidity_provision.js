@@ -73,8 +73,10 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const { instance: targetToken, decimals: targetTokenDecimals } = await tokenInfoPromises[targetTokenId]
-    const { instance: stableToken, decimals: stableTokenDecimals } = await tokenInfoPromises[stableTokenId]
+    const targetTokenData = await tokenInfoPromises[targetTokenId]
+    const stableTokenData = await tokenInfoPromises[stableTokenId]
+    const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
+    const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
 
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
@@ -89,7 +91,7 @@ module.exports = async callback => {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
+    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
