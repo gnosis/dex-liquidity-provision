@@ -33,8 +33,9 @@ const sUSDByNetwork = {
 module.exports = async callback => {
   try {
     const networkId = await web3.eth.net.getId()
-    const defaultAccount = (await web3.eth.getAccounts())[0]
 
+    const account = (await web3.eth.getAccounts())[0]
+    console.log("Using account", account)
     const snxjs = new SynthetixJs({ networkId: networkId })
     const exchange = await getExchange(web3)
 
@@ -59,11 +60,11 @@ module.exports = async callback => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
-    const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
+    const [buyETHAmount, sellSUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
+    const [sellETHAmount, buySUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
 
-    const buyAmounts = [lowerBuyAmount, upperBuyAmount]
-    const sellAmounts = [lowerSellAmount, upperSellAmount]
+    const buyAmounts = [buyETHAmount, buySUSDAmount]
+    const sellAmounts = [sellSUSDAmount, sellETHAmount]
 
     // Fetch auction index and declare validity interval for orders.
     // Note that order validity interval is inclusive on both sides.
@@ -76,7 +77,7 @@ module.exports = async callback => {
     const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
-      from: defaultAccount,
+      from: account,
     })
     callback()
   } catch (error) {
