@@ -3,7 +3,15 @@ const assert = require("assert")
 const Contract = require("@truffle/contract")
 const { prepareTokenRegistration } = require("./test-utils")
 const { toErc20Units } = require("../scripts/utils/printing_tools")
-const { getOutputAmountFromPrice, isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
+const { getOutputAmountFromPrice, getUnlimitedOrderAmounts, isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
+
+const max128 = new BN(2).pow(new BN(128)).subn(1)
+const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
+
+const assertEqualUpToFloatPrecision = function (value, expected) {
+  const differenceFromExpected = value.sub(expected).abs()
+  assert(differenceFromExpected.mul(floatTolerance).lt(expected))
+}
 
 describe("getOutputAmountFromPrice", () => {
   it("computes the right output amount", () => {
@@ -44,16 +52,76 @@ describe("getOutputAmountFromPrice", () => {
         expectedOutputAmountString: "10.1",
       },
     ]
-    const tolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
     for (const { price, inputAmountString, inputDecimals, outputDecimals, expectedOutputAmountString } of testCases) {
       const inputAmount = toErc20Units(inputAmountString, inputDecimals)
       const expectedOutputAmount = toErc20Units(expectedOutputAmountString, outputDecimals)
       const outputAmount = getOutputAmountFromPrice(price, inputAmount, inputDecimals, outputDecimals)
-      const differenceFromExpected = outputAmount.sub(expectedOutputAmount).abs()
-      assert(differenceFromExpected.mul(tolerance).lt(expectedOutputAmount))
+      assertEqualUpToFloatPrecision(outputAmount, expectedOutputAmount)
     }
   })
 })
+
+describe("getUnlimitedOrderAmounts", () => {
+  it("computes the amounts needed to set up an unlimited order", () => {
+    const testCases = [
+      {
+        price: 160,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.divn(160),
+      },
+      {
+        price: 1/160,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128.divn(160),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 1,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 1+Number.EPSILON,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.sub(new BN(2).pow(new BN(128-52))),
+      },
+      {
+        price: 1-Number.EPSILON,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128.sub(new BN(2).pow(new BN(128-52))),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 100,
+        stableTokenDecimals: 165,
+        targetTokenDecimals: 200,
+        expectedStableTokenAmount: max128.div(new BN(10).pow(new BN(200-165-2))),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 100,
+        stableTokenDecimals: 200,
+        targetTokenDecimals: 165,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.div(new BN(10).pow(new BN(200-165+2))),
+      },
+    ]
+    for (const { price, stableTokenDecimals, targetTokenDecimals, expectedStableTokenAmount, expectedTargetTokenAmount } of testCases) {
+      const [stableTokenAmount, targetTokenAmount] = getUnlimitedOrderAmounts(price, stableTokenDecimals, targetTokenDecimals)
+      assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
+      assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
+    }
+  })
+})
+
 
 contract("PriceOracle", function(accounts) {
   describe("Price oracle sanity check", async () => {
