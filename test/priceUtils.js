@@ -1,7 +1,59 @@
+const BN = require("bn.js")
 const assert = require("assert")
 const Contract = require("@truffle/contract")
 const { prepareTokenRegistration } = require("./test-utils")
-const { isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
+const { toErc20Units } = require("../scripts/utils/printing_tools")
+const { getOutputAmountFromPrice, isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
+
+describe("getOutputAmountFromPrice", () => {
+  it("computes the right output amount", () => {
+    const testCases = [
+      {
+        price: 160,
+        inputAmountString: "1",
+        inputDecimals: 18,
+        outputDecimals: 6,
+        expectedOutputAmountString: "160",
+      },
+      {
+        price: 1/160,
+        inputAmountString: "160",
+        inputDecimals: 6,
+        outputDecimals: 18,
+        expectedOutputAmountString: "1",
+      },
+      {
+        price: 0.000125,
+        inputAmountString: "8000",
+        inputDecimals: 8,
+        outputDecimals: 18,
+        expectedOutputAmountString: "1",
+      },
+      {
+        price: 10**30,
+        inputAmountString: "0.000000000000000000000001", // 10**-24
+        inputDecimals: 100,
+        outputDecimals: 1,
+        expectedOutputAmountString: "1000000",
+      },
+      {
+        price: 10.1,
+        inputAmountString: "1",
+        inputDecimals: 0,
+        outputDecimals: 70,
+        expectedOutputAmountString: "10.1",
+      },
+    ]
+    const tolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
+    for (const { price, inputAmountString, inputDecimals, outputDecimals, expectedOutputAmountString } of testCases) {
+      const inputAmount = toErc20Units(inputAmountString, inputDecimals)
+      const expectedOutputAmount = toErc20Units(expectedOutputAmountString, outputDecimals)
+      const outputAmount = getOutputAmountFromPrice(price, inputAmount, inputDecimals, outputDecimals)
+      const differenceFromExpected = outputAmount.sub(expectedOutputAmount).abs()
+      assert(differenceFromExpected.mul(tolerance).lt(expectedOutputAmount))
+    }
+  })
+})
 
 contract("PriceOracle", function(accounts) {
   describe("Price oracle sanity check", async () => {

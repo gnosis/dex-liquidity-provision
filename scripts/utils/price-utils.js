@@ -2,6 +2,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
+  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
 
@@ -139,9 +140,28 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return true
   }
 
+  /**
+   * Computes the amount of output token units from their price and the amount of input token units
+   * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
+   * @param {number} price amount of output token in exchange for one input token
+   * @param {BN} inputTokenAmount amount of token units that are exchanged at price
+   * @param {integer} inputDecimals number of decimals of the input token
+   * @param {integer} outputDecimals number of decimals of the output token
+   * @return {BN} amount of output token units obtained
+   */
+  const getOutputAmountFromPrice = function(price, inputAmount, inputDecimals, outputDecimals) {
+    const priceFraction = Fraction.fromNumber(price)
+    const unitPriceFraction = priceFraction.mul(
+      new Fraction(new BN(10).pow(new BN(outputDecimals)), new BN(10).pow(new BN(inputDecimals)))
+    )
+    const outputAmountFraction = unitPriceFraction.mul(new Fraction(inputAmount, 1))
+    return outputAmountFraction.toBN()
+  }
+
   return {
     isPriceReasonable,
     areBoundsReasonable,
     checkCorrectnessOfDeposits,
+    getOutputAmountFromPrice,
   }
 }
