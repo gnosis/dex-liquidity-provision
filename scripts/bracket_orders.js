@@ -1,4 +1,7 @@
-const { getExchange, getSafe, buildOrders } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = require("./utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price-utils.js")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user-interface-helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
@@ -59,7 +62,10 @@ module.exports = async callback => {
     // check price against dex.ag's API
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
+    const targetTokenData = await tokenInfoPromises[targetTokenId]
+    const stableTokenData = await tokenInfoPromises[stableTokenId]
+    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
     const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
