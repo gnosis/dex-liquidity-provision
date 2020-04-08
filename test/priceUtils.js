@@ -7,12 +7,8 @@ contract("PriceOracle", function() {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const targetTokenData = {
-        symbol: "WETH"
-      }
-      const stableTokenData = {
-        symbol: "DAI"
-      }
+      const targetTokenData = { symbol: "WETH" }
+      const stableTokenData = { symbol: "DAI" }
       assert(await isPriceReasonable(targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage))
     })
   })
