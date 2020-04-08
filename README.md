@@ -26,3 +26,12 @@ npx truffle test
 ```
 
 Use scripts as described in `scripts/README.md`.
+
+## Synthetix Spread Orders
+
+This service requires a service that runs a script every 5 minutes. We have configured this to run inside a Docker container that can be interacted with as follows:
+
+```sh
+docker build -t gnosispm/dex-liquidity-provision .
+docker run -e PK=$YOUR_PRIVATE_KEY -t gnosispm/dex-liquidity-provision:latest truffle exec scripts/synthetix/facilicate_trade.js --network rinkeby
+```
