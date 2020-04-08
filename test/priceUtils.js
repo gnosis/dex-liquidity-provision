@@ -112,7 +112,7 @@ contract("PriceOracle", function(accounts) {
         {
           // order is profitable for others
           user: "0x4c7281e2bd549a0aea492b28ef60e3d81fed36e6",
-          sellTokenBalance: new BN("10eed9efc"),
+          sellTokenBalance: new BN("24719283572357"),
           buyToken: DAItokenId, // buy and sell tokens are changed in comparison to previous example
           sellToken: USDCtokenId,
           priceNumerator: new BN("99").mul(new BN(10).pow(new BN(18))),
