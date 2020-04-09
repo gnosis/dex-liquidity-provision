@@ -208,7 +208,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
 
     // checks whether the order amount is negligible
-    if (Math.floor(await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)) < 1) {
+    if ((await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)).lt(new BN("1"))) {
       return true
     }
 
@@ -225,12 +225,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
     const currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol, globalPriceStorage)
 
-    return fromErc20Units(
-      toErc20Units(currentMarketPrice, precisionDecimals)
-        .mul(order.sellTokenBalance)
-        .div(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))),
-      precisionDecimals
-    )
+    return Fraction.fromNumber(parseFloat(currentMarketPrice))
+      .mul(new Fraction(order.sellTokenBalance, new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))))
+      .toBN()
   }
 
   return {
