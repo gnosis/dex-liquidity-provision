@@ -212,7 +212,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       return true
     }
 
-    const marketPrice = getUnitPrice(parseInt(currentMarketPrice), (await tokenInfo[order.sellToken]).decimals, (await tokenInfo[order.buyToken]).decimals)
+    const marketPrice = getUnitPrice(parseFloat(currentMarketPrice), (await tokenInfo[order.sellToken]).decimals, (await tokenInfo[order.buyToken]).decimals)
     const orderPrice = new Fraction(order.priceNumerator, order.priceDenominator)
 
     return marketPrice.lt(orderPrice)
