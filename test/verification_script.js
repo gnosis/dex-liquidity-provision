@@ -107,7 +107,7 @@ contract("verification checks - for allowances", async accounts => {
   })
 })
 
-contract("Verification checks", function(accounts) {
+contract.only("Verification checks", function(accounts) {
   let exchange
   let lw
   let gnosisSafeMasterCopy

@@ -28,7 +28,7 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    await verifyCorrectSetup(argv.brackets, argv.masterSafe, argv.allowanceExceptions)
+    await verifyCorrectSetup(argv.brackets, argv.masterSafe, argv.allowanceExceptions, {}, true)
     callback()
   } catch (error) {
     callback(error)

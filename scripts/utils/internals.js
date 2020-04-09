@@ -1,6 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
+  const IProxy = artifacts.require("IProxy")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const MultiSend = artifacts.require("MultiSend")
@@ -187,13 +188,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   const getMasterCopy = async function(safeAddress) {
-    return new Promise(function(resolve, reject) {
-      web3.eth.getStorageAt(safeAddress, 0, (err, resp) => {
-        if (err) return reject(err)
-        resolve("0x" + resp.slice(2))
-      })
-    })
+    const safe = await IProxy.at(safeAddress)
+    return safe.masterCopy()
   }
+
   return {
     waitForNSeconds,
     getMasterCopy,

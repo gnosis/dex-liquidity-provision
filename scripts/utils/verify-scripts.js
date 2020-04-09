@@ -65,6 +65,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     log("2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
+        console.log((await getMasterCopy(bracketTrader)).toString().toLowerCase())
         assert.equal(
           (await getMasterCopy(bracketTrader)).toString().toLowerCase(),
           gnosisSafe.address.toString().toLowerCase(),
