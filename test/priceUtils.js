@@ -1,11 +1,9 @@
 const assert = require("assert")
-<<<<<<< HEAD
 const BN = require("bn.js")
 
 const Contract = require("@truffle/contract")
-const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
+const { addCustomMintableTokenToExchange } = require("./test-utils")
 const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price-utils")(web3, artifacts)
-const ERC20 = artifacts.require("DetailedMintableToken")
 contract("PriceOracle", function(accounts) {
   let exchange
   beforeEach(async function() {
@@ -19,24 +17,6 @@ contract("PriceOracle", function(accounts) {
   describe("Price oracle sanity check", async () => {
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990)", async () => {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
-
-      const token1 = await ERC20.new("WETH", 18)
-      const token2 = await ERC20.new("DAI", 18)
-
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token1.address, { from: accounts[0] })
-      await prepareTokenRegistration(accounts[0], exchange)
-      await exchange.addToken(token2.address, { from: accounts[0] })
-      const targetTokenId = 1
-      const stableTokenId = 2
-=======
-const { isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
-
-contract("PriceOracle", function() {
-  describe("Price oracle sanity check", async () => {
-    it("checks that price is within reasonable range (10 ≤ price ≤ 1990)", async () => {
-      //the following test especially checks that the price p is not inverted (1/p) and is not below 1
->>>>>>> master
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
       const targetTokenData = { symbol: "WETH" }

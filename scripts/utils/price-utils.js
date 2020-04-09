@@ -2,7 +2,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
   const precisionDecimals = 20
-
+  const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { toErc20Units, fromErc20Units } = require("./printing_tools")
 
