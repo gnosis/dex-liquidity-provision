@@ -577,6 +577,47 @@ withdrawal of the desired funds
     return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
   }
 
+  const getAllowances = async function(owner, tokenInfo) {
+    const allowances = {}
+    await Promise.all(
+      Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
+        const token = (await tokenData).instance
+        const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
+        const spenders = allElementsOnlyOnce(eventList.map(event => event.returnValues.spender))
+        const tokenAllowances = {}
+        // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
+        await Promise.all(
+          spenders.map(async spender => {
+            tokenAllowances[spender] = await token.allowance(owner, spender)
+          })
+        )
+        allowances[tokenAddress] = tokenAllowances
+      })
+    )
+    return allowances
+  }
+
+  const assertNoAllowances = async function(address, tokenInfo, exceptions = []) {
+    const allowances = await getAllowances(address, tokenInfo)
+    for (const [tokenAddress, tokenAllowances] of Object.entries(allowances)) {
+      for (const spender in tokenAllowances) {
+        if (!exceptions.includes(spender))
+          assert.equal(
+            tokenAllowances[spender].toString(),
+            "0",
+            address +
+              " allows address " +
+              spender +
+              " to spend " +
+              (await tokenInfo[tokenAddress]).symbol +
+              " (amount: " +
+              fromErc20Units(tokenAllowances[spender], (await tokenInfo[tokenAddress]).decimals) +
+              ")"
+          )
+      }
+    }
+  }
+
   return {
     getSafe,
     getExchange,
@@ -595,6 +636,8 @@ withdrawal of the desired funds
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
     isOnlySafeOwner,
+    getAllowances,
+    assertNoAllowances,
     maxU32,
     maxUINT,
     ADDRESS_0,
