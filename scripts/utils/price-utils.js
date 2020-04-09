@@ -180,5 +180,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     checkCorrectnessOfDeposits,
     getOutputAmountFromPrice,
     getUnlimitedOrderAmounts,
+    max128,
   }
 }

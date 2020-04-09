@@ -18,7 +18,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
-  const max128 = new BN(2).pow(new BN(128)).subn(1)
   const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
   /**
@@ -588,7 +587,6 @@ withdrawal of the desired funds
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
     isOnlySafeOwner,
-    max128,
     maxU32,
     maxUINT,
     ADDRESS_0,
