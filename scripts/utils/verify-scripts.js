@@ -77,13 +77,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       bracketTraderAddresses.map(async bracketTrader => {
         const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
 
-        // Checks that selling an initial amount and then re-buying it with the second order is profitable.
+        // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
         const initialAmount = toErc20Units(1, 18)
         const amountAfterSelling = initialAmount.mul(relevantOrders[0].priceNumerator).div(relevantOrders[0].priceDenominator)
         const amountAfterBuying = amountAfterSelling
           .mul(relevantOrders[1].priceNumerator)
           .div(relevantOrders[1].priceDenominator)
-        assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
+
+        assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
         // If the last equation holds, the inverse trade must be profitable as well
       })
     )

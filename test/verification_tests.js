@@ -95,9 +95,31 @@ contract("Verification scripts", function(accounts) {
         message: "order length is not correct",
       })
     })
-    // describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
-    //   it("throws if the proxy contract is not gnosis safe template", async () => {})
-    // })
+    describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
+      it("throws if the proxy contract is not gnosis safe template", async () => {
+        const masterSafe = await GnosisSafe.at(
+          await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+        )
+        const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
+        const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+        const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+        const lowestLimit = 90
+        const highestLimit = 120
+        //first round of order building
+        const transaction = await buildOrders(
+          masterSafe.address,
+          bracketAddresses,
+          targetToken.id,
+          stableToken.id,
+          highestLimit, // <-- highest and lowest price are switched
+          lowestLimit
+        )
+        await execTransaction(masterSafe, lw, transaction)
+        await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, []), {
+          message: "Brackets are not profitable",
+        })
+      })
+    })
     describe("5 constraint: Throws if there are profitable orders", async () => {
       it("throws if there are profitable orders", async () => {
         const masterSafe = await GnosisSafe.at(
