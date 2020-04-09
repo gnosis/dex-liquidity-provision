@@ -1,7 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
   const Contract = require("@truffle/contract")
-
+  const BN = require("bn.js")
   const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances } = require("./trading_strategy_helpers")(
     web3,
     artifacts
@@ -82,19 +82,17 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
 
     log("4. Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
-    await Promise.all(
-      bracketTraderAddresses.map(async bracketTrader => {
-        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+    for (const bracketTrader of bracketTraderAddresses) {
+      const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
-        // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
-        const initialAmount = toErc20Units(1, 50)
-        const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
-        const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
+      // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
+      const initialAmount = new BN(10).pow(new BN(50))
+      const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
+      const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
 
-        assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
-        // If the last equation holds, the inverse trade must be profitable as well
-      })
-    )
+      assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
+      // If the last equation holds, the inverse trade must be profitable as well
+    }
 
     log("5. Verify that no bracket-trader offers profitable orders")
     for (const order of relevantOrders) {
