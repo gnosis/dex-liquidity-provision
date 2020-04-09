@@ -13,7 +13,15 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const pageSize = 50
   const assert = require("assert")
 
-  const verifyCorrectSetup = async function(brackets, masterSafe, allowanceExceptions, globalPriceStorage = {}) {
+  const verifyCorrectSetup = async function(
+    brackets,
+    masterSafe,
+    allowanceExceptions,
+    globalPriceStorage = {},
+    logActivated = false
+  ) {
+    const log = logActivated ? (...a) => console.log(...a) : () => {}
+
     const BatchExchangeArtifact = require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange")
     const networkId = await web3.eth.net.getId()
     const BatchExchange = new web3.eth.Contract(BatchExchangeArtifact.abi, BatchExchangeArtifact.networks[networkId].address)
@@ -21,7 +29,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, pageSize)
     const bracketTraderAddresses = brackets.map(address => address.toLowerCase())
 
-    // fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const gnosisSafe = await GnosisSafe.deployed()
+
+    // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchangeContract.setNetwork(web3.network_id)
@@ -44,61 +55,57 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    // 1. verify that the owner of the brackets is the masterSafe
+    log("1. Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        assert(await isOnlySafeOwner(masterSafe, bracketTrader, artifacts), "owners are not set correctly")
+        assert(await isOnlySafeOwner(masterSafe, bracketTrader, artifacts), "Owners are not set correctly")
       })
     )
 
-    // 2. verify that all proxies of the brackets are pointing to the right gnosis-safe proxy:
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafe = await GnosisSafe.deployed()
+    log("2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        assert(await getMasterCopy(bracketTrader), gnosisSafe.address, "MasterCopy not set correctly")
+        assert.equal(
+          (await getMasterCopy(bracketTrader)).toString().toLowerCase(),
+          gnosisSafe.address.toString().toLowerCase(),
+          "MasterCopy not set correctly"
+        )
       })
     )
 
-    // 3. verify that each bracket has only two orders
+    log("3. Verify that each bracket has only two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
-        assert(relevantOrders.length == 2, "order length is not correct")
+        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+        assert(ownedOrders.length == 2, "order length is not correct")
       })
     )
 
-    // 4. verify that each bracket can not loose tokens by consecutive selling and buying via the two orders
+    log("4. Verify that each bracket can not loose tokens by consecutive selling and buying via the two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
+        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
-        // Checks that selling an initial amount and then re-buying it with the second order is profitable.
+        // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
         const initialAmount = toErc20Units(1, 18)
-        const amountAfterSelling = initialAmount.mul(relevantOrders[0].priceNumerator).div(relevantOrders[0].priceDenominator)
-        const amountAfterBuying = amountAfterSelling
-          .mul(relevantOrders[1].priceNumerator)
-          .div(relevantOrders[1].priceDenominator)
-        assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
+        const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
+        const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
+
+        assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
         // If the last equation holds, the inverse trade must be profitable as well
       })
     )
 
-    // 5. verify that no bracket-trader offers profitable orders
-    for (const bracketTrader of bracketTraderAddresses) {
-      const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
-      for (const order of relevantOrders) {
-        assert.equal(
-          await checkNoProfitableOffer(order, exchange, tokenInfo, globalPriceStorage),
-          true,
-          `The order ${order} of the bracket ${bracketTrader} is profitable`
-        )
-      }
+    log("5. Verify that no bracket-trader offers profitable orders")
+    for (const order of relevantOrders) {
+      assert(
+        await checkNoProfitableOffer(order, exchange, tokenInfo, globalPriceStorage),
+        `The order of the bracket ${order.user} is profitable`
+      )
     }
 
-    // 6. verify that no allowances are currently set
+    log("6. Verify that no allowances are currently set")
     await assertNoAllowances(masterSafe, tokenInfo, allowanceExceptions)
-    // TODO: test if following line can be parallelized with Infura
     for (const bracketTrader of bracketTraderAddresses) await assertNoAllowances(bracketTrader, tokenInfo)
   }
 
