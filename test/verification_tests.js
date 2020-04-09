@@ -1,40 +1,21 @@
 const assert = require("assert")
-const BN = require("bn.js")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
-const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
-const { prepareTokenRegistration, addCustomMintableTokenToExchange } = require("./test-utils")
-const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price-utils")(web3, artifacts)
-const ERC20 = artifacts.require("DetailedMintableToken")
 const { deploySafe } = require("./test-utils")
-const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-
-const assertThrows = require("assert-throws-async")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const {
-  fetchTokenInfoFromExchange,
-  fetchTokenInfoAtAddresses,
-  deployFleetOfSafes,
-  buildOrders,
-  buildTransferApproveDepositFromList,
-  buildTransferApproveDepositFromOrders,
-  buildRequestWithdraw,
-  buildWithdraw,
-  buildTransferFundsToMaster,
-  buildWithdrawAndTransferFundsToMaster,
-  isOnlySafeOwner,
-  max128,
-  maxU32,
-} = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const FleetFactory = artifacts.require("FleetFactory")
+const { verifyCorrectSetup } = require("../scripts/utils/verify-scripts")(web3, artifacts)
+const { addCustomMintableTokenToExchange } = require("./test-utils")
+const { deployFleetOfSafes, buildOrders } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
+const { execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 
 contract("Verification scripts", function(accounts) {
   let exchange
   let lw
   let gnosisSafeMasterCopy
   let proxyFactory
-  let fleetFactory
+  let targetToken
+  let stableToken
   beforeEach(async function() {
     // Create lightwallet
     // TODO - can we just use accounts provided by ganache?
@@ -42,43 +23,52 @@ contract("Verification scripts", function(accounts) {
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    fleetFactory = await FleetFactory.new(proxyFactory.address)
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
+
+    targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
+    stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+    await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
-  const { verifyCorrectSetup } = require("../scripts/utils/verify-scripts")(web3, artifacts)
-  const decodeCreateProxy = function(rawEvent) {
-    const { data, topics } = rawEvent
-    const eventSignature = web3.eth.abi.encodeEventSignature("ProxyCreation(address)")
-    assert.equal(topics[0], eventSignature, "Input raw event is not a CreateProxy event")
-    const decoded = web3.eth.abi.decodeLog(
-      [
-        {
-          type: "address",
-          name: "proxy",
-        },
-      ],
-      data,
-      topics
-    )
-    return decoded.proxy
-  }
   describe("1 constraint: Owner is master safe", async () => {
     it.only("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
-      const bracketAddresses = await deployFleetOfSafes(masterSafe, 1)
-
+      const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
+      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
+        message: "owners are not set correctly",
+      })
+    })
+  })
+  describe("2 constraint: Owner is master safe", async () => {
+    it("throws if the proxy contract is not gnosis safe template", async () => {
+      const notMasterCopy = await GnosisSafe.new()
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const notOwnedBracket = [
+        (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 2))).address,
+      ]
+      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
+        message: "MasterCopy not set correctly",
+      })
+    })
+  })
+  describe("3 constraint: Throws if a bracket does not have two orders", async () => {
+    it.only("throws if the proxy contract is not gnosis safe template", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
       const stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
-
       const lowestLimit = 90
       const highestLimit = 120
-
+      //first round of order building
       const transaction = await buildOrders(
         masterSafe.address,
         bracketAddresses,
@@ -88,18 +78,22 @@ contract("Verification scripts", function(accounts) {
         highestLimit
       )
       await execTransaction(masterSafe, lw, transaction)
-
-      //
-      await (await GnosisSafe.at(bracketAddresses[0])).assertThrows(
-        await verifyCorrectSetup(bracketAddresses, masterSafe, []),
-        "AssertionError [ERR_ASSERTION]: isOnlySafeOwner throws"
+      // second round of order building
+      const transaction2 = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
       )
+      await execTransaction(masterSafe, lw, transaction2)
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, []), {
+        message: "order length is not correct",
+      })
     })
-  })
-  describe("2 constraint: Owner is master safe", async () => {
-    it("throws if the proxy contract is not gnosis safe template", async () => {})
-  })
-  describe("3 constraint: Throws if two orders are profitable to trade against each other", async () => {
-    it("throws if the proxy contract is not gnosis safe template", async () => {})
+    describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
+      it("throws if the proxy contract is not gnosis safe template", async () => {})
+    })
   })
 })
