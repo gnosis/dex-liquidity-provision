@@ -21,11 +21,10 @@ const {
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   isOnlySafeOwner,
-  max128,
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits } = require("../scripts/utils/price-utils")(web3, artifacts)
+const { checkCorrectnessOfDeposits, max128 } = require("../scripts/utils/price-utils")(web3, artifacts)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
