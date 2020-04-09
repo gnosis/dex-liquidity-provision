@@ -162,7 +162,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     // checks whether the order amount is negligible
     if (Math.floor(await valueInUSD(order, tokenInfo, globalPriceStorage)) < 1) {
-      console.log("its getting here")
       return true
     }
 
@@ -171,8 +170,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       .mul(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
       .div(new BN(10).pow(new BN((await tokenInfo[order.buyToken]).decimals)))
       .div(order.priceDenominator)
-    console.log(marketPrice)
-    console.log(orderPrice)
 
     return marketPrice.lt(orderPrice)
   }

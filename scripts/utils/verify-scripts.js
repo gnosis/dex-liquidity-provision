@@ -21,6 +21,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, pageSize)
     const bracketTraderAddresses = brackets.map(address => address.toLowerCase())
 
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const gnosisSafe = await GnosisSafe.deployed()
+
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
@@ -52,8 +55,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
 
     // 2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy:
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafe = await GnosisSafe.deployed()
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         assert.equal(
@@ -67,22 +68,20 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // 3. Verify that each bracket has only two orders
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
-        assert(relevantOrders.length == 2, "order length is not correct")
+        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+        assert(ownedOrders.length == 2, "order length is not correct")
       })
     )
 
     // 4. Verify that each bracket can not loose tokens by consecutive selling and buying via the two orders
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
+        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
         // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
         const initialAmount = toErc20Units(1, 18)
-        const amountAfterSelling = initialAmount.mul(relevantOrders[0].priceNumerator).div(relevantOrders[0].priceDenominator)
-        const amountAfterBuying = amountAfterSelling
-          .mul(relevantOrders[1].priceNumerator)
-          .div(relevantOrders[1].priceDenominator)
+        const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
+        const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
 
         assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
         // If the last equation holds, the inverse trade must be profitable as well
@@ -90,14 +89,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
 
     // 5. Verify that no bracket-trader offers profitable orders
-    for (const bracketTrader of bracketTraderAddresses) {
-      const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
-      for (const order of relevantOrders) {
-        assert(
-          await checkNoProfitableOffer(order, exchange, globalPriceStorage),
-          `The order of the bracket ${bracketTrader} is profitable`
-        )
-      }
+    for (const order of relevantOrders) {
+      assert(
+        await checkNoProfitableOffer(order, exchange, globalPriceStorage),
+        `The order of the bracket ${order.user} is profitable`
+      )
     }
 
     // 6. Verify that no allowances are currently set
