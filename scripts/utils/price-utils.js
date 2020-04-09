@@ -1,8 +1,6 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
-  const precisionDecimals = 20
-  const { toErc20Units, fromErc20Units } = require("./printing_tools")
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
