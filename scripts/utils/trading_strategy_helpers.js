@@ -13,7 +13,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const fs = require("fs")
   const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  const { getUnlimitedOrderAmounts } = require("./price-utils")(web3, artifacts)
+  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
@@ -246,10 +247,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, stableToken, targetToken)
+        const [upperBuyAmount, upperSellAmount] = getUnlimitedOrderAmounts(upperLimit, stableToken.decimals, targetToken.decimals)
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, stableToken, targetToken)
+        const [lowerSellAmount, lowerBuyAmount] = getUnlimitedOrderAmounts(lowerLimit, stableToken.decimals, targetToken.decimals)
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
@@ -261,8 +262,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const sellTokens = [stableTokenId, targetTokenId]
         const validFroms = [validFromForAllOrders, validFromForAllOrders]
         const validTos = [expiry, expiry]
-        const buyAmounts = [lowerBuyAmount, upperBuyAmount]
-        const sellAmounts = [lowerSellAmount, upperSellAmount]
+        const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
+        const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
 
         const orderData = exchange.contract.methods
           .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
@@ -280,35 +281,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("Transaction bundle size", transactions.length)
     return buildBundledTransaction(transactions)
-  }
-
-  // TODO - pass stableTokenDecmials and targetTokenDecimals since these are the only attributes used here.
-  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
-    // decimalsForPrice: This number defines the rounding errors,
-    // Since we can accept similar rounding error as within the smart contract
-    // we set it to 38 = amount of digits of max128
-    const decimalsForPrice = 38
-    const roundedPrice = price.toFixed(decimalsForPrice)
-    const priceFormatted = toErc20Units(roundedPrice, decimalsForPrice)
-
-    const decimalsForOne = decimalsForPrice - stableToken.decimals + targetToken.decimals
-    const ONE = toErc20Units(1, decimalsForOne)
-    let sellAmount
-    let buyAmount
-    if (priceFormatted.gt(ONE)) {
-      sellAmount = max128
-        .mul(ONE)
-        .div(priceFormatted)
-        .toString()
-      buyAmount = max128.toString()
-    } else {
-      buyAmount = max128
-        .mul(priceFormatted)
-        .div(ONE)
-        .toString()
-      sellAmount = max128.toString()
-    }
-    return [sellAmount, buyAmount]
   }
 
   const checkSufficiencyOfBalance = async function(token, owner, amount) {
@@ -609,7 +581,6 @@ withdrawal of the desired funds
     buildWithdrawAndTransferFundsToMaster,
     buildBracketTransactionForTransferApproveDeposit,
     buildTransferApproveDepositFromOrders,
-    calculateBuyAndSellAmountsFromPrice,
     checkSufficiencyOfBalance,
     buildRequestWithdraw,
     buildWithdraw,
