@@ -212,11 +212,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       return true
     }
 
-    const marketPrice = toErc20Units(currentMarketPrice, precisionDecimals)
-    const orderPrice = toErc20Units(order.priceNumerator, precisionDecimals)
-      .mul(new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals)))
-      .div(new BN(10).pow(new BN((await tokenInfo[order.buyToken]).decimals)))
-      .div(order.priceDenominator)
+    const marketPrice = getUnitPrice(parseInt(currentMarketPrice), (await tokenInfo[order.sellToken]).decimals, (await tokenInfo[order.buyToken]).decimals)
+    const orderPrice = new Fraction(order.priceNumerator, order.priceDenominator)
 
     return marketPrice.lt(orderPrice)
   }
