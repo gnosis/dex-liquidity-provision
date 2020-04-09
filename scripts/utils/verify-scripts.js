@@ -94,7 +94,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       for (const order of relevantOrders) {
         assert(
           await checkNoProfitableOffer(order, exchange, globalPriceStorage),
-          `The order ${order} of the bracket ${bracketTrader} is profitable`
+          `The order of the bracket ${bracketTrader} is profitable`
         )
       }
     }
