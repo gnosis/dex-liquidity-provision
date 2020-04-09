@@ -155,7 +155,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return stableTokenAmountFraction.toBN()
   }
 
-
   /**
    * Computes the stable and target token amounts needed to set up an unlimited order in the exchange
    * @param {number} price amount of stable tokens in exchange for one target token
@@ -168,7 +167,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
     if (stableTokenAmount.gt(targetTokenAmount)) {
       stableTokenAmount = max128.clone()
-      targetTokenAmount = getOutputAmountFromPrice(1/price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
+      targetTokenAmount = getOutputAmountFromPrice(1 / price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
       assert(stableTokenAmount.gte(targetTokenAmount), "Error: unable to create unlimited order")
     }
     return [targetTokenAmount, stableTokenAmount]
