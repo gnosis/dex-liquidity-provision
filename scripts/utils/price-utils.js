@@ -155,19 +155,29 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   /**
+   * Midifies the price to work with ERC20 units
+   * @param {number} price amount of stable token in exchange for one target token
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @return {Fraction} fraction representing the amount of units of stable tokens in exchange for one unit of target token
+   */
+  const getUnitPrice = function(price, targetTokenDecimals, stableTokenDecimals) {
+    return Fraction.fromNumber(price).mul(
+      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
+    )
+  }
+
+  /**
    * Computes the amount of output token units from their price and the amount of input token units
    * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
-   * @param {number} price amount of output token in exchange for one input token
-   * @param {BN} targetTokenAmount amount of token units that are exchanged at price
-   * @param {integer} targetTokenDecimals number of decimals of the input token
-   * @param {integer} stableTokenDecimals number of decimals of the output token
+   * @param {number} price amount of stable token in exchange for one target token
+   * @param {BN} targetTokenAmount amount of target token units that are exchanged at price
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
    * @return {BN} amount of output token units obtained
    */
   const getOutputAmountFromPrice = function(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
-    const priceFraction = Fraction.fromNumber(price)
-    const unitPriceFraction = priceFraction.mul(
-      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
-    )
+    const unitPriceFraction = getUnitPrice(price, targetTokenDecimals, stableTokenDecimals)
     const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
     return stableTokenAmountFraction.toBN()
   }
