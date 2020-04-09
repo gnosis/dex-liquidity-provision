@@ -1,9 +1,142 @@
-const assert = require("assert")
 const BN = require("bn.js")
-
 const Contract = require("@truffle/contract")
+const assert = require("assert")
+const { toErc20Units } = require("../scripts/utils/printing_tools")
 const { addCustomMintableTokenToExchange } = require("./test-utils")
-const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price-utils")(web3, artifacts)
+const {
+  getOutputAmountFromPrice,
+  getUnlimitedOrderAmounts,
+  isPriceReasonable,
+  checkNoProfitableOffer,
+} = require("../scripts/utils/price-utils")(web3, artifacts)
+const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
+
+const max128 = new BN(2).pow(new BN(128)).subn(1)
+const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
+
+const assertEqualUpToFloatPrecision = function(value, expected) {
+  const differenceFromExpected = value.sub(expected).abs()
+  assert(differenceFromExpected.mul(floatTolerance).lt(expected))
+}
+
+describe("getOutputAmountFromPrice", () => {
+  it("computes the right output amount", () => {
+    const testCases = [
+      {
+        price: 160,
+        inputAmountString: "1",
+        inputDecimals: 18,
+        outputDecimals: 6,
+        expectedOutputAmountString: "160",
+      },
+      {
+        price: 1 / 160,
+        inputAmountString: "160",
+        inputDecimals: 6,
+        outputDecimals: 18,
+        expectedOutputAmountString: "1",
+      },
+      {
+        price: 0.000125,
+        inputAmountString: "8000",
+        inputDecimals: 8,
+        outputDecimals: 18,
+        expectedOutputAmountString: "1",
+      },
+      {
+        price: 10 ** 30,
+        inputAmountString: "0.000000000000000000000001", // 10**-24
+        inputDecimals: 100,
+        outputDecimals: 1,
+        expectedOutputAmountString: "1000000",
+      },
+      {
+        price: 10.1,
+        inputAmountString: "1",
+        inputDecimals: 0,
+        outputDecimals: 70,
+        expectedOutputAmountString: "10.1",
+      },
+    ]
+    for (const { price, inputAmountString, inputDecimals, outputDecimals, expectedOutputAmountString } of testCases) {
+      const inputAmount = toErc20Units(inputAmountString, inputDecimals)
+      const expectedOutputAmount = toErc20Units(expectedOutputAmountString, outputDecimals)
+      const outputAmount = getOutputAmountFromPrice(price, inputAmount, inputDecimals, outputDecimals)
+      assertEqualUpToFloatPrecision(outputAmount, expectedOutputAmount)
+    }
+  })
+})
+
+describe("getUnlimitedOrderAmounts", () => {
+  it("computes the amounts needed to set up an unlimited order", () => {
+    const testCases = [
+      {
+        price: 160,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.divn(160),
+      },
+      {
+        price: 1 / 160,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128.divn(160),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 1,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 1 + Number.EPSILON,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+      },
+      {
+        price: 1 - Number.EPSILON,
+        stableTokenDecimals: 18,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 100,
+        stableTokenDecimals: 165,
+        targetTokenDecimals: 200,
+        expectedStableTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 - 2))),
+        expectedTargetTokenAmount: max128,
+      },
+      {
+        price: 100,
+        stableTokenDecimals: 200,
+        targetTokenDecimals: 165,
+        expectedStableTokenAmount: max128,
+        expectedTargetTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 + 2))),
+      },
+    ]
+    for (const {
+      price,
+      stableTokenDecimals,
+      targetTokenDecimals,
+      expectedStableTokenAmount,
+      expectedTargetTokenAmount,
+    } of testCases) {
+      const [targetTokenAmount, stableTokenAmount] = getUnlimitedOrderAmounts(price, targetTokenDecimals, stableTokenDecimals)
+      assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
+      assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
+    }
+  })
+})
+
 contract("PriceOracle", function(accounts) {
   let exchange
   beforeEach(async function() {
@@ -52,12 +185,13 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["WETH-DAI"] = 1 / 120.0
       globalPriceStorage["WETH-USDC"] = 1 / 120.0
 
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage), true)
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
       const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
@@ -87,9 +221,10 @@ contract("PriceOracle", function(accounts) {
       const globalPriceStorage = {}
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
+      assert.equal(await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage), true)
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
@@ -123,13 +258,14 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
 
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
         false,
         "Price should have been profitable for others"
       )
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
