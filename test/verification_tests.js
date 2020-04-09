@@ -143,6 +143,6 @@ contract("Verification scripts", function(accounts) {
     //       message: "tbd",
     //     })
     //   })
-    })
+    // })
   })
 })
