@@ -214,7 +214,7 @@ contract.only("Verification checks", function(accounts) {
     })
   })
   describe("5 Check: Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
-    it.only("throws if there are profitable orders", async () => {
+    it("throws if there are profitable orders", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
