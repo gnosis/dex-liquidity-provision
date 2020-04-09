@@ -78,7 +78,7 @@ module.exports = async callback => {
 
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
-      gasPrice: 8 * 1e9 // If only there was some way to access `gasPriceGWei` as declared in truffle-config
+      gasPrice: 8 * 1e9, // If only there was some way to access `gasPriceGWei` as declared in truffle-config
     })
     callback()
   } catch (error) {
