@@ -44,20 +44,20 @@ contract("Verification scripts", function(accounts) {
       })
     })
   })
-  // describe("2 constraint: Owner is master safe", async () => {
-  //   it("throws if the proxy contract is not gnosis safe template", async () => {
-  //     const notMasterCopy = await GnosisSafe.new()
-  //     const masterSafe = await GnosisSafe.at(
-  //       await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-  //     )
-  //     const notOwnedBracket = [
-  //       (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 2))).address,
-  //     ]
-  //     await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
-  //       message: "MasterCopy not set correctly",
-  //     })
-  //   })
-  // })
+  describe("2 constraint: MasterCopy is usual GnosisSafeMasterCopy", async () => {
+    it.only("throws if the proxy contract is not gnosis safe template", async () => {
+      const notMasterCopy = await GnosisSafe.new()
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const notOwnedBracket = [
+        (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 1))).address,
+      ]
+      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
+        message: "MasterCopy not set correctly",
+      })
+    })
+  })
   describe("3 constraint: Throws if a bracket does not have two orders", async () => {
     it("throws if the proxy contract is not gnosis safe template", async () => {
       const masterSafe = await GnosisSafe.at(

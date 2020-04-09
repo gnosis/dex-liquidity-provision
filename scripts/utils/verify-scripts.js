@@ -56,7 +56,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const gnosisSafe = await GnosisSafe.deployed()
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        assert(await getMasterCopy(bracketTrader), gnosisSafe.address, "MasterCopy not set correctly")
+        assert.strictEqual(await getMasterCopy(bracketTrader), gnosisSafe.address, "MasterCopy not set correctly")
       })
     )
 
