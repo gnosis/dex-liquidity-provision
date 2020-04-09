@@ -153,7 +153,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Midifies the price to work with ERC20 units
+   * Modifies the price to work with ERC20 units
    * @param {number} price amount of stable token in exchange for one target token
    * @param {integer} targetTokenDecimals number of decimals of the target token
    * @param {integer} stableTokenDecimals number of decimals of the stable token
