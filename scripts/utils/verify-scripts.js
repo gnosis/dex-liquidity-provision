@@ -89,7 +89,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
       for (const order of relevantOrders) {
         assert.equal(
-          await checkNoProfitableOffer(order, exchange, globalPriceStorage),
+          await checkNoProfitableOffer(order, exchange, tokenInfo, globalPriceStorage),
           true,
           `The order ${order} of the bracket ${bracketTrader} is profitable`
         )

@@ -9,6 +9,10 @@ const {
   isPriceReasonable,
   checkNoProfitableOffer,
 } = require("../scripts/utils/price-utils")(web3, artifacts)
+const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 
 const max128 = new BN(2).pow(new BN(128)).subn(1)
 const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
@@ -182,12 +186,13 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["WETH-DAI"] = 1 / 120.0
       globalPriceStorage["WETH-USDC"] = 1 / 120.0
 
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage), true)
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
       const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
@@ -217,9 +222,10 @@ contract("PriceOracle", function(accounts) {
       const globalPriceStorage = {}
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage), true)
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
+      assert.equal(await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage), true)
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
@@ -253,13 +259,14 @@ contract("PriceOracle", function(accounts) {
       globalPriceStorage["USDC-USDC"] = 1.0
       globalPriceStorage["DAI-USDC"] = 1.0
 
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
         false,
         "Price should have been profitable for others"
       )
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
