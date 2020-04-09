@@ -9,10 +9,7 @@ const {
   isPriceReasonable,
   checkNoProfitableOffer,
 } = require("../scripts/utils/price-utils")(web3, artifacts)
-const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(
-  web3,
-  artifacts
-)
+const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 const max128 = new BN(2).pow(new BN(128)).subn(1)
 const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision

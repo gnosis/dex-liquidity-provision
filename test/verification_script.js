@@ -74,12 +74,8 @@ contract("verification checks - for allowances", async accounts => {
       const allowedTokenAddress = Object.keys(tokenInfo)[0]
       const token = tokenInfo[allowedTokenAddress].instance
       await token.approve(spender, amount, { from: owner })
-      let hasThrown = false
-      try {
-        await assertNoAllowances(owner, tokenInfo)
-      } catch (error) {
-        assert.equal(
-          error.message,
+      await assert.rejects(assertNoAllowances(owner, tokenInfo), {
+        message:
           owner +
           " allows address " +
           spender +
@@ -87,12 +83,8 @@ contract("verification checks - for allowances", async accounts => {
           "TEST1" +
           " (amount: " +
           "10" + // token has 1 decimal
-            ")",
-          "Assertion was triggered for different reasons than expected"
-        )
-        hasThrown = true
-      }
-      assert(hasThrown, "Nonzero allowance did not cause assertion to fail")
+          ")",
+      })
     })
     it("do not trigger assertion if address is an exception", async () => {
       const owner = accounts[1]
