@@ -190,7 +190,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return new Promise(function(resolve, reject) {
       web3.eth.getStorageAt(safeAddress, 0, (err, resp) => {
         if (err) return reject(err)
-        resolve("0x" + resp.slice(26))
+        resolve("0x" + resp.slice(2))
       })
     })
   }

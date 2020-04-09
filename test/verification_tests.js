@@ -1,4 +1,5 @@
 const assert = require("assert")
+const BN = require("bn.js")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const Contract = require("@truffle/contract")
 const { deploySafe } = require("./test-utils")
@@ -6,7 +7,11 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const { verifyCorrectSetup } = require("../scripts/utils/verify-scripts")(web3, artifacts)
 const { addCustomMintableTokenToExchange } = require("./test-utils")
-const { deployFleetOfSafes, buildOrders } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
+const {
+  deployFleetOfSafes,
+  buildOrders,
+  buildTransferApproveDepositFromOrders,
+} = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 
 contract("Verification scripts", function(accounts) {
@@ -45,14 +50,12 @@ contract("Verification scripts", function(accounts) {
     })
   })
   describe("2 constraint: MasterCopy is usual GnosisSafeMasterCopy", async () => {
-    it.only("throws if the proxy contract is not gnosis safe template", async () => {
+    it("throws if the proxy contract is not gnosis safe template", async () => {
       const notMasterCopy = await GnosisSafe.new()
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
-      const notOwnedBracket = [
-        (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 1))).address,
-      ]
+      const notOwnedBracket = [(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 1)).toLowerCase()]
       await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
         message: "MasterCopy not set correctly",
       })
@@ -95,5 +98,51 @@ contract("Verification scripts", function(accounts) {
     // describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
     //   it("throws if the proxy contract is not gnosis safe template", async () => {})
     // })
+    // describe("5 constraint: Throws if there are profitable orders", async () => {
+    //   it.only("throws if there are profitable orders", async () => {
+    //     const masterSafe = await GnosisSafe.at(
+    //       await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+    //     )
+    //     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
+    //     const targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
+    //     const stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+    //     const lowestLimit = 90
+    //     const highestLimit = 120
+    //     const currentPrice = 100
+    //     const investmentStableToken = new BN("1100000000000000000000")
+    //     const investmentTargetToken = new BN("1100000000000000000000")
+    //     //first round of order building
+    //     const transaction = await buildOrders(
+    //       masterSafe.address,
+    //       bracketAddresses,
+    //       targetToken,
+    //       stableToken,
+    //       lowestLimit,
+    //       highestLimit
+    //     )
+    //     await execTransaction(masterSafe, lw, transaction)
+    //     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
+    //       masterSafe.address,
+    //       bracketAddresses,
+    //       targetToken.address,
+    //       stableToken.address,
+    //       lowestLimit,
+    //       highestLimit,
+    //       currentPrice,
+    //       investmentStableToken,
+    //       investmentTargetToken,
+    //       true
+    //     )
+    //     await execTransaction(masterSafe, lw, bundledFundingTransaction)
+
+    //     const globalPriceStorage = {}
+    //     globalPriceStorage["DAI-USDC"] = 1.0
+    //     globalPriceStorage["WETH-DAI"] = 1 //<-- completely off price that will make the one order seem like it would be selling at unresonable prices
+
+    //     await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, [], globalPriceStorage), {
+    //       message: "tbd",
+    //     })
+    //   })
+    })
   })
 })

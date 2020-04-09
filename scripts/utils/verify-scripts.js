@@ -56,7 +56,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const gnosisSafe = await GnosisSafe.deployed()
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        assert.strictEqual(await getMasterCopy(bracketTrader), gnosisSafe.address, "MasterCopy not set correctly")
+        assert.equal(
+          (await getMasterCopy(bracketTrader)).toString().toLowerCase(),
+          gnosisSafe.address.toString().toLowerCase(),
+          "MasterCopy not set correctly"
+        )
       })
     )
 
@@ -88,9 +92,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     for (const bracketTrader of bracketTraderAddresses) {
       const relevantOrders = auctionElementsDecoded.filter(order => order.user.toLowerCase() == bracketTrader)
       for (const order of relevantOrders) {
-        assert.equal(
+        assert(
           await checkNoProfitableOffer(order, exchange, globalPriceStorage),
-          true,
           `The order ${order} of the bracket ${bracketTrader} is profitable`
         )
       }
