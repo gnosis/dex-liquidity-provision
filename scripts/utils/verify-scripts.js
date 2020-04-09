@@ -6,8 +6,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     web3,
     artifacts
   )
+  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
+
   const { getMasterCopy } = require("./internals")(web3, artifacts)
-  const { toErc20Units } = require("./printing_tools")
   const { getDexagPrice } = require("./price-utils")(web3, artifacts)
   const { checkNoProfitableOffer } = require("./price-utils")(web3, artifacts)
   const pageSize = 50
@@ -86,10 +87,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
       // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
-      const initialAmount = new BN(10).pow(new BN(50))
-      const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
-      const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
-
+      const initialAmount = new Fraction(new BN(10).pow(new BN(50)), new BN("1"))
+      const amountAfterSelling = initialAmount.mul(new Fraction(ownedOrders[0].priceNumerator, ownedOrders[0].priceDenominator))
+      const amountAfterBuying = amountAfterSelling.mul(
+        new Fraction(ownedOrders[1].priceNumerator, ownedOrders[1].priceDenominator)
+      )
       assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
       // If the last equation holds, the inverse trade must be profitable as well
     }
