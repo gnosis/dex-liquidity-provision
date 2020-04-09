@@ -1,3 +1,18 @@
+/**
+ * The purpose of the verification script is to ensure that the setup of liquidity-strategy
+ * (i.e the GnosisSafes and the Proxies) was done successfully, such that
+ * - only the masterSafe can modify the setup
+ * - only the masterSafe can withdraw funds
+ * - the brackets do not offer profitable orders
+ *
+ * Unfortunately, there are limitations of the script. For example, we can not ensure
+ * that during the deployment no additional owners were added to the safes, as the owners do
+ * not necessarily need to be within the "owner-loop". This means that the loop in here:
+ * https://github.com/gnosis/safe-contracts/blob/development/contracts/base/OwnerManager.sol#L148
+ * is not required to reveal all owners approved here:
+ * https://github.com/gnosis/safe-contracts/blob/development/contracts/base/OwnerManager.sol#L15
+ */
+
 const { verifyCorrectSetup } = require("./utils/verify-scripts")(web3, artifacts)
 
 const argv = require("yargs")
