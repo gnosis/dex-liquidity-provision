@@ -1,4 +1,5 @@
 const assert = require("assert")
+<<<<<<< HEAD
 const BN = require("bn.js")
 
 const Contract = require("@truffle/contract")
@@ -28,9 +29,19 @@ contract("PriceOracle", function(accounts) {
       await exchange.addToken(token2.address, { from: accounts[0] })
       const targetTokenId = 1
       const stableTokenId = 2
+=======
+const { isPriceReasonable } = require("../scripts/utils/price-utils")(web3, artifacts)
+
+contract("PriceOracle", function() {
+  describe("Price oracle sanity check", async () => {
+    it("checks that price is within reasonable range (10 ≤ price ≤ 1990)", async () => {
+      //the following test especially checks that the price p is not inverted (1/p) and is not below 1
+>>>>>>> master
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      assert(await isPriceReasonable(exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage))
+      const targetTokenData = { symbol: "WETH" }
+      const stableTokenData = { symbol: "DAI" }
+      assert(await isPriceReasonable(targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id

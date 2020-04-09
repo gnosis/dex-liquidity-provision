@@ -73,8 +73,10 @@ module.exports = async callback => {
     const targetTokenId = argv.targetToken
     const stableTokenId = argv.stableToken
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const { instance: targetToken, decimals: targetTokenDecimals } = await tokenInfoPromises[targetTokenId]
-    const { instance: stableToken, decimals: stableTokenDecimals } = await tokenInfoPromises[stableTokenId]
+    const targetTokenData = await tokenInfoPromises[targetTokenId]
+    const stableTokenData = await tokenInfoPromises[stableTokenId]
+    const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
+    const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
 
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
@@ -89,7 +91,7 @@ module.exports = async callback => {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
-    const priceCheck = await isPriceReasonable(exchange, targetTokenId, stableTokenId, argv.currentPrice)
+    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
@@ -106,10 +108,7 @@ module.exports = async callback => {
     }
 
     console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
-    const bracketAddresses = "0x222553e6215115ECfa5392AA915991296B21a8CE,0xFB62b4F54C282A81356663Fff3961495786A7059,0x65AAEc82f8558667Cedb2862232A6772d3E93759,0x6015112DdD3f2EaCac088a9393C2CD85D6BCa8a9,0x44F5ee112730Ce2Fffc12d3116eB6C8a1dC1280D,0x96aC86684b0657DA25EbC55Bdb075A0Acee1Ce94,0xD785d0e45fF76BB12400AbfC6D9c84500F2ac02D,0x1c60B58C72933A9263c928b1D2Cd6D2a0188364b,0xc7d44814ce209c08ACC59BC4cC597CB164062226,0x6c0C324354f26f43eC15c5d2c91F207A18524C1D,0xa8c03018c35383D9a8DBE21F08a617cE67B19341,0x370a076b5b6A10A8355127db728911ED1D99E531,0xE73604fC1724a50CEcBC1096d4229b81aF117c94,0x8d8d0d74136AE888aA23eB81f9f0d95Cf9D6b8dD,0x1634CB63743C7E360ef6Ef367c5B0C3735F564b6,0x3eB57eE5885eC7Af5677012864F9c8dD1A0972c3,0xDD77394eCD4349c25eF3931D5f28e17dadf53d4c,0x74c61eC16D980Ac775D306444ceDB4414a170370,0xf4517a782b77Dfd62fB5ed7b31cbd78E34523B9b,0xDD9626CF3C52FA817816940B937A49b44b3DD674,0x9bD926383A3514A1A5B379fC3fa8212FB39Ad6ED,0x9669dE5Aa6F9A0Ed5A757896Fe8840FD7e85c8B5".split(
-      ","
-    )
-    //await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
+    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("List of bracket traders in one line:", bracketAddresses.join())
 
     // Sleeping for 5 seconds to make sure Infura nodes have processed all newly deployed contracts so that
@@ -117,15 +116,15 @@ module.exports = async callback => {
     sleep(5000)
 
     console.log("3. Building orders and deposits")
-    // const orderTransaction = await buildOrders(
-    //   masterSafe.address,
-    //   bracketAddresses,
-    //   argv.targetToken,
-    //   argv.stableToken,
-    //   argv.lowestLimit,
-    //   argv.highestLimit,
-    //   true
-    // )
+    const orderTransaction = await buildOrders(
+      masterSafe.address,
+      bracketAddresses,
+      argv.targetToken,
+      argv.stableToken,
+      argv.lowestLimit,
+      argv.highestLimit,
+      true
+    )
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
@@ -140,7 +139,7 @@ module.exports = async callback => {
     )
 
     console.log("4. Sending out orders")
-    //await signAndSend(masterSafe, orderTransaction, argv.network)
+    await signAndSend(masterSafe, orderTransaction, argv.network)
 
     console.log("5. Sending out funds")
     const answer = await promptUser(
