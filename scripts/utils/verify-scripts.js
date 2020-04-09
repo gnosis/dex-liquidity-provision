@@ -81,7 +81,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    log("4. Verify that each bracket can not loose tokens by selling and buying consecutively via their two orders")
+    log("4. Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
