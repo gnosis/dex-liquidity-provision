@@ -188,82 +188,90 @@ contract.only("Verification checks", function(accounts) {
         message: "order length is not correct",
       })
     })
-    describe("4 Check: The orders of a bracket are profitable to trade against each other", async () => {
-      it("throws if orders of one bracket are not profitable", async () => {
-        const masterSafe = await GnosisSafe.at(
-          await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-        )
-        const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-        const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
-        const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
-        const lowestLimit = 90
-        const highestLimit = 120
-        const transaction = await buildOrders(
-          masterSafe.address,
-          bracketAddresses,
-          targetToken.id,
-          stableToken.id,
-          highestLimit, // <-- highest and lowest price are switched, this implies that brackets are unprofitable
-          lowestLimit
-        )
-        await execTransaction(masterSafe, lw, transaction)
-        await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, []), {
-          message: "Brackets are not profitable",
-        })
+  })
+  describe("4 Check: The orders of a bracket are profitable to trade against each other", async () => {
+    it("throws if orders of one bracket are not profitable", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
+      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+      const lowestLimit = 90
+      const highestLimit = 120
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken.id,
+        stableToken.id,
+        highestLimit, // <-- highest and lowest price are switched, this implies that brackets are unprofitable
+        lowestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, []), {
+        message: "Brackets are not profitable",
       })
     })
-    describe("5 Check: Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
-      it("throws if there are profitable orders", async () => {
-        const masterSafe = await GnosisSafe.at(
-          await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-        )
-        const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-        const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
-        const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+  })
+  describe("5 Check: Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
+    it.only("throws if there are profitable orders", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 3)
+      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
 
-        const investmentStableToken = new BN("1000000000000000000000000")
-        const investmentTargetToken = new BN("1000000000000000000000000")
-        await stableToken.token.mint(masterSafe.address, investmentStableToken, { from: accounts[0] })
-        await targetToken.token.mint(masterSafe.address, investmentTargetToken, { from: accounts[0] })
-        const lowestLimit = 90
-        const highestLimit = 120
-        const currentPrice = 100
+      const investmentStableToken = new BN("1000000000000000000000000")
+      const investmentTargetToken = new BN("1000000000000000000000000")
+      await stableToken.token.mint(masterSafe.address, investmentStableToken, { from: accounts[0] })
+      await targetToken.token.mint(masterSafe.address, investmentTargetToken, { from: accounts[0] })
+      const lowestLimit = 90
+      const highestLimit = 120
+      const currentPrice = 100
 
-        const transaction = await buildOrders(
-          masterSafe.address,
-          bracketAddresses,
-          targetToken.id,
-          stableToken.id,
-          lowestLimit,
-          highestLimit
-        )
-        await execTransaction(masterSafe, lw, transaction)
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken.id,
+        stableToken.id,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transaction)
 
-        const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
-          masterSafe.address,
-          bracketAddresses,
-          targetToken.token.address,
-          stableToken.token.address,
-          lowestLimit,
-          highestLimit,
-          currentPrice,
-          investmentStableToken,
-          investmentTargetToken,
-          true
-        )
-        await execTransaction(masterSafe, lw, bundledFundingTransaction)
+      const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
+        masterSafe.address,
+        bracketAddresses,
+        targetToken.token.address,
+        stableToken.token.address,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        investmentStableToken,
+        investmentTargetToken,
+        true
+      )
+      await execTransaction(masterSafe, lw, bundledFundingTransaction)
 
-        // Close auction for deposits to be reflected in exchange balance
-        await waitForNSeconds(301)
+      // Close auction for deposits to be reflected in exchange balance
+      await waitForNSeconds(301)
 
-        const globalPriceStorage = {}
-        globalPriceStorage["DAI-USDC"] = 1.0
-        globalPriceStorage["WETH-USDC"] = 1
-        globalPriceStorage["WETH-DAI"] = 0.0000001 //<-- completely off price that will make the one order seem like it would be selling at unresonable prices
+      const globalPriceStorage = {}
+      globalPriceStorage["DAI-USDC"] = 1.0
+      globalPriceStorage["WETH-USDC"] = 1
+      globalPriceStorage["DAI-WETH"] = 100 //<-- price is correct
+      await verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, [], globalPriceStorage)
+      await verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, [], globalPriceStorage)
 
-        await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, [], globalPriceStorage), {
-          message: `The order of the bracket ${bracketAddresses[1].toLowerCase()} is profitable`,
-        })
+      globalPriceStorage["DAI-WETH"] = 121 //<-- price is off, hence orders are profitable
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, [], globalPriceStorage), {
+        message: `The order of the bracket ${bracketAddresses[1].toLowerCase()} is profitable`,
+      })
+
+      globalPriceStorage["DAI-WETH"] = 70 //<-- price is off, hence orders are profitable
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, [], globalPriceStorage), {
+        message: `The order of the bracket ${bracketAddresses[0].toLowerCase()} is profitable`,
       })
     })
   })
