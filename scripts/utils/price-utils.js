@@ -3,8 +3,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const precisionDecimals = 20
   const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
-  const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { toErc20Units, fromErc20Units } = require("./printing_tools")
+  const exchangeUtils = require("@gnosis.pm/dex-contracts")
+  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
+
+  const max128 = new BN(2).pow(new BN(128)).subn(1)
 
   const checkCorrectnessOfDeposits = async (
     currentPrice,
@@ -152,6 +155,42 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return true
   }
 
+  /**
+   * Computes the amount of output token units from their price and the amount of input token units
+   * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
+   * @param {number} price amount of output token in exchange for one input token
+   * @param {BN} targetTokenAmount amount of token units that are exchanged at price
+   * @param {integer} targetTokenDecimals number of decimals of the input token
+   * @param {integer} stableTokenDecimals number of decimals of the output token
+   * @return {BN} amount of output token units obtained
+   */
+  const getOutputAmountFromPrice = function(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
+    const priceFraction = Fraction.fromNumber(price)
+    const unitPriceFraction = priceFraction.mul(
+      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
+    )
+    const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
+    return stableTokenAmountFraction.toBN()
+  }
+
+  /**
+   * Computes the stable and target token amounts needed to set up an unlimited order in the exchange
+   * @param {number} price amount of stable tokens in exchange for one target token
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @return {BN[2]} amounts of stable token and target token for an unlimited order at the input price
+   */
+  const getUnlimitedOrderAmounts = function(price, targetTokenDecimals, stableTokenDecimals) {
+    let targetTokenAmount = max128.clone()
+    let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
+    if (stableTokenAmount.gt(targetTokenAmount)) {
+      stableTokenAmount = max128.clone()
+      targetTokenAmount = getOutputAmountFromPrice(1 / price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
+      assert(stableTokenAmount.gte(targetTokenAmount), "Error: unable to create unlimited order")
+    }
+    return [targetTokenAmount, stableTokenAmount]
+  }
+
   const checkNoProfitableOffer = async (order, exchange, globalPriceStorage = null) => {
     const tokenInfo = fetchTokenInfoFromExchange(exchange, [order.buyToken, order.sellToken])
     const currentMarketPrice = await getDexagPrice(
@@ -189,7 +228,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     isPriceReasonable,
     areBoundsReasonable,
     checkCorrectnessOfDeposits,
+    getOutputAmountFromPrice,
+    getUnlimitedOrderAmounts,
     getDexagPrice,
     checkNoProfitableOffer,
+    max128,
   }
 }
