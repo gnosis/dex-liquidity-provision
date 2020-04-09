@@ -8,7 +8,6 @@ contract("PriceOracle", function(accounts) {
   let exchange
   beforeEach(async function() {
     // Create lightwallet
-    // TODO - can we just use accounts provided by ganache?
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)
     BatchExchange.setNetwork(web3.network_id)
