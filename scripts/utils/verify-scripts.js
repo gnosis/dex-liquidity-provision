@@ -62,7 +62,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    log("2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy")
+    log("2. Verify that masterCopy of brackets is the known masterCopy")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         assert.equal(
@@ -81,13 +81,13 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    log("4. Verify that each bracket can not loose tokens by consecutive selling and buying via the two orders")
+    log("4. Verify that each bracket can not loose tokens by selling and buying consecutively via their two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
         // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
-        const initialAmount = toErc20Units(1, 18)
+        const initialAmount = toErc20Units(1, 50)
         const amountAfterSelling = initialAmount.mul(ownedOrders[0].priceNumerator).div(ownedOrders[0].priceDenominator)
         const amountAfterBuying = amountAfterSelling.mul(ownedOrders[1].priceNumerator).div(ownedOrders[1].priceDenominator)
 
