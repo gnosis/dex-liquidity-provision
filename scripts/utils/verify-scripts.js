@@ -13,7 +13,15 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const pageSize = 50
   const assert = require("assert")
 
-  const verifyCorrectSetup = async function(brackets, masterSafe, allowanceExceptions, globalPriceStorage = {}) {
+  const verifyCorrectSetup = async function(
+    brackets,
+    masterSafe,
+    allowanceExceptions,
+    globalPriceStorage = {},
+    logActivated = false
+  ) {
+    const log = logActivated ? (...a) => console.log(...a) : () => {}
+
     const BatchExchangeArtifact = require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange")
     const networkId = await web3.eth.net.getId()
     const BatchExchange = new web3.eth.Contract(BatchExchangeArtifact.abi, BatchExchangeArtifact.networks[networkId].address)
@@ -47,14 +55,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    // 1. Verify that the owner of the brackets is the masterSafe
+    log("1. Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         assert(await isOnlySafeOwner(masterSafe, bracketTrader, artifacts), "Owners are not set correctly")
       })
     )
 
-    // 2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy:
+    log("2. Verify that all proxies of the brackets are pointing to the right gnosis-safe proxy")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         assert.equal(
@@ -65,7 +73,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    // 3. Verify that each bracket has only two orders
+    log("3. Verify that each bracket has only two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
@@ -73,7 +81,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    // 4. Verify that each bracket can not loose tokens by consecutive selling and buying via the two orders
+    log("4. Verify that each bracket can not loose tokens by consecutive selling and buying via the two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
@@ -88,7 +96,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    // 5. Verify that no bracket-trader offers profitable orders
+    log("5. Verify that no bracket-trader offers profitable orders")
     for (const order of relevantOrders) {
       assert(
         await checkNoProfitableOffer(order, exchange, globalPriceStorage),
@@ -96,9 +104,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       )
     }
 
-    // 6. Verify that no allowances are currently set
+    log("6. Verify that no allowances are currently set")
     await assertNoAllowances(masterSafe, tokenInfo, allowanceExceptions)
-    // TODO: test if following line can be parallelized with Infura
     for (const bracketTrader of bracketTraderAddresses) await assertNoAllowances(bracketTrader, tokenInfo)
   }
 
