@@ -141,18 +141,18 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * Computes the amount of output token units from their price and the amount of input token units
    * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
    * @param {number} price amount of output token in exchange for one input token
-   * @param {BN} inputTokenAmount amount of token units that are exchanged at price
-   * @param {integer} inputDecimals number of decimals of the input token
-   * @param {integer} outputDecimals number of decimals of the output token
+   * @param {BN} targetTokenAmount amount of token units that are exchanged at price
+   * @param {integer} targetTokenDecimals number of decimals of the input token
+   * @param {integer} stableTokenDecimals number of decimals of the output token
    * @return {BN} amount of output token units obtained
    */
-  const getOutputAmountFromPrice = function(price, inputAmount, inputDecimals, outputDecimals) {
+  const getOutputAmountFromPrice = function(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
     const priceFraction = Fraction.fromNumber(price)
     const unitPriceFraction = priceFraction.mul(
-      new Fraction(new BN(10).pow(new BN(outputDecimals)), new BN(10).pow(new BN(inputDecimals)))
+      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
     )
-    const outputAmountFraction = unitPriceFraction.mul(new Fraction(inputAmount, 1))
-    return outputAmountFraction.toBN()
+    const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
+    return stableTokenAmountFraction.toBN()
   }
 
 
