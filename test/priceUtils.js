@@ -113,7 +113,7 @@ describe("getUnlimitedOrderAmounts", () => {
       },
     ]
     for (const { price, stableTokenDecimals, targetTokenDecimals, expectedStableTokenAmount, expectedTargetTokenAmount } of testCases) {
-      const [stableTokenAmount, targetTokenAmount] = getUnlimitedOrderAmounts(price, stableTokenDecimals, targetTokenDecimals)
+      const [targetTokenAmount, stableTokenAmount] = getUnlimitedOrderAmounts(price, targetTokenDecimals, stableTokenDecimals)
       assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
       assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
     }
