@@ -33,7 +33,7 @@ contract("Verification scripts", function(accounts) {
     await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
   describe("1 constraint: Owner is master safe", async () => {
-    it.only("throws if the masterSafe is not the only owner", async () => {
+    it("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -44,22 +44,22 @@ contract("Verification scripts", function(accounts) {
       })
     })
   })
-  describe("2 constraint: Owner is master safe", async () => {
-    it("throws if the proxy contract is not gnosis safe template", async () => {
-      const notMasterCopy = await GnosisSafe.new()
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
-      const notOwnedBracket = [
-        (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 2))).address,
-      ]
-      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
-        message: "MasterCopy not set correctly",
-      })
-    })
-  })
+  // describe("2 constraint: Owner is master safe", async () => {
+  //   it("throws if the proxy contract is not gnosis safe template", async () => {
+  //     const notMasterCopy = await GnosisSafe.new()
+  //     const masterSafe = await GnosisSafe.at(
+  //       await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+  //     )
+  //     const notOwnedBracket = [
+  //       (await GnosisSafe.at(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 2))).address,
+  //     ]
+  //     await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
+  //       message: "MasterCopy not set correctly",
+  //     })
+  //   })
+  // })
   describe("3 constraint: Throws if a bracket does not have two orders", async () => {
-    it.only("throws if the proxy contract is not gnosis safe template", async () => {
+    it("throws if the proxy contract is not gnosis safe template", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
@@ -92,8 +92,8 @@ contract("Verification scripts", function(accounts) {
         message: "order length is not correct",
       })
     })
-    describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
-      it("throws if the proxy contract is not gnosis safe template", async () => {})
-    })
+    // describe("4 constraint: Throws if two orders are profitable to trade against each other", async () => {
+    //   it("throws if the proxy contract is not gnosis safe template", async () => {})
+    // })
   })
 })
