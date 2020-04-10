@@ -1,4 +1,5 @@
 const BN = require("bn.js")
+
 const bnZero = new BN(0)
 const bnOne = new BN(1)
 const bnTwo = new BN(2)

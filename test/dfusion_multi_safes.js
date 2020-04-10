@@ -2,12 +2,14 @@ const BN = require("bn.js")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
+
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const ERC20 = artifacts.require("ERC20Detailed")
 const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
+
 const { prepareTokenRegistration, addCustomMintableTokenToExchange, deploySafe } = require("./test_utils")
 const {
   fetchTokenInfoFromExchange,
@@ -25,7 +27,6 @@ const {
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 const { checkCorrectnessOfDeposits, max128 } = require("../scripts/utils/price_utils")(web3, artifacts)
-
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
 const TEN = new BN(10)
