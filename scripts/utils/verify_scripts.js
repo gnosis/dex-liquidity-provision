@@ -9,8 +9,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
   const { getMasterCopy } = require("./internals")(web3, artifacts)
-  const { getDexagPrice } = require("./price-utils")(web3, artifacts)
-  const { checkNoProfitableOffer } = require("./price-utils")(web3, artifacts)
+  const { getDexagPrice } = require("./price_utils")(web3, artifacts)
+  const { checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
   const pageSize = 50
   const assert = require("assert")
 

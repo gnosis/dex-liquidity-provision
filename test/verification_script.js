@@ -1,14 +1,14 @@
-const { createTokenAndGetData } = require("./test-utils")
+const { createTokenAndGetData } = require("./test_utils")
 const { getAllowances, assertNoAllowances } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const assert = require("assert")
 const BN = require("bn.js")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const Contract = require("@truffle/contract")
-const { deploySafe } = require("./test-utils")
+const { deploySafe } = require("./test_utils")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const { verifyCorrectSetup } = require("../scripts/utils/verify-scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange } = require("./test-utils")
+const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
+const { addCustomMintableTokenToExchange } = require("./test_utils")
 const {
   deployFleetOfSafes,
   buildOrders,
