@@ -1,7 +1,10 @@
-const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { SynthetixJs } = require("synthetix-js")
 const ethers = require("ethers")
+const fetch = require("node-fetch")
+
+const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { calculateBuyAndSellAmountsFromPrice } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+
 
 // These are fixed constants for the current version of the dex-contracts
 const sETHByNetwork = {
@@ -30,9 +33,17 @@ const sUSDByNetwork = {
   },
 }
 
+const gasStationURL = {
+  1: "https://safe-relay.gnosis.io/api/v1/gas-station/",
+  4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/"
+}
+
 module.exports = async callback => {
   try {
     const networkId = await web3.eth.net.getId()
+    console.log("Anything")
+    const gasPrices = await (await fetch(gasStationURL[networkId])).json()
+    console.log(gasPrices)
 
     const account = (await web3.eth.getAccounts())[0]
     console.log("Using account", account)
@@ -78,7 +89,7 @@ module.exports = async callback => {
 
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
-      gasPrice: 8 * 1e9, // If only there was some way to access `gasPriceGWei` as declared in truffle-config
+      gasPrice: gasPrices.fast
     })
     callback()
   } catch (error) {
