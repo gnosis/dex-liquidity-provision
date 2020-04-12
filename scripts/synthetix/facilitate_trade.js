@@ -41,9 +41,7 @@ const gasStationURL = {
 module.exports = async callback => {
   try {
     const networkId = await web3.eth.net.getId()
-    console.log("Anything")
     const gasPrices = await (await fetch(gasStationURL[networkId])).json()
-    console.log(gasPrices)
 
     const account = (await web3.eth.getAccounts())[0]
     console.log("Using account", account)
