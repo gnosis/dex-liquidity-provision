@@ -34,7 +34,6 @@ const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, th
 
 // Need some small adjustments to default implementation for web3js 1.x
 async function getParamFromTxEvent(transaction, eventName, paramName, contract, subject) {
-  // assert.isObject(transaction)
   if (subject != null) {
     logGasUsage(subject, transaction)
   }
