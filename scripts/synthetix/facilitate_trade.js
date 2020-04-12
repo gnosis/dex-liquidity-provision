@@ -3,7 +3,7 @@ const ethers = require("ethers")
 const fetch = require("node-fetch")
 
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
-const { calculateBuyAndSellAmountsFromPrice } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const { getUnlimitedOrderAmounts } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
 
 // These are fixed constants for the current version of the dex-contracts
@@ -69,8 +69,8 @@ module.exports = async callback => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [buyETHAmount, sellSUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
-    const [sellETHAmount, buySUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
+    const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
+    const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
 
     const buyAmounts = [buyETHAmount, buySUSDAmount]
     const sellAmounts = [sellSUSDAmount, sellETHAmount]
