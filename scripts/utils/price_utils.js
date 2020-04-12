@@ -1,6 +1,8 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
+  const assert = require("assert")
   const axios = require("axios")
   const BN = require("bn.js")
+
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
