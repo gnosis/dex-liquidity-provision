@@ -2,13 +2,13 @@ const BN = require("bn.js")
 const Contract = require("@truffle/contract")
 const assert = require("assert")
 const { toErc20Units } = require("../scripts/utils/printing_tools")
-const { addCustomMintableTokenToExchange } = require("./test-utils")
+const { addCustomMintableTokenToExchange } = require("./test_utils")
 const {
   getOutputAmountFromPrice,
   getUnlimitedOrderAmounts,
   isPriceReasonable,
   checkNoProfitableOffer,
-} = require("../scripts/utils/price-utils")(web3, artifacts)
+} = require("../scripts/utils/price_utils")(web3, artifacts)
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 const max128 = new BN(2).pow(new BN(128)).subn(1)

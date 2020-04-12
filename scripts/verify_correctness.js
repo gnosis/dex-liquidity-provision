@@ -13,7 +13,7 @@
  * https://github.com/gnosis/safe-contracts/blob/development/contracts/base/OwnerManager.sol#L15
  */
 
-const { verifyCorrectSetup } = require("./utils/verify-scripts")(web3, artifacts)
+const { verifyCorrectSetup } = require("./utils/verify_scripts")(web3, artifacts)
 
 const argv = require("yargs")
   .option("brackets", {
