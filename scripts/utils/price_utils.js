@@ -1,6 +1,8 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
+  const assert = require("assert")
   const axios = require("axios")
   const BN = require("bn.js")
+
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
@@ -35,7 +37,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
       // checks whether price is in middle of bracket:
       if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
-        assert.isTrue(
+        assert(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
             bracketExchangeBalanceTargetToken,
@@ -52,7 +54,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
       if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
-        assert.isTrue(
+        assert(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
             bracketExchangeBalanceTargetToken,

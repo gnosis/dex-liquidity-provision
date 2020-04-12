@@ -1,7 +1,9 @@
-const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { SynthetixJs } = require("synthetix-js")
 const ethers = require("ethers")
-const { calculateBuyAndSellAmountsFromPrice } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const fetch = require("node-fetch")
+
+const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const { getUnlimitedOrderAmounts } = require("../utils/price_utils")(web3, artifacts)
 
 // These are fixed constants for the current version of the dex-contracts
 const sETHByNetwork = {
@@ -30,12 +32,17 @@ const sUSDByNetwork = {
   },
 }
 
+const gasStationURL = {
+  1: "https://safe-relay.gnosis.io/api/v1/gas-station/",
+  4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
+}
+
 module.exports = async callback => {
   try {
     const networkId = await web3.eth.net.getId()
-
     const account = (await web3.eth.getAccounts())[0]
     console.log("Using account", account)
+
     const snxjs = new SynthetixJs({ networkId: networkId })
     const exchange = await getExchange(web3)
 
@@ -60,8 +67,16 @@ module.exports = async callback => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [buyETHAmount, sellSUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
-    const [sellETHAmount, buySUSDAmount] = calculateBuyAndSellAmountsFromPrice(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
+    const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(
+      formatedRate * (1 - sUSDTosETHFee),
+      sUSD.decimals,
+      sETH.decimals
+    )
+    const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(
+      formatedRate * (1 + sETHTosUSDFee),
+      sETH.decimals,
+      sUSD.decimals
+    )
 
     const buyAmounts = [buyETHAmount, buySUSDAmount]
     const sellAmounts = [sellSUSDAmount, sellETHAmount]
@@ -76,8 +91,10 @@ module.exports = async callback => {
     const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
     const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
+    const gasPrices = (await fetch(gasStationURL[networkId])).json()
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
+      gasPrice: gasPrices.fast,
     })
     callback()
   } catch (error) {
