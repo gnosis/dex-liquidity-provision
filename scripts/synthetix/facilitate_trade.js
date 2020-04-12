@@ -67,8 +67,8 @@ module.exports = async callback => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 - sUSDTosETHFee), sUSD, sETH)
-    const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 + sETHTosUSDFee), sETH, sUSD)
+    const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 - sUSDTosETHFee), sUSD.decimals, sETH.decimals)
+    const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(formatedRate * (1 + sETHTosUSDFee), sETH.decimals, sUSD.decimals)
 
     const buyAmounts = [buyETHAmount, buySUSDAmount]
     const sellAmounts = [sellSUSDAmount, sellETHAmount]
@@ -83,7 +83,7 @@ module.exports = async callback => {
     const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
     const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
-    const gasPrices = await fetch(gasStationURL[networkId]).json()
+    const gasPrices = (await fetch(gasStationURL[networkId])).json()
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
       gasPrice: gasPrices.fast,
