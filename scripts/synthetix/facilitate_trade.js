@@ -5,7 +5,6 @@ const fetch = require("node-fetch")
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { getUnlimitedOrderAmounts } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
-
 // These are fixed constants for the current version of the dex-contracts
 const sETHByNetwork = {
   1: {
