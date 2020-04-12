@@ -34,16 +34,15 @@ const sUSDByNetwork = {
 
 const gasStationURL = {
   1: "https://safe-relay.gnosis.io/api/v1/gas-station/",
-  4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/"
+  4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
 }
 
 module.exports = async callback => {
   try {
     const networkId = await web3.eth.net.getId()
-    const gasPrices = await (await fetch(gasStationURL[networkId])).json()
-
     const account = (await web3.eth.getAccounts())[0]
     console.log("Using account", account)
+
     const snxjs = new SynthetixJs({ networkId: networkId })
     const exchange = await getExchange(web3)
 
@@ -84,9 +83,10 @@ module.exports = async callback => {
     const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
     const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
 
+    const gasPrices = await fetch(gasStationURL[networkId]).json()
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
-      gasPrice: gasPrices.fast
+      gasPrice: gasPrices.fast,
     })
     callback()
   } catch (error) {
