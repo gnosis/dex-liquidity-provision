@@ -2,8 +2,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const BN = require("bn.js")
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
+  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
-  const { fetchTokenInfoFromExchange } = require("./trading_strategy_helpers")(web3, artifacts)
+  const max128 = new BN(2).pow(new BN(128)).subn(1)
 
   const checkCorrectnessOfDeposits = async (
     currentPrice,
@@ -101,28 +102,40 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   // returns undefined if the price was not available
-  const getDexagPrice = async function(tokenBought, tokenSold) {
+  const getDexagPrice = async function(tokenBought, tokenSold, globalPriceStorage = null) {
+    if (globalPriceStorage !== null && tokenBought + "-" + tokenSold in globalPriceStorage) {
+      return globalPriceStorage[tokenBought + "-" + tokenSold]
+    }
+    if (globalPriceStorage !== null && tokenSold + "-" + tokenBought in globalPriceStorage) {
+      return 1.0 / globalPriceStorage[tokenSold + "-" + tokenBought]
+    }
     // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
     tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
     tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
     // see https://docs.dex.ag/ for API documentation
     const url = "https://api-v2.dex.ag/price?from=" + tokenSold + "&to=" + tokenBought + "&fromAmount=1&dex=ag"
     let price
-    try {
-      const requestResult = await axios.get(url)
-      price = requestResult.data.price
-    } catch (error) {
-      console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-      console.log(">", error.response.data.error)
+    // try to get price 3 times
+    for (let i = 0; i < 3; i++) {
+      try {
+        const requestResult = await axios.get(url)
+        price = requestResult.data.price
+        break
+      } catch (error) {
+        if (i == 2) {
+          console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
+          console.log(">", error.response.data.error)
+        }
+      }
+    }
+    if (globalPriceStorage !== null) {
+      globalPriceStorage[tokenBought + "-" + tokenSold] = price
     }
     return price
   }
 
-  const isPriceReasonable = async (exchange, targetTokenId, stableTokenId, price, acceptedPriceDeviationInPercentage = 2) => {
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const targetToken = await tokenInfoPromises[targetTokenId]
-    const stableToken = await tokenInfoPromises[stableTokenId]
-    const dexagPrice = await getDexagPrice(stableToken.symbol, targetToken.symbol)
+  const isPriceReasonable = async (targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
+    const dexagPrice = await getDexagPrice(stableTokenData.symbol, targetTokenData.symbol)
     if (dexagPrice === undefined) {
       console.log("Warning: could not perform price check against dex.ag.")
       return false
@@ -132,16 +145,97 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         acceptedPriceDeviationInPercentage,
         "percent from the price found on dex.ag."
       )
-      console.log("         chosen price:", price, stableToken.symbol, "bought for 1", targetToken.symbol)
-      console.log("         dex.ag price:", dexagPrice, stableToken.symbol, "bought for 1", targetToken.symbol)
+      console.log("         chosen price:", price, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
+      console.log("         dex.ag price:", dexagPrice, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
       return false
     }
     return true
+  }
+
+  /**
+   * Modifies the price to work with ERC20 units
+   * @param {number} price amount of stable token in exchange for one target token
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @return {Fraction} fraction representing the amount of units of stable tokens in exchange for one unit of target token
+   */
+  const getUnitPrice = function(price, targetTokenDecimals, stableTokenDecimals) {
+    return Fraction.fromNumber(price).mul(
+      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
+    )
+  }
+
+  /**
+   * Computes the amount of output token units from their price and the amount of input token units
+   * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
+   * @param {number} price amount of stable token in exchange for one target token
+   * @param {BN} targetTokenAmount amount of target token units that are exchanged at price
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @return {BN} amount of output token units obtained
+   */
+  const getOutputAmountFromPrice = function(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
+    const unitPriceFraction = getUnitPrice(price, targetTokenDecimals, stableTokenDecimals)
+    const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
+    return stableTokenAmountFraction.toBN()
+  }
+
+  /**
+   * Computes the stable and target token amounts needed to set up an unlimited order in the exchange
+   * @param {number} price amount of stable tokens in exchange for one target token
+   * @param {integer} targetTokenDecimals number of decimals of the target token
+   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @return {BN[2]} amounts of stable token and target token for an unlimited order at the input price
+   */
+  const getUnlimitedOrderAmounts = function(price, targetTokenDecimals, stableTokenDecimals) {
+    let targetTokenAmount = max128.clone()
+    let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
+    if (stableTokenAmount.gt(targetTokenAmount)) {
+      stableTokenAmount = max128.clone()
+      targetTokenAmount = getOutputAmountFromPrice(1 / price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
+      assert(stableTokenAmount.gte(targetTokenAmount), "Error: unable to create unlimited order")
+    }
+    return [targetTokenAmount, stableTokenAmount]
+  }
+
+  const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
+    const currentMarketPrice = await getDexagPrice(
+      (await tokenInfo[order.buyToken]).symbol,
+      (await tokenInfo[order.sellToken]).symbol,
+      globalPriceStorage
+    )
+
+    // checks whether the order amount is negligible
+    if ((await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)).lt(new BN("1"))) {
+      return true
+    }
+
+    const marketPrice = getUnitPrice(
+      parseFloat(currentMarketPrice),
+      (await tokenInfo[order.sellToken]).decimals,
+      (await tokenInfo[order.buyToken]).decimals
+    )
+    const orderPrice = new Fraction(order.priceNumerator, order.priceDenominator)
+
+    return marketPrice.lt(orderPrice)
+  }
+
+  const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
+    const currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol, globalPriceStorage)
+
+    return Fraction.fromNumber(parseFloat(currentMarketPrice))
+      .mul(new Fraction(order.sellTokenBalance, new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))))
+      .toBN()
   }
 
   return {
     isPriceReasonable,
     areBoundsReasonable,
     checkCorrectnessOfDeposits,
+    getOutputAmountFromPrice,
+    getUnlimitedOrderAmounts,
+    getDexagPrice,
+    checkNoProfitableOffer,
+    max128,
   }
 }

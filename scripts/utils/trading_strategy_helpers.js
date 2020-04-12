@@ -13,11 +13,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const fs = require("fs")
   const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units, toErc20Units } = require("./printing_tools")
+  const { getUnlimitedOrderAmounts } = require("./price-utils")(web3, artifacts)
+  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
-  const max128 = new BN(2).pow(new BN(128)).subn(1)
   const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
   /**
@@ -246,10 +246,18 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = calculateBuyAndSellAmountsFromPrice(upperLimit, stableToken, targetToken)
+        const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(
+          upperLimit,
+          targetToken.decimals,
+          stableToken.decimals
+        )
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = calculateBuyAndSellAmountsFromPrice(lowerLimit, stableToken, targetToken)
+        const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(
+          lowerLimit,
+          targetToken.decimals,
+          stableToken.decimals
+        )
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
@@ -261,8 +269,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         const sellTokens = [stableTokenId, targetTokenId]
         const validFroms = [validFromForAllOrders, validFromForAllOrders]
         const validTos = [expiry, expiry]
-        const buyAmounts = [lowerBuyAmount, upperBuyAmount]
-        const sellAmounts = [lowerSellAmount, upperSellAmount]
+        const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
+        const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
 
         const orderData = exchange.contract.methods
           .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
@@ -280,35 +288,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("Transaction bundle size", transactions.length)
     return buildBundledTransaction(transactions)
-  }
-
-  // TODO - pass stableTokenDecmials and targetTokenDecimals since these are the only attributes used here.
-  const calculateBuyAndSellAmountsFromPrice = function(price, stableToken, targetToken) {
-    // decimalsForPrice: This number defines the rounding errors,
-    // Since we can accept similar rounding error as within the smart contract
-    // we set it to 38 = amount of digits of max128
-    const decimalsForPrice = 38
-    const roundedPrice = price.toFixed(decimalsForPrice)
-    const priceFormatted = toErc20Units(roundedPrice, decimalsForPrice)
-
-    const decimalsForOne = decimalsForPrice - stableToken.decimals + targetToken.decimals
-    const ONE = toErc20Units(1, decimalsForOne)
-    let sellAmount
-    let buyAmount
-    if (priceFormatted.gt(ONE)) {
-      sellAmount = max128
-        .mul(ONE)
-        .div(priceFormatted)
-        .toString()
-      buyAmount = max128.toString()
-    } else {
-      buyAmount = max128
-        .mul(priceFormatted)
-        .div(ONE)
-        .toString()
-      sellAmount = max128.toString()
-    }
-    return [sellAmount, buyAmount]
   }
 
   const checkSufficiencyOfBalance = async function(token, owner, amount) {
@@ -598,6 +577,47 @@ withdrawal of the desired funds
     return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
   }
 
+  const getAllowances = async function(owner, tokenInfo) {
+    const allowances = {}
+    await Promise.all(
+      Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
+        const token = (await tokenData).instance
+        const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
+        const spenders = allElementsOnlyOnce(eventList.map(event => event.returnValues.spender))
+        const tokenAllowances = {}
+        // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
+        await Promise.all(
+          spenders.map(async spender => {
+            tokenAllowances[spender] = await token.allowance(owner, spender)
+          })
+        )
+        allowances[tokenAddress] = tokenAllowances
+      })
+    )
+    return allowances
+  }
+
+  const assertNoAllowances = async function(address, tokenInfo, exceptions = []) {
+    const allowances = await getAllowances(address, tokenInfo)
+    for (const [tokenAddress, tokenAllowances] of Object.entries(allowances)) {
+      for (const spender in tokenAllowances) {
+        if (!exceptions.includes(spender))
+          assert.equal(
+            tokenAllowances[spender].toString(),
+            "0",
+            address +
+              " allows address " +
+              spender +
+              " to spend " +
+              (await tokenInfo[tokenAddress]).symbol +
+              " (amount: " +
+              fromErc20Units(tokenAllowances[spender], (await tokenInfo[tokenAddress]).decimals) +
+              ")"
+          )
+      }
+    }
+  }
+
   return {
     getSafe,
     getExchange,
@@ -609,7 +629,6 @@ withdrawal of the desired funds
     buildWithdrawAndTransferFundsToMaster,
     buildBracketTransactionForTransferApproveDeposit,
     buildTransferApproveDepositFromOrders,
-    calculateBuyAndSellAmountsFromPrice,
     checkSufficiencyOfBalance,
     buildRequestWithdraw,
     buildWithdraw,
@@ -617,7 +636,8 @@ withdrawal of the desired funds
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
     isOnlySafeOwner,
-    max128,
+    getAllowances,
+    assertNoAllowances,
     maxU32,
     maxUINT,
     ADDRESS_0,

@@ -23,6 +23,7 @@ const addCustomMintableTokenToExchange = async function(exchange, symbol, decima
     token: token,
   }
 }
+
 const deploySafe = async function(gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
   const initData = gnosisSafeMasterCopy.contract.methods
     .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
@@ -50,8 +51,21 @@ function logGasUsage(subject, transactionOrReceipt) {
   console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
 }
 
+const createTokenAndGetData = async function(symbol, decimals) {
+  const tokenData = {
+    decimals: decimals,
+    symbol: symbol,
+  }
+  const token = await TestToken.new(symbol, decimals)
+  tokenData.address = token.address
+  tokenData.instance = token
+  return { address: token.address, tokenData: tokenData }
+}
+
 module.exports = {
+  deploySafe,
+  getParamFromTxEvent,
+  createTokenAndGetData,
   prepareTokenRegistration,
   addCustomMintableTokenToExchange,
-  deploySafe,
 }
