@@ -13,7 +13,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const fs = require("fs")
   const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
-  const { getUnlimitedOrderAmounts } = require("./price-utils")(web3, artifacts)
+  const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"

@@ -14,4 +14,3 @@ script:
   - yarn lint
   - yarn pretty-check
   - yarn test
-  - npx mocha test/printingTools.js
