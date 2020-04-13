@@ -295,6 +295,23 @@ contract("GnosisSafe", function(accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1 and wide brackets", async () => {
+      const tradeInfo = {
+        fleetSize: 4,
+        lowestLimit: 25,
+        highestLimit: 400,
+        currentPrice: 100,
+        amountStableToken: "1",
+        amountTargetToken: "2",
+        stableTokenInfo: { decimals: 18, symbol: "DAI" },
+        targetTokenInfo: { decimals: 18, symbol: "WETH" },
+      }
+      const expectedDistribution = {
+        bracketsWithStableTokenDeposit: 2,
+        bracketsWithTargetTokenDeposit: 2,
+      }
+      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+    })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const tradeInfo = {
         fleetSize: 4,
@@ -379,6 +396,22 @@ contract("GnosisSafe", function(accounts) {
           lowestLimit: 100,
           highestLimit: 121,
           currentPrice: 110,
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 2,
+          bracketsWithTargetTokenDeposit: 2,
+        }
+        for (const tokenSetup of tokenSetups) {
+          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        }
+      })
+      it("when p is in the middle of the brackets and the steps are wide", async () => {
+        const tradeInfoWithoutTokens = {
+          fleetSize: 4,
+          lowestLimit: 25,
+          highestLimit: 400,
+          currentPrice: 100,
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 2,
