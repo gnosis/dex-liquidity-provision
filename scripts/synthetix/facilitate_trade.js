@@ -69,13 +69,13 @@ module.exports = async callback => {
     // Compute buy-sell amounts based on unlimited orders with rates from above.
     const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(
       formatedRate * (1 - sUSDTosETHFee),
-      sUSD.decimals,
-      sETH.decimals
+      sETH.decimals,
+      sUSD.decimals
     )
     const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(
       formatedRate * (1 + sETHTosUSDFee),
-      sETH.decimals,
-      sUSD.decimals
+      sUSD.decimals,
+      sETH.decimals
     )
 
     const buyAmounts = [buyETHAmount, buySUSDAmount]
