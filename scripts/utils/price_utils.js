@@ -17,6 +17,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     investmentStableTokenPerBracket,
     investmentTargetTokenPerBracket
   ) => {
+    const currentUnitPrice = getUnitPrice(currentPrice, await targetToken.decimals(), await stableToken.decimals())
     const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
     const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
@@ -34,9 +35,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const sellTargetTokenOrder = sellTargetTokenOrders[0]
 
     // Check that tokens with a lower price than the target price are funded with stableTokens
-    if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
+    if (checkThatOrderPriceIsBelowTarget(currentUnitPrice, sellStableTokenOrder)) {
       // checks whether price is in middle of bracket:
-      if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
+      if (checkThatOrderPriceIsBelowTarget(currentUnitPrice.inverted(), sellTargetTokenOrder)) {
         assert(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
@@ -52,8 +53,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       assert.equal(bracketExchangeBalanceStableToken, 0)
     }
 
-    if (checkThatOrderPriceIsBelowTarget(1 / currentPrice, sellTargetTokenOrder)) {
-      if (checkThatOrderPriceIsBelowTarget(currentPrice, sellStableTokenOrder)) {
+    if (checkThatOrderPriceIsBelowTarget(currentUnitPrice.inverted(), sellTargetTokenOrder)) {
+      if (checkThatOrderPriceIsBelowTarget(currentUnitPrice, sellStableTokenOrder)) {
         assert(
           checkFundingInTheMiddleBracket(
             bracketExchangeBalanceStableToken,
@@ -70,9 +71,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     }
   }
 
-  const checkThatOrderPriceIsBelowTarget = function(currentPrice, order) {
-    const multiplicator = 1000000000
-    return new BN(currentPrice * multiplicator).mul(order.priceNumerator) > order.priceDenominator.mul(new BN(multiplicator))
+  const checkThatOrderPriceIsBelowTarget = function(currentUnitPrice, order) {
+    // TODO: rewrite function checkCorrectnessOfDeposits so that the fraction becomes "numerator/denominator"
+    const orderPrice = new Fraction(order.priceDenominator, order.priceNumerator)
+    return orderPrice.lt(currentUnitPrice)
   }
 
   const checkFundingInTheMiddleBracket = function(
