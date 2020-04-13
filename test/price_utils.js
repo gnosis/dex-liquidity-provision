@@ -1,6 +1,7 @@
 const BN = require("bn.js")
-const Contract = require("@truffle/contract")
 const assert = require("assert")
+const Contract = require("@truffle/contract")
+
 const { toErc20Units } = require("../scripts/utils/printing_tools")
 const { addCustomMintableTokenToExchange } = require("./test_utils")
 const {

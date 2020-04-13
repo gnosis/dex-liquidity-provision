@@ -1,18 +1,18 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
-  const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
-  const Contract = require("@truffle/contract")
   const BN = require("bn.js")
+  const assert = require("assert")
+  const Contract = require("@truffle/contract")
+  const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
+  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
+
   const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances } = require("./trading_strategy_helpers")(
     web3,
     artifacts
   )
-  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
-
   const { getMasterCopy } = require("./internals")(web3, artifacts)
-  const { getDexagPrice } = require("./price_utils")(web3, artifacts)
-  const { checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
+  const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
+
   const pageSize = 50
-  const assert = require("assert")
 
   const verifyCorrectSetup = async function(
     brackets,

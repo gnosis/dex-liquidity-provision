@@ -1,9 +1,9 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
+  const readline = require("readline")
+
   const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
   const { signTransaction, createLightwallet } = require("../utils/internals")(web3, artifacts)
-
-  const readline = require("readline")
 
   const rl = readline.createInterface({
     input: process.stdin,

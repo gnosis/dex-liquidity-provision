@@ -1,21 +1,24 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
+  const assert = require("assert")
+  const BN = require("bn.js")
+  const fs = require("fs")
   const Contract = require("@truffle/contract")
+
+  const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
+  const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
+  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
+  const { allElementsOnlyOnce } = require("./js_helpers")
+
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
+
   BatchExchange.setNetwork(web3.network_id)
   BatchExchange.setProvider(web3.currentProvider)
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
 
-  const assert = require("assert")
-  const BN = require("bn.js")
-  const fs = require("fs")
-  const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
-  const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
-  const { allElementsOnlyOnce } = require("./js_helpers")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))

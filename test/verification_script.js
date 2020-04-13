@@ -1,20 +1,21 @@
-const { createTokenAndGetData } = require("./test_utils")
-const { getAllowances, assertNoAllowances } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const assert = require("assert")
 const BN = require("bn.js")
-const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
+const assert = require("assert")
 const Contract = require("@truffle/contract")
-const { deploySafe } = require("./test_utils")
+const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
+
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange } = require("./test_utils")
+const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
+const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
+  getAllowances,
+  assertNoAllowances,
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromOrders,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 
 contract("verification checks - for allowances", async accounts => {
   describe("allowances", async () => {

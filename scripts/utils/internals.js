@@ -1,10 +1,11 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
-  const IProxy = artifacts.require("IProxy")
 
+  const IProxy = artifacts.require("IProxy")
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const MultiSend = artifacts.require("MultiSend")
+
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
 

@@ -3,8 +3,8 @@ const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = requir
   artifacts
 )
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils.js")(web3, artifacts)
-const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
+const { proceedAnyways } = require("./utils/user_interface_helpers")
 
 const argv = require("./utils/default_yargs")
   .option("targetToken", {

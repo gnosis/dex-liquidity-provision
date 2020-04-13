@@ -1,6 +1,8 @@
 const TokenOWL = artifacts.require("TokenOWL")
 const TestToken = artifacts.require("DetailedMintableToken")
+
 const { toErc20Units } = require("../scripts/utils/printing_tools")
+
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
 const prepareTokenRegistration = async function(account, exchange) {
