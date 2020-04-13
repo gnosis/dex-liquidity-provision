@@ -144,7 +144,7 @@ contract("GnosisSafe", function(accounts) {
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
     })
   })
-  describe("transfer tests:", async function() {
+  describe.only("transfer tests:", async function() {
     const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -469,6 +469,25 @@ contract("GnosisSafe", function(accounts) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
+      })
+      it("with extreme prices and decimals", async () => {
+        const tradeInfo = {
+          fleetSize: 4,
+          lowestLimit: 20e+194,
+          highestLimit: 5e+194,
+          currentPrice: 10e+194,
+          bracketsWithStableTokenDeposit: 2,
+          bracketsWithTargetTokenDeposit: 2,
+          amountStableToken: "10",
+          amountTargetToken: fromErc20Units(new BN("5000000"), 200),
+          stableTokenInfo: { decimals: 3, symbol: "fewdecimals" },
+          targetTokenInfo: { decimals: 200, symbol: "manydecimals" },
+        }
+        const expectedDistribution = {
+          bracketsWithStableTokenDeposit: 2,
+          bracketsWithTargetTokenDeposit: 2,
+        }
+        await testAutomaticDeposits(tradeInfo, expectedDistribution)
       })
     })
   })
