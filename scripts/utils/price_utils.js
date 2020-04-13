@@ -17,64 +17,49 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     investmentStableTokenPerBracket,
     investmentTargetTokenPerBracket
   ) => {
-    const currentUnitPrice = getUnitPrice(currentPrice, await targetToken.decimals(), await stableToken.decimals())
+    // all prices are of the form: 1 target token = "price" stable tokens 
     const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
     const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
+    const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
+    const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
+
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
     const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 
-    const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
-    const sellStableTokenOrders = bracketOrders.filter(order => order.sellToken == stableTokenId)
-    assert.equal(sellStableTokenOrders.length, 1)
-    const sellStableTokenOrder = sellStableTokenOrders[0]
+    const currentUnitPrice = getUnitPrice(currentPrice, await targetToken.decimals(), await stableToken.decimals())
 
-    const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
+    const buyTargetTokenOrders = bracketOrders.filter(order => order.buyToken == targetTokenId)
+    assert.equal(buyTargetTokenOrders.length, 1)
+    const buyTargetTokenOrder = buyTargetTokenOrders[0]
+    assert.equal(buyTargetTokenOrder.sellToken, stableTokenId)
+    // price of order is in terms of target tokens per stable token, the inverse is needed
+    const priceBuyingTargetToken = new Fraction(buyTargetTokenOrder.priceNumerator, buyTargetTokenOrder.priceDenominator).inverted()
+
     const sellTargetTokenOrders = bracketOrders.filter(order => order.sellToken == targetTokenId)
     assert.equal(sellTargetTokenOrders.length, 1)
     const sellTargetTokenOrder = sellTargetTokenOrders[0]
+    assert.equal(sellTargetTokenOrder.buyToken, stableTokenId)
+    const priceSellingTargetToken = new Fraction(sellTargetTokenOrder.priceNumerator, sellTargetTokenOrder.priceDenominator)
 
-    // Check that tokens with a lower price than the target price are funded with stableTokens
-    if (checkThatOrderPriceIsBelowTarget(currentUnitPrice, sellStableTokenOrder)) {
-      // checks whether price is in middle of bracket:
-      if (checkThatOrderPriceIsBelowTarget(currentUnitPrice.inverted(), sellTargetTokenOrder)) {
-        assert(
-          checkFundingInTheMiddleBracket(
-            bracketExchangeBalanceStableToken,
-            bracketExchangeBalanceTargetToken,
-            investmentStableTokenPerBracket,
-            investmentTargetTokenPerBracket
-          )
-        )
-      } else {
-        assert.equal(bracketExchangeBalanceStableToken, investmentStableTokenPerBracket.toString())
-      }
+    assert(priceBuyingTargetToken.lt(priceSellingTargetToken))
+
+    if (priceSellingTargetToken.lt(currentUnitPrice)) {
+      assert.equal(bracketExchangeBalanceTargetToken, "0")
+      assert.equal(bracketExchangeBalanceStableToken, investmentStableTokenPerBracket.toString())
+    } else if (priceBuyingTargetToken.gt(currentUnitPrice)) {
+      assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
+      assert.equal(bracketExchangeBalanceStableToken, "0")
     } else {
-      assert.equal(bracketExchangeBalanceStableToken, 0)
-    }
-
-    if (checkThatOrderPriceIsBelowTarget(currentUnitPrice.inverted(), sellTargetTokenOrder)) {
-      if (checkThatOrderPriceIsBelowTarget(currentUnitPrice, sellStableTokenOrder)) {
-        assert(
-          checkFundingInTheMiddleBracket(
-            bracketExchangeBalanceStableToken,
-            bracketExchangeBalanceTargetToken,
-            investmentStableTokenPerBracket,
-            investmentTargetTokenPerBracket
-          )
+      assert(
+        checkFundingInTheMiddleBracket(
+          bracketExchangeBalanceStableToken,
+          bracketExchangeBalanceTargetToken,
+          investmentStableTokenPerBracket,
+          investmentTargetTokenPerBracket
         )
-      } else {
-        assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
-      }
-    } else {
-      assert.equal(bracketExchangeBalanceTargetToken, 0)
+      )
     }
-  }
-
-  const checkThatOrderPriceIsBelowTarget = function(currentUnitPrice, order) {
-    // TODO: rewrite function checkCorrectnessOfDeposits so that the fraction becomes "numerator/denominator"
-    const orderPrice = new Fraction(order.priceDenominator, order.priceNumerator)
-    return orderPrice.lt(currentUnitPrice)
   }
 
   const checkFundingInTheMiddleBracket = function(
