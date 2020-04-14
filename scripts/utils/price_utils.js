@@ -17,7 +17,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     investmentStableTokenPerBracket,
     investmentTargetTokenPerBracket
   ) => {
-    // all prices are of the form: 1 target token = "price" stable tokens 
+    // all prices are of the form: 1 target token = "price" stable tokens
     const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
     const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
     const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
@@ -34,7 +34,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const buyTargetTokenOrder = buyTargetTokenOrders[0]
     assert.equal(buyTargetTokenOrder.sellToken, stableTokenId)
     // price of order is in terms of target tokens per stable token, the inverse is needed
-    const priceBuyingTargetToken = new Fraction(buyTargetTokenOrder.priceNumerator, buyTargetTokenOrder.priceDenominator).inverted()
+    const priceBuyingTargetToken = new Fraction(
+      buyTargetTokenOrder.priceNumerator,
+      buyTargetTokenOrder.priceDenominator
+    ).inverted()
 
     const sellTargetTokenOrders = bracketOrders.filter(order => order.sellToken == targetTokenId)
     assert.equal(sellTargetTokenOrders.length, 1)

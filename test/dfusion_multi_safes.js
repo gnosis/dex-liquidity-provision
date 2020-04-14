@@ -473,9 +473,9 @@ contract("GnosisSafe", function(accounts) {
       it("with extreme prices and decimals", async () => {
         const tradeInfo = {
           fleetSize: 4,
-          lowestLimit: 5e+194,
-          highestLimit: 20e+194,
-          currentPrice: 10e+194,
+          lowestLimit: 5e194,
+          highestLimit: 20e194,
+          currentPrice: 10e194,
           bracketsWithStableTokenDeposit: 2,
           bracketsWithTargetTokenDeposit: 2,
           amountStableToken: "10",
