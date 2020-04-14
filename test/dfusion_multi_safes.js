@@ -476,8 +476,6 @@ contract("GnosisSafe", function(accounts) {
           lowestLimit: 5e194,
           highestLimit: 20e194,
           currentPrice: 10e194,
-          bracketsWithStableTokenDeposit: 2,
-          bracketsWithTargetTokenDeposit: 2,
           amountStableToken: "10",
           amountTargetToken: fromErc20Units(new BN("5000000"), 200),
           stableTokenInfo: { decimals: 3, symbol: "fewdecimals" },
