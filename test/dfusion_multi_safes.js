@@ -625,7 +625,7 @@ contract("GnosisSafe", function(accounts) {
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
-    it.only("Failing when lowest limit is higher than highest limit", async () => {
+    it("Failing when lowest limit is higher than highest limit", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
