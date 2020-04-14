@@ -470,11 +470,11 @@ contract("GnosisSafe", function(accounts) {
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
-      /*it("with extreme prices and decimals", async () => {
+      it("with extreme prices and decimals", async () => {
         const tradeInfo = {
           fleetSize: 4,
-          lowestLimit: 20e+194,
-          highestLimit: 5e+194,
+          lowestLimit: 5e+194,
+          highestLimit: 20e+194,
           currentPrice: 10e+194,
           bracketsWithStableTokenDeposit: 2,
           bracketsWithTargetTokenDeposit: 2,
@@ -488,7 +488,7 @@ contract("GnosisSafe", function(accounts) {
           bracketsWithTargetTokenDeposit: 2,
         }
         await testAutomaticDeposits(tradeInfo, expectedDistribution)
-      })*/
+      })
     })
   })
 
