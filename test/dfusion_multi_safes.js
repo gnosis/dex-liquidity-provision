@@ -1,5 +1,5 @@
 const BN = require("bn.js")
-const assert = require("assert")
+const assertNodejs = require("assert")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
@@ -637,10 +637,13 @@ contract("GnosisSafe", function(accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      await assert.rejects(buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, lowestLimit, highestLimit), {
-        name: "AssertionError [ERR_ASSERTION]",
-        message: "Lowest limit must be lower than highest limit",
-      })
+      await assertNodejs.rejects(
+        buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, lowestLimit, highestLimit),
+        {
+          name: "AssertionError [ERR_ASSERTION]",
+          message: "Lowest limit must be lower than highest limit",
+        }
+      )
     })
   })
 
