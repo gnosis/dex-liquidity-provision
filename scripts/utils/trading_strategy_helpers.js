@@ -228,6 +228,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
+    assert(lowestLimit < highestLimit, "Lowest limit must be lower than highest limit")
+
     const exchange = await exchangePromise
     log("Batch Exchange", exchange.address)
 

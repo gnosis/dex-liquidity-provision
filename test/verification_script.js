@@ -7,6 +7,7 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
+const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
@@ -15,7 +16,9 @@ const {
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromOrders,
+  maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
+const { buildExecTransaction, CALL } = require("../scripts/utils/internals")(web3, artifacts)
 
 contract("verification checks - for allowances", async accounts => {
   describe("allowances", async () => {
@@ -187,21 +190,37 @@ contract("Verification checks", function(accounts) {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
-      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
       const lowestLimit = 90
       const highestLimit = 120
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken.id,
-        stableToken.id,
-        highestLimit, // <-- highest and lowest price are switched, this implies that brackets are unprofitable
-        lowestLimit
-      )
+
+      // create unlimited orders to sell low and buy high
+      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
+      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
+
+      const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
+      const buyTokens = [targetToken.id, stableToken.id]
+      const sellTokens = [stableToken.id, targetToken.id]
+      const validFroms = [validFrom, validFrom]
+      const validTos = [maxU32, maxU32]
+      const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
+      const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
+
+      const orderData = exchange.contract.methods
+        .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
+        .encodeABI()
+      const orderTransaction = {
+        operation: CALL,
+        to: exchange.address,
+        value: 0,
+        data: orderData,
+      }
+
+      const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, lw, transaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
         message: "Brackets are not profitable",
       })
     })
