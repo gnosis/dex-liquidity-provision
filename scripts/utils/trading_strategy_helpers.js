@@ -224,7 +224,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     highestLimit,
     debug = false,
     validFrom = 3,
-    expiry = maxU32
+    expiry = maxU32 - 1 // We did not choose maxU32, in order to distinguish orders from "non-expiring" orders of the web interface
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
