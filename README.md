@@ -14,7 +14,7 @@ Install needed dependencies:
 yarn install
 ```
 
-Run Ganache in the background with an increased gas limit (this is needed to deploy Dfusion):
+Run Ganache in the background with an increased gas limit (this is needed to deploy Gnosis Protocol):
 
 ```
 npx ganache-cli --gasLimit=80000000
