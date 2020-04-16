@@ -1,6 +1,6 @@
 # Gnosis Liquidity Provision
 
-We want to employ different liquidity strategies when the Dfusion exchange is launched.
+We want to employ different liquidity strategies when the Gnosis Protocol is launched.
 This repo is responsible for testing and execution.
 
 The code is this repository is *work in progress*: it will be subject to significant changes and has known rough edges that break some functionalities.
@@ -14,7 +14,7 @@ Install needed dependencies:
 yarn install
 ```
 
-Run Ganache in the background with an increased gas limit (this is needed to deploy Dfusion):
+Run Ganache in the background with an increased gas limit (this is needed to deploy Gnosis Protocol):
 
 ```
 npx ganache-cli --gasLimit=80000000

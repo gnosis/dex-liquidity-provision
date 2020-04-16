@@ -137,7 +137,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const buildBundledTransaction = async function(transactions) {
     // TODO: do we really need to await the concrete instance of multiSend, since we are only using it to compute the data of a transaction?
     const multiSend = await multiSendPromise
-    const transactionData = encodeMultiSend(multiSend, transactions, web3)
+    const transactionData = encodeMultiSend(multiSend, transactions)
     const bundledTransaction = {
       operation: DELEGATECALL,
       to: multiSend.address,

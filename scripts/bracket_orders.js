@@ -56,7 +56,7 @@ const argv = require("./utils/default_yargs")
 
 module.exports = async callback => {
   try {
-    const masterSafePromise = getSafe(argv.masterSafe, artifacts)
+    const masterSafePromise = getSafe(argv.masterSafe)
     const exchange = await getExchange(web3)
 
     // check price against dex.ag's API
