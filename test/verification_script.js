@@ -5,11 +5,12 @@ const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
 const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
-const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
+const { execTransaction, waitForNSeconds, ADDRESS_0 } = require("../scripts/utils/internals")(web3, artifacts)
 const {
   getAllowances,
   assertNoAllowances,
@@ -126,7 +127,7 @@ contract("Verification checks", function(accounts) {
     stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
     await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
-  describe("1 Check: Owner is master safe", async () => {
+  describe("Owner is master safe", async () => {
     it("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
       const masterSafe = await GnosisSafe.at(
@@ -138,7 +139,7 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("2 Check: MasterCopy is usual GnosisSafeMasterCopy", async () => {
+  describe("MasterCopy is usual GnosisSafeMasterCopy", async () => {
     it("throws if the proxy contract is not gnosis safe template", async () => {
       const notMasterCopy = await GnosisSafe.new()
       const masterSafe = await GnosisSafe.at(
@@ -150,7 +151,20 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("3 Check: Each bracket has only two orders", async () => {
+  describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy ", async () => {
+    it("throws if bytecode differs", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
+      const evilSafe = await GnosisSafe.at(evilProxy.address)
+      await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
+      await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address, []), {
+        message: "Bad bytecode for bracket " + evilProxy.address,
+      })
+    })
+  })
+  describe("Each bracket has only two orders", async () => {
     it("throws if a bracket does not have two orders", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -185,7 +199,7 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("4 Check: The orders of a bracket are profitable to trade against each other", async () => {
+  describe("The orders of a bracket are profitable to trade against each other", async () => {
     it("throws if orders of one bracket are not profitable", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -225,7 +239,7 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("5 Check: Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
+  describe("Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
     it("throws if there are profitable orders", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
