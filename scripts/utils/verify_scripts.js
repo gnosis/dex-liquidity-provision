@@ -9,7 +9,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     web3,
     artifacts
   )
-  const { getMasterCopy } = require("./internals")(web3, artifacts)
+  const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
@@ -58,6 +58,18 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     await Promise.all(
       brackets.concat(master).map(async safe => {
         assert.strictEqual((await safe.getModules()).length, 0, "Modules present in Safe " + safe.address)
+      })
+    )
+
+    log("- Verify unchanged fallback handler")
+    const defaultFallbackHandler = getFallbackHandler(GnosisSafe.address)
+    await Promise.all(
+      bracketAddresses.concat(masterAddress).map(async safeAddress => {
+        assert.strictEqual(
+          await getFallbackHandler(safeAddress),
+          await defaultFallbackHandler,
+          "Fallback handler of Safe " + safeAddress + " changed"
+        )
       })
     )
   }

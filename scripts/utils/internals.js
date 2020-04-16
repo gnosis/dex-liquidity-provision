@@ -1,6 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
+  const ethUtil = require("ethereumjs-util")
 
   const IProxy = artifacts.require("IProxy")
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
@@ -9,6 +10,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
 
+  const fallbackHandlerStorageSlot = "0x" + ethUtil.keccak256("fallback_manager.handler.address").toString("hex")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const CALL = 0
   const DELEGATECALL = 1
@@ -193,9 +195,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return safe.masterCopy()
   }
 
+  const getFallbackHandler = async function(safeAddress) {
+    return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
+    getFallbackHandler,
     execTransaction,
     encodeMultiSend,
     createLightwallet,
