@@ -18,7 +18,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const pageSize = 50
 
-  const verifyBracketsWellFormed = async function(bracketAddresses, masterAddress, logActivated = false) {
+  const verifyBracketsWellFormed = async function(masterAddress, bracketAddresses, logActivated = false) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
     const gnosisSafe = await gnosisSafeMasterCopy
@@ -101,7 +101,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    await verifyBracketsWellFormed(brackets, masterSafe, logActivated)
+    await verifyBracketsWellFormed(masterSafe, brackets, logActivated)
 
     log("- Verify that each bracket has only two orders")
     await Promise.all(
