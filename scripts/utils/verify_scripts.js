@@ -59,7 +59,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     log("1. Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
-        assert(await isOnlySafeOwner(masterSafe, bracketTrader, artifacts), "Owners are not set correctly")
+        assert(await isOnlySafeOwner(masterSafe, bracketTrader), "Owners are not set correctly")
       })
     )
 
