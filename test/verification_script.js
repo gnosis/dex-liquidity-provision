@@ -151,7 +151,7 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy ", async () => {
+  describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy", async () => {
     it("throws if bytecode differs", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -161,6 +161,46 @@ contract("Verification checks", function(accounts) {
       await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
       await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address, []), {
         message: "Bad bytecode for bracket " + evilProxy.address,
+      })
+    })
+  })
+  describe("Mo modules are installed", async () => {
+    it("throws if module is present in master", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
+      const bracket = await GnosisSafe.at(bracketAddress)
+      const moduleAddress = "0x" + "2".padStart(40, "0")
+      const addModuleTransaction = {
+        to: masterSafe.address,
+        value: 0,
+        data: bracket.contract.methods.enableModule(moduleAddress).encodeABI(),
+        operation: CALL,
+      }
+      // modules can only be added with a transaction from the contract to itself
+      await execTransaction(masterSafe, lw, addModuleTransaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+        message: "Modules present in Safe " + masterSafe.address,
+      })
+    })
+    it("throws if module is present in bracket", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
+      const bracket = await GnosisSafe.at(bracketAddress)
+      const moduleAddress = "0x" + "2".padStart(40, "0")
+      const addModuleTransaction = {
+        to: bracketAddress,
+        value: 0,
+        data: bracket.contract.methods.enableModule(moduleAddress).encodeABI(),
+        operation: CALL,
+      }
+      const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
+      await execTransaction(masterSafe, lw, execAddModuleTransaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+        message: "Modules present in Safe " + bracketAddress,
       })
     })
   })
