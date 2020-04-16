@@ -164,7 +164,7 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
-  describe("Mo modules are installed", async () => {
+  describe("No modules are installed", async () => {
     it("throws if module is present in master", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -201,6 +201,46 @@ contract("Verification checks", function(accounts) {
       await execTransaction(masterSafe, lw, execAddModuleTransaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
         message: "Modules present in Safe " + bracketAddress,
+      })
+    })
+  })
+  describe("Fallback handler did not change", async () => {
+    it("throws if master's fallback handler changed", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
+      const bracket = await GnosisSafe.at(bracketAddress)
+      const handlerAddress = "0x" + "2".padStart(40, "0")
+      const addModuleTransaction = {
+        to: masterSafe.address,
+        value: 0,
+        data: bracket.contract.methods.setFallbackHandler(handlerAddress).encodeABI(),
+        operation: CALL,
+      }
+      // fallback address can only be added with a transaction from the contract to itself
+      await execTransaction(masterSafe, lw, addModuleTransaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+        message: "Fallback handler of Safe " + masterSafe.address + " changed",
+      })
+    })
+    it("throws if bracket's fallback handler changed", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
+      const bracket = await GnosisSafe.at(bracketAddress)
+      const handlerAddress = "0x" + "2".padStart(40, "0")
+      const addModuleTransaction = {
+        to: bracketAddress,
+        value: 0,
+        data: bracket.contract.methods.setFallbackHandler(handlerAddress).encodeABI(),
+        operation: CALL,
+      }
+      const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
+      await execTransaction(masterSafe, lw, execAddModuleTransaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+        message: "Fallback handler of Safe " + bracketAddress + " changed",
       })
     })
   })
