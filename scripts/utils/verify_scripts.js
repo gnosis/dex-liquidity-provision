@@ -5,14 +5,43 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
-  const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances } = require("./trading_strategy_helpers")(
+  const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances, getSafe } = require("./trading_strategy_helpers")(
     web3,
     artifacts
   )
   const { getMasterCopy } = require("./internals")(web3, artifacts)
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
 
+  const GnosisSafe = artifacts.require("GnosisSafe.sol")
+  const gnosisSafeMasterCopy = GnosisSafe.deployed()
+
   const pageSize = 50
+
+  const verifyBracketsWellFormed = async function(bracketAddresses, masterAddress, logActivated = false) {
+    const log = logActivated ? (...a) => console.log(...a) : () => {}
+
+    const gnosisSafe = await gnosisSafeMasterCopy
+    const master = await getSafe(masterAddress)
+    const brackets = await Promise.all(bracketAddresses.map(bracketAddress => getSafe(bracketAddress)))
+
+    log("- Verify that the owner of the brackets is the masterSafe")
+    await Promise.all(
+      brackets.map(async bracketTrader => {
+        assert(await isOnlySafeOwner(masterAddress, bracketTrader, artifacts), "Owners are not set correctly")
+      })
+    )
+
+    log("- Verify that masterCopy of brackets is the known masterCopy")
+    await Promise.all(
+      bracketAddresses.map(async bracketAddress => {
+        assert.equal(
+          (await getMasterCopy(bracketAddress)).toString().toLowerCase(),
+          gnosisSafe.address.toString().toLowerCase(),
+          "MasterCopy not set correctly"
+        )
+      })
+    )
+  }
 
   const verifyCorrectSetup = async function(
     brackets,
@@ -29,9 +58,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, pageSize)
     const bracketTraderAddresses = brackets.map(address => address.toLowerCase())
-
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const gnosisSafe = await GnosisSafe.deployed()
 
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
@@ -56,25 +82,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    log("1. Verify that the owner of the brackets is the masterSafe")
-    await Promise.all(
-      bracketTraderAddresses.map(async bracketTrader => {
-        assert(await isOnlySafeOwner(masterSafe, bracketTrader, artifacts), "Owners are not set correctly")
-      })
-    )
+    await verifyBracketsWellFormed(brackets, masterSafe, logActivated)
 
-    log("2. Verify that masterCopy of brackets is the known masterCopy")
-    await Promise.all(
-      bracketTraderAddresses.map(async bracketTrader => {
-        assert.equal(
-          (await getMasterCopy(bracketTrader)).toString().toLowerCase(),
-          gnosisSafe.address.toString().toLowerCase(),
-          "MasterCopy not set correctly"
-        )
-      })
-    )
-
-    log("3. Verify that each bracket has only two orders")
+    log("- Verify that each bracket has only two orders")
     await Promise.all(
       bracketTraderAddresses.map(async bracketTrader => {
         const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
@@ -82,7 +92,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       })
     )
 
-    log("4. Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
+    log("- Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
     for (const bracketTrader of bracketTraderAddresses) {
       const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
 
@@ -96,7 +106,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       // If the last equation holds, the inverse trade must be profitable as well
     }
 
-    log("5. Verify that no bracket-trader offers profitable orders")
+    log("- Verify that no bracket-trader offers profitable orders")
     for (const order of relevantOrders) {
       assert(
         await checkNoProfitableOffer(order, exchange, tokenInfo, globalPriceStorage),
@@ -104,7 +114,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       )
     }
 
-    log("6. Verify that no allowances are currently set")
+    log("- Verify that no allowances are currently set")
     await assertNoAllowances(masterSafe, tokenInfo, allowanceExceptions)
     for (const bracketTrader of bracketTraderAddresses) await assertNoAllowances(bracketTrader, tokenInfo)
   }
