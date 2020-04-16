@@ -13,6 +13,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
+  const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
 
   const pageSize = 50
@@ -38,6 +39,17 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
           (await getMasterCopy(bracketAddress)).toString().toLowerCase(),
           gnosisSafe.address.toString().toLowerCase(),
           "MasterCopy not set correctly"
+        )
+      })
+    )
+
+    log("- Verify proxy bytecode")
+    await Promise.all(
+      bracketAddresses.map(async bracketAddress => {
+        assert.equal(
+          await web3.eth.getCode(bracketAddress),
+          GnosisSafeProxy.deployedBytecode,
+          "Bad bytecode for bracket " + bracketAddress
         )
       })
     )
