@@ -53,6 +53,13 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         )
       })
     )
+
+    log("- Verify absence of modules")
+    await Promise.all(
+      brackets.concat(master).map(async safe => {
+        assert.strictEqual((await safe.getModules()).length, 0, "Modules present in Safe " + safe.address)
+      })
+    )
   }
 
   const verifyCorrectSetup = async function(
