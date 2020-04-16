@@ -106,7 +106,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @return {bool} whether owned is indeed owned only by master
    */
   const isOnlySafeOwner = async function(masterAddress, owned) {
-    const ownedSafe = typeof(owned) === "string" ? await getSafe(owned) : owned
+    const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
     const ownerAddresses = await ownedSafe.getOwners()
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
