@@ -10,7 +10,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
 
-  const fallbackHandlerStorageSlot = "0x" + ethUtil.keccak256("fallback_manager.handler.address").toString("hex")
   const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const CALL = 0
   const DELEGATECALL = 1
@@ -195,6 +194,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return safe.masterCopy()
   }
 
+  const fallbackHandlerStorageSlot = "0x" + ethUtil.keccak256("fallback_manager.handler.address").toString("hex")
   const getFallbackHandler = async function(safeAddress) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
