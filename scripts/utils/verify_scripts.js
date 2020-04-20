@@ -11,6 +11,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   )
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
+  const { equalUpToOrder } = require("./js_helpers")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
@@ -18,12 +19,31 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const pageSize = 50
 
-  const verifyBracketsWellFormed = async function(masterAddress, bracketAddresses, logActivated = false) {
+  const verifyBracketsWellFormed = async function(
+    masterAddress,
+    bracketAddresses,
+    masterThreshold,
+    masterOwners,
+    logActivated = false
+  ) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
     const gnosisSafe = await gnosisSafeMasterCopy
     const master = await getSafe(masterAddress)
     const brackets = await Promise.all(bracketAddresses.map(bracketAddress => getSafe(bracketAddress)))
+
+    if (!masterOwners || !masterThreshold) log("- Master safe owner verification skipped")
+    else {
+      log("- Verify owners of masterSafe")
+      const threshold = master.getThreshold()
+      const owners = master.getOwners()
+      assert.equal(
+        await threshold,
+        masterThreshold,
+        "Master threshold is " + (await threshold) + " while it is supposed to be " + masterThreshold
+      )
+      assert(equalUpToOrder(await owners, masterOwners), "Master owners are different than expected")
+    }
 
     log("- Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
@@ -77,7 +97,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const verifyCorrectSetup = async function(
     brackets,
     masterSafe,
-    allowanceExceptions,
+    masterThreshold = null,
+    masterOwners = null,
+    allowanceExceptions = [],
     globalPriceStorage = {},
     logActivated = false
   ) {
@@ -113,7 +135,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    await verifyBracketsWellFormed(masterSafe, brackets, logActivated)
+    await verifyBracketsWellFormed(masterSafe, brackets, masterThreshold, masterOwners, logActivated)
 
     log("- Verify that each bracket has only two orders")
     await Promise.all(
