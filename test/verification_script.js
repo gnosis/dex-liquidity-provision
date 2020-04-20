@@ -221,7 +221,7 @@ contract("Verification checks", function(accounts) {
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, lw, transaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
-        message: "Brackets are not profitable",
+        message: "Brackets do not gain money when trading",
       })
     })
   })
