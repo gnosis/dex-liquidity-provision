@@ -20,7 +20,6 @@ module.exports = async callback => {
   try {
     const WETH = Contract(require("canonical-weth/build/contracts/WETH9"))
     WETH.setProvider(web3.currentProvider)
-    WETH.setNetwork(web3.network_id)
 
     const weth = await WETH.deployed()
 

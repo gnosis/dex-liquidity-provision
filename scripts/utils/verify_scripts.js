@@ -93,7 +93,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchangeContract.setNetwork(web3.network_id)
     BatchExchangeContract.setProvider(web3.currentProvider)
     const exchange = await BatchExchangeContract.deployed()
 

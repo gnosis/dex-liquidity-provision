@@ -141,7 +141,6 @@ contract("PriceOracle", function(accounts) {
     // Create lightwallet
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
   })
   describe("Price oracle sanity check", async () => {

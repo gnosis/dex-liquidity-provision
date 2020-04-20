@@ -87,7 +87,6 @@ contract("GnosisSafe", function(accounts) {
     testToken = await TestToken.new("TEST", 18)
 
     BatchExchange.setProvider(web3.currentProvider)
-    BatchExchange.setNetwork(web3.network_id)
     exchange = await BatchExchange.deployed()
   })
 
