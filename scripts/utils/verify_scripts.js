@@ -1,5 +1,4 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
-  const BN = require("bn.js")
   const assert = require("assert")
   const Contract = require("@truffle/contract")
   const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
