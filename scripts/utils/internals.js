@@ -1,6 +1,7 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
+  const ethUtil = require("ethereumjs-util")
 
   const IProxy = artifacts.require("IProxy")
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
@@ -193,9 +194,22 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return safe.masterCopy()
   }
 
+  const fallbackHandlerStorageSlot = "0x" + ethUtil.keccak256("fallback_manager.handler.address").toString("hex")
+  /**
+   * Users can set up their Gnosis Safe to have a fallback handler: a contract to which all transactions
+   * with nonempty data triggering a call to the fallback are forwarded.
+   * The fallback contract address is always located at the same storage position for every Safe.
+   * @param {Address} transactions Address of a Gnosis Safe
+   * @return {Address} Fallback contract of the input Gnosis Safe
+   */
+  const getFallbackHandler = async function(safeAddress) {
+    return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
+    getFallbackHandler,
     execTransaction,
     encodeMultiSend,
     createLightwallet,
