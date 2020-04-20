@@ -277,6 +277,44 @@ contract("Verification checks", function(accounts) {
         message: "order length is not correct",
       })
     })
+    it("throws if orders do not buy and sell the same tokens in a loop", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
+      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+      const lowestLimit = 90
+      const highestLimit = 120
+
+      // create unlimited orders to sell low and buy high
+      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
+      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
+
+      const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
+      const buyTokens = [targetToken.id, targetToken.id]
+      const sellTokens = [stableToken.id, stableToken.id]
+      const validFroms = [validFrom, validFrom]
+      const validTos = [maxU32, maxU32]
+      const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
+      const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
+
+      const orderData = exchange.contract.methods
+        .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
+        .encodeABI()
+      const orderTransaction = {
+        operation: CALL,
+        to: exchange.address,
+        value: 0,
+        data: orderData,
+      }
+
+      const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
+      await execTransaction(masterSafe, lw, transaction)
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+        message: "The two orders are not set up to trade back and forth on the same token pair",
+      })
+    })
   })
   describe("The orders of a bracket are profitable to trade against each other", async () => {
     it("throws if orders of one bracket are not profitable", async () => {
@@ -314,7 +352,7 @@ contract("Verification checks", function(accounts) {
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, lw, transaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
-        message: "Brackets are not profitable",
+        message: "Brackets do not gain money when trading",
       })
     })
   })
