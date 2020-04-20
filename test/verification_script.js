@@ -139,6 +139,26 @@ contract("Verification checks", function(accounts) {
       })
     })
   })
+  describe("Master safe has specified owners", async () => {
+    it("throws if the masterSafe has different threshold", async () => {
+      const owners = [lw.accounts[0], lw.accounts[1]]
+      const realThreshold = 2
+      const fakeThreshold = 1
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, owners, realThreshold))
+      await assert.rejects(verifyCorrectSetup([], masterSafe.address, fakeThreshold, owners), {
+        message: "Master threshold is " + realThreshold + " while it is supposed to be " + fakeThreshold,
+      })
+    })
+    it("throws if the masterSafe has different owners", async () => {
+      const realOwners = [lw.accounts[0], lw.accounts[1]]
+      const fakeOwners = [lw.accounts[0], lw.accounts[2]]
+      const threshold = 2
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, realOwners, threshold))
+      await assert.rejects(verifyCorrectSetup([], masterSafe.address, threshold, fakeOwners), {
+        message: "Master owners are different than expected",
+      })
+    })
+  })
   describe("MasterCopy is usual GnosisSafeMasterCopy", async () => {
     it("throws if the proxy contract is not gnosis safe template", async () => {
       const notMasterCopy = await GnosisSafe.new()
