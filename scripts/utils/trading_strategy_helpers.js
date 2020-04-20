@@ -100,14 +100,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Checks that the first input address is the only owner of the first input address
-   * @param {Address} masterAddress address that should be the only owner
-   * @param {Address} ownedAddress address that is owned
-   * @return {bool} whether ownedAddress is indeed owned only by masterAddress
+   * Checks that the address used as the first argument is the only owner of the Safe included as the second argument
+   * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
+   * @param {SmartContract|Address} owned Safe that might be owned by master
+   * @return {bool} whether owned is indeed owned only by master
    */
-  const isOnlySafeOwner = async function(masterAddress, ownedAddress) {
-    const owned = await getSafe(ownedAddress)
-    const ownerAddresses = await owned.getOwners()
+  const isOnlySafeOwner = async function(masterAddress, owned) {
+    const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
+    const ownerAddresses = await ownedSafe.getOwners()
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
 

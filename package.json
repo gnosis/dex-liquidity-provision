@@ -39,6 +39,7 @@
     "dotenv": "^8.0.0",
     "eslint": "^6.8.0",
     "eth-gas-reporter": "^0.2.16",
+    "ethereumjs-util": "^6.2.0",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
     "sol-merger": "^2.0.1",
