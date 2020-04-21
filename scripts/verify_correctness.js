@@ -28,12 +28,31 @@ const argv = require("yargs")
     type: "string",
     describe: "The masterSafe in control of the bracket-traders",
   })
+  .option("masterOwners", {
+    type: "string",
+    describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
+    coerce: str => {
+      return str.split(",")
+    },
+  })
+  .option("masterThreshold", {
+    type: "number",
+    describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
+    coerce: str => {
+      return str.split(",")
+    },
+  })
   .option("allowanceExceptions", {
     type: "string",
     describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
     coerce: str => {
       return str.split(",")
     },
+  })
+  .check(function(argv) {
+    if ((!argv.masterOwners && argv.masterThreshold) || (argv.masterOwners && !argv.masterThreshold))
+      throw new Error("Master owners and master threshold must be either both absent or both specified")
+    return true
   })
   .demand(["brackets", "masterSafe"])
   .help(
@@ -43,7 +62,15 @@ const argv = require("yargs")
 
 module.exports = async callback => {
   try {
-    await verifyCorrectSetup(argv.brackets, argv.masterSafe, argv.allowanceExceptions, {}, true)
+    await verifyCorrectSetup(
+      argv.brackets,
+      argv.masterSafe,
+      argv.masterThreshold,
+      argv.masterOwners,
+      argv.allowanceExceptions,
+      {},
+      true
+    )
     callback()
   } catch (error) {
     callback(error)

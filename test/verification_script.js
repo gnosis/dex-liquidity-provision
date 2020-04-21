@@ -133,8 +133,28 @@ contract("Verification checks", function(accounts) {
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
-      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address), {
         message: "Owners are not set correctly",
+      })
+    })
+  })
+  describe("Master safe has specified owners", async () => {
+    it("throws if the masterSafe has different threshold", async () => {
+      const owners = [lw.accounts[0], lw.accounts[1]]
+      const realThreshold = 2
+      const fakeThreshold = 1
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, owners, realThreshold))
+      await assert.rejects(verifyCorrectSetup([], masterSafe.address, fakeThreshold, owners), {
+        message: "Master threshold is " + realThreshold + " while it is supposed to be " + fakeThreshold,
+      })
+    })
+    it("throws if the masterSafe has different owners", async () => {
+      const realOwners = [lw.accounts[0], lw.accounts[1]]
+      const fakeOwners = [lw.accounts[0], lw.accounts[2]]
+      const threshold = 2
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, realOwners, threshold))
+      await assert.rejects(verifyCorrectSetup([], masterSafe.address, threshold, fakeOwners), {
+        message: "Master owners are different than expected",
       })
     })
   })
@@ -145,7 +165,7 @@ contract("Verification checks", function(accounts) {
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
       const brackets = [(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 1)).toLowerCase()]
-      await assert.rejects(verifyCorrectSetup(brackets, masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup(brackets, masterSafe.address), {
         message: "MasterCopy not set correctly",
       })
     })
@@ -158,7 +178,7 @@ contract("Verification checks", function(accounts) {
       const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
       const evilSafe = await GnosisSafe.at(evilProxy.address)
       await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
-      await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
         message: "Bad bytecode for bracket " + evilProxy.address,
       })
     })
@@ -179,7 +199,7 @@ contract("Verification checks", function(accounts) {
       }
       // modules can only be added with a transaction from the contract to itself
       await execTransaction(masterSafe, lw, addModuleTransaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Modules present in Safe " + masterSafe.address,
       })
     })
@@ -198,7 +218,7 @@ contract("Verification checks", function(accounts) {
       }
       const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
       await execTransaction(masterSafe, lw, execAddModuleTransaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Modules present in Safe " + bracketAddress,
       })
     })
@@ -219,7 +239,7 @@ contract("Verification checks", function(accounts) {
       }
       // fallback address can only be added with a transaction from the contract to itself
       await execTransaction(masterSafe, lw, addModuleTransaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Fallback handler of Safe " + masterSafe.address + " changed",
       })
     })
@@ -238,7 +258,7 @@ contract("Verification checks", function(accounts) {
       }
       const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
       await execTransaction(masterSafe, lw, execAddModuleTransaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Fallback handler of Safe " + bracketAddress + " changed",
       })
     })
@@ -273,7 +293,7 @@ contract("Verification checks", function(accounts) {
         highestLimit
       )
       await execTransaction(masterSafe, lw, transaction2)
-      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address), {
         message: "order length is not correct",
       })
     })
@@ -351,7 +371,7 @@ contract("Verification checks", function(accounts) {
 
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, lw, transaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Brackets do not gain money when trading",
       })
     })
@@ -404,16 +424,16 @@ contract("Verification checks", function(accounts) {
       globalPriceStorage["DAI-USDC"] = 1.0
       globalPriceStorage["WETH-USDC"] = 1
       globalPriceStorage["DAI-WETH"] = 100 //<-- price is correct
-      await verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, [], globalPriceStorage)
-      await verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, [], globalPriceStorage)
+      await verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage)
+      await verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage)
 
       globalPriceStorage["DAI-WETH"] = 121 //<-- price is off, hence orders are profitable
-      await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, [], globalPriceStorage), {
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[1].toLowerCase()} is profitable`,
       })
 
       globalPriceStorage["DAI-WETH"] = 70 //<-- price is off, hence orders are profitable
-      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, [], globalPriceStorage), {
+      await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[0].toLowerCase()} is profitable`,
       })
     })

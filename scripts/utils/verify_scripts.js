@@ -17,12 +17,35 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const pageSize = 50
 
-  const verifyBracketsWellFormed = async function(masterAddress, bracketAddresses, logActivated = false) {
+  const verifyBracketsWellFormed = async function(
+    masterAddress,
+    bracketAddresses,
+    masterThreshold = null,
+    masterOwners = null,
+    logActivated = false
+  ) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
     const gnosisSafe = await gnosisSafeMasterCopy
     const master = await getSafe(masterAddress)
     const brackets = await Promise.all(bracketAddresses.map(bracketAddress => getSafe(bracketAddress)))
+
+    if (!masterOwners || !masterThreshold) log("Warning: master safe owner verification skipped")
+    else {
+      log("- Verify owners of masterSafe")
+      const threshold = master.getThreshold()
+      const owners = master.getOwners()
+      assert.equal(
+        await threshold,
+        masterThreshold,
+        "Master threshold is " + (await threshold) + " while it is supposed to be " + masterThreshold
+      )
+      assert.deepStrictEqual(
+        (await owners).slice().sort(),
+        masterOwners.slice().sort(),
+        "Master owners are different than expected"
+      )
+    }
 
     log("- Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
@@ -76,7 +99,9 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const verifyCorrectSetup = async function(
     brackets,
     masterSafe,
-    allowanceExceptions,
+    masterThreshold = null,
+    masterOwners = null,
+    allowanceExceptions = [],
     globalPriceStorage = {},
     logActivated = false
   ) {
@@ -111,7 +136,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
     }
 
-    await verifyBracketsWellFormed(masterSafe, brackets, logActivated)
+    await verifyBracketsWellFormed(masterSafe, brackets, masterThreshold, masterOwners, logActivated)
 
     log("- Verify that orders are set up correctly")
     for (const bracketTrader of bracketTraderAddresses) {
