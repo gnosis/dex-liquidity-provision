@@ -13,7 +13,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
 
-  BatchExchange.setNetwork(web3.network_id)
   BatchExchange.setProvider(web3.currentProvider)
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
@@ -86,7 +85,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * Returns an instance of the exchange contract
    */
   const getExchange = function(web3) {
-    BatchExchange.setNetwork(web3.network_id)
     BatchExchange.setProvider(web3.currentProvider)
     return BatchExchange.deployed()
   }

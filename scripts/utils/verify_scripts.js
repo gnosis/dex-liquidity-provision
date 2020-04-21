@@ -1,5 +1,4 @@
 module.exports = function(web3 = web3, artifacts = artifacts) {
-  const BN = require("bn.js")
   const assert = require("assert")
   const Contract = require("@truffle/contract")
   const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
@@ -118,7 +117,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchangeContract.setNetwork(web3.network_id)
     BatchExchangeContract.setProvider(web3.currentProvider)
     const exchange = await BatchExchangeContract.deployed()
 
@@ -140,26 +138,24 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     await verifyBracketsWellFormed(masterSafe, brackets, masterThreshold, masterOwners, logActivated)
 
-    log("- Verify that each bracket has only two orders")
-    await Promise.all(
-      bracketTraderAddresses.map(async bracketTrader => {
-        const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
-        assert(ownedOrders.length == 2, "order length is not correct")
-      })
-    )
+    log("- Verify that orders are set up correctly")
+    for (const bracketTrader of bracketTraderAddresses) {
+      const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+      assert(ownedOrders.length == 2, "order length is not correct")
+
+      assert(
+        ownedOrders[0].buyToken === ownedOrders[1].sellToken && ownedOrders[0].sellToken === ownedOrders[1].buyToken,
+        "The two orders are not set up to trade back and forth on the same token pair"
+      )
+    }
 
     log("- Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
     for (const bracketTrader of bracketTraderAddresses) {
       const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
-
-      // Checks that selling an initial amount and then re-buying it with the second order is unprofitable.
-      const initialAmount = new Fraction(new BN(10).pow(new BN(50)), new BN("1"))
-      const amountAfterSelling = initialAmount.mul(new Fraction(ownedOrders[0].priceNumerator, ownedOrders[0].priceDenominator))
-      const amountAfterBuying = amountAfterSelling.mul(
-        new Fraction(ownedOrders[1].priceNumerator, ownedOrders[1].priceDenominator)
-      )
-      assert(amountAfterBuying.gt(initialAmount), "Brackets are not profitable")
-      // If the last equation holds, the inverse trade must be profitable as well
+      const sellOrderPrice = new Fraction(ownedOrders[0].priceNumerator, ownedOrders[0].priceDenominator)
+      const buyOrderPrice = new Fraction(ownedOrders[1].priceNumerator, ownedOrders[1].priceDenominator)
+      const one = new Fraction(1, 1)
+      assert(sellOrderPrice.mul(buyOrderPrice).gt(one), "Brackets do not gain money when trading")
     }
 
     log("- Verify that no bracket-trader offers profitable orders")
