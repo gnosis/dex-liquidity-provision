@@ -21,8 +21,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   const verifyBracketsWellFormed = async function(
     masterAddress,
     bracketAddresses,
-    masterThreshold,
-    masterOwners,
+    masterThreshold = null,
+    masterOwners = null,
     logActivated = false
   ) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
