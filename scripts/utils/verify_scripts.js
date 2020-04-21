@@ -31,7 +31,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const master = await getSafe(masterAddress)
     const brackets = await Promise.all(bracketAddresses.map(bracketAddress => getSafe(bracketAddress)))
 
-    if (!masterOwners || !masterThreshold) log("- Master safe owner verification skipped")
+    if (!masterOwners || !masterThreshold) log("Warning: master safe owner verification skipped")
     else {
       log("- Verify owners of masterSafe")
       const threshold = master.getThreshold()
