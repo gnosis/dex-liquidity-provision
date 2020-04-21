@@ -11,7 +11,6 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   )
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
-  const { equalUpToOrder } = require("./js_helpers")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
@@ -42,7 +41,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
         masterThreshold,
         "Master threshold is " + (await threshold) + " while it is supposed to be " + masterThreshold
       )
-      assert(equalUpToOrder(await owners, masterOwners), "Master owners are different than expected")
+      assert.deepStrictEqual(
+        (await owners).slice().sort(),
+        masterOwners.slice().sort(),
+        "Master owners are different than expected"
+      )
     }
 
     log("- Verify that the owner of the brackets is the masterSafe")
