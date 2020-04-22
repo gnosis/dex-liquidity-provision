@@ -9,23 +9,12 @@ const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts
 const ERC20 = artifacts.require("ERC20Detailed")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const TestToken = artifacts.require("DetailedMintableToken")
 
-const { prepareTokenRegistration, addCustomMintableTokenToExchange, deploySafe } = require("../test_utils")
-const {
-  fetchTokenInfoFromExchange,
-  fetchTokenInfoAtAddresses,
-  deployFleetOfSafes,
-  buildOrders,
-  buildTransferApproveDepositFromList,
-  buildTransferApproveDepositFromOrders,
-  buildRequestWithdraw,
-  buildWithdraw,
-  buildTransferFundsToMaster,
-  buildWithdrawAndTransferFundsToMaster,
-  isOnlySafeOwner,
-  maxU32,
-} = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
+const { addCustomMintableTokenToExchange, deploySafe } = require("../test_utils")
+const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
