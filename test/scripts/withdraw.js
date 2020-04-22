@@ -241,10 +241,9 @@ contract("Withdraw script", function(accounts) {
       {
         argv: {
           masterSafe: masterSafe.address,
-          withdrawalFile: "/dev/null",
-          requestWithdraw: true,
+          withdrawalFile: "/dev/zero",
         },
-        error: "Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster",
+        error: "Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given",
       },
     ]
     for (const { argv, error } of badInput)
