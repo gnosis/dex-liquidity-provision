@@ -44,6 +44,7 @@
     "openzeppelin-solidity": "^2.4.0",
     "sol-merger": "^2.0.1",
     "synthetix-js": "^2.21.6",
+    "tmp-promise": "^2.0.2",
     "truffle": "^5.1.18",
     "truffle-plugin-verify": "^0.3.10"
   },
