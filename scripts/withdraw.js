@@ -13,7 +13,7 @@ const argv = require("./utils/default_yargs")
     describe: "file name (and path) to the list of withdrawals",
     demandOption: true,
   })
-  .option("withdrawAllFrom", {
+  .option("allTokens", {
     type: "boolean",
     describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket",
   })
