@@ -19,7 +19,7 @@ module.exports = function(web3, artifacts) {
     }
   }
 
-  const getAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
+  const getMaxWithdrawableAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
     const token = tokenInfo.instance
@@ -59,7 +59,7 @@ module.exports = function(web3, artifacts) {
         withdrawals.map(async withdrawal => ({
           bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
-          amount: await getAmount(
+          amount: await getMaxWithdrawableAmount(
             argv,
             withdrawal.bracketAddress,
             await tokenInfoPromises[withdrawal.tokenAddress],
