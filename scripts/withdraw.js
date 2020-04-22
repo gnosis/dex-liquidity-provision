@@ -15,6 +15,7 @@ const argv = require("./utils/default_yargs")
   })
   .option("allTokens", {
     type: "boolean",
+    default: false,
     describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket",
   })
   .option("requestWithdraw", {
