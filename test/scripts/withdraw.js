@@ -216,7 +216,7 @@ contract("Withdraw script", function(accounts) {
 
     depositFile.cleanup()
   })
-  it.only("fails on bad input", async () => {
+  it("fails on bad input", async () => {
     const masterSafe = await GnosisSafe.at(
       await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     )
