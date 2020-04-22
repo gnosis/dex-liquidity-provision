@@ -11,6 +11,15 @@ module.exports = function(web3, artifacts) {
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
+  const assertGoodArguments = function(argv) {
+    if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
+      throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
+    } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
+      throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
+    }
+    return true
+  }
+
   const getAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
@@ -37,6 +46,8 @@ module.exports = function(web3, artifacts) {
 
   return async function(argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
+
+    assertGoodArguments(argv)
 
     let withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
     const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
