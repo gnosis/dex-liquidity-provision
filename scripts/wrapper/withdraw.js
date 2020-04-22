@@ -1,5 +1,5 @@
 module.exports = function(web3, artifacts) {
-  const { fromErc20Units, shortenedAddress } = require("./utils/printing_tools")
+  const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
     getExchange,
     fetchTokenInfoForFlux,
@@ -7,7 +7,7 @@ module.exports = function(web3, artifacts) {
     buildWithdraw,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
-  } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+  } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
   const getAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
