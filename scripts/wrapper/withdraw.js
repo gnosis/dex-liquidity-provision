@@ -17,7 +17,6 @@ module.exports = function(web3, artifacts) {
     } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
-    return true
   }
 
   const getAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
