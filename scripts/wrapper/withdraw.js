@@ -1,4 +1,6 @@
 module.exports = function(web3, artifacts) {
+  const fs = require("fs").promises
+
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
     getExchange,
@@ -36,9 +38,8 @@ module.exports = function(web3, artifacts) {
   return async function(argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
-    let withdrawals = require(argv.withdrawalFile)
+    let withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
     const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
-
     const exchange = await getExchange(web3)
 
     if (argv.allTokens) {
@@ -48,7 +49,12 @@ module.exports = function(web3, artifacts) {
         withdrawals.map(async withdrawal => ({
           bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
-          amount: await getAmount(argv, withdrawal.bracketAddress, await tokenInfoPromises[withdrawal.tokenAddress], exchange),
+          amount: await getAmount(
+            argv,
+            withdrawal.bracketAddress,
+            await tokenInfoPromises[withdrawal.tokenAddress],
+            await exchange
+          ),
         }))
       )
     }
