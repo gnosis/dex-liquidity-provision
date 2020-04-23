@@ -58,7 +58,7 @@ In this script the targetToken is 1, which happens to be WETH and the stableToke
 
 The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be send via Metamask - otherwise, it can happen that the payload is too high for Metamask.
 
-Please document the displayed bracket-trader addresses. They are require for the withdrawals later. They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
+Please document the displayed bracket-trader addresses. They are required for future withdrawals. They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
 
 Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
 
