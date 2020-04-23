@@ -15,11 +15,12 @@
 
 const { verifyCorrectSetup } = require("./utils/verify_scripts")(web3, artifacts)
 
-const argv = require("yargs")
+const argv = require("./utils/default_yargs")
   .option("brackets", {
     type: "string",
     describe:
       "Trader account addresses for displaying their information, they can be obtained via the script find_bracket_traders",
+    demandOption: true,
     coerce: (str) => {
       return str.split(",")
     },
@@ -27,6 +28,7 @@ const argv = require("yargs")
   .option("masterSafe", {
     type: "string",
     describe: "The masterSafe in control of the bracket-traders",
+    demandOption: true,
   })
   .option("masterOwners", {
     type: "string",
@@ -53,12 +55,7 @@ const argv = require("yargs")
     if ((!argv.masterOwners && argv.masterThreshold) || (argv.masterOwners && !argv.masterThreshold))
       throw new Error("Master owners and master threshold must be either both absent or both specified")
     return true
-  })
-  .demand(["brackets", "masterSafe"])
-  .help(
-    "Make sure that you have an RPC connection to the network in consideration. For network configurations, please see truffle-config.js"
-  )
-  .version(false).argv
+  }).argv
 
 module.exports = async (callback) => {
   try {
