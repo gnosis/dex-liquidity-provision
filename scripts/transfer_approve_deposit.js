@@ -1,3 +1,5 @@
+const fs = require("fs").promises
+
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { buildTransferApproveDepositFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
@@ -18,7 +20,7 @@ module.exports = async (callback) => {
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
-    const deposits = require(argv.depositFile)
+    const deposits = JSON.parse(await fs.readFile(argv.depositFile, "utf8"))
     // TODO - make it simpler to construct deposit file style
     console.log("Preparing transaction data...")
     const transaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, true)
