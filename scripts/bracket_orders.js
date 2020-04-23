@@ -31,7 +31,7 @@ const argv = require("./utils/default_yargs")
     type: "string",
     describe: "Trader account addresses to place orders on behalf of",
     demandOption: true,
-    coerce: str => {
+    coerce: (str) => {
       return str.split(",")
     },
   })
@@ -54,7 +54,7 @@ const argv = require("./utils/default_yargs")
     default: 2 ** 32 - 1,
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     const masterSafePromise = getSafe(argv.masterSafe)
     const exchange = await getExchange(web3)

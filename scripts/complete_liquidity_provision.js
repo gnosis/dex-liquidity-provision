@@ -59,7 +59,7 @@ const argv = require("./utils/default_yargs")
     describe: "Price for the bracket selling at the highest price",
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")

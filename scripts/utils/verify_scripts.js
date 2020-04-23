@@ -1,4 +1,4 @@
-module.exports = function(web3 = web3, artifacts = artifacts) {
+module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const Contract = require("@truffle/contract")
   const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
@@ -17,7 +17,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const pageSize = 50
 
-  const verifyBracketsWellFormed = async function(
+  const verifyBracketsWellFormed = async function (
     masterAddress,
     bracketAddresses,
     masterThreshold = null,
@@ -28,7 +28,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     const gnosisSafe = await gnosisSafeMasterCopy
     const master = await getSafe(masterAddress)
-    const brackets = await Promise.all(bracketAddresses.map(bracketAddress => getSafe(bracketAddress)))
+    const brackets = await Promise.all(bracketAddresses.map((bracketAddress) => getSafe(bracketAddress)))
 
     if (!masterOwners || !masterThreshold) log("Warning: master safe owner verification skipped")
     else {
@@ -49,14 +49,14 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("- Verify that the owner of the brackets is the masterSafe")
     await Promise.all(
-      brackets.map(async bracketTrader => {
+      brackets.map(async (bracketTrader) => {
         assert(await isOnlySafeOwner(masterAddress, bracketTrader), "Owners are not set correctly")
       })
     )
 
     log("- Verify that masterCopy of brackets is the known masterCopy")
     await Promise.all(
-      bracketAddresses.map(async bracketAddress => {
+      bracketAddresses.map(async (bracketAddress) => {
         assert.equal(
           (await getMasterCopy(bracketAddress)).toString().toLowerCase(),
           gnosisSafe.address.toString().toLowerCase(),
@@ -67,7 +67,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("- Verify proxy bytecode")
     await Promise.all(
-      bracketAddresses.map(async bracketAddress => {
+      bracketAddresses.map(async (bracketAddress) => {
         assert.equal(
           await web3.eth.getCode(bracketAddress),
           GnosisSafeProxy.deployedBytecode,
@@ -78,7 +78,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("- Verify absence of modules")
     await Promise.all(
-      brackets.concat(master).map(async safe => {
+      brackets.concat(master).map(async (safe) => {
         assert.strictEqual((await safe.getModules()).length, 0, "Modules present in Safe " + safe.address)
       })
     )
@@ -86,7 +86,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     log("- Verify unchanged fallback handler")
     const defaultFallbackHandler = getFallbackHandler(GnosisSafe.address)
     await Promise.all(
-      bracketAddresses.concat(masterAddress).map(async safeAddress => {
+      bracketAddresses.concat(masterAddress).map(async (safeAddress) => {
         assert.strictEqual(
           await getFallbackHandler(safeAddress),
           await defaultFallbackHandler,
@@ -96,7 +96,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
   }
 
-  const verifyCorrectSetup = async function(
+  const verifyCorrectSetup = async function (
     brackets,
     masterSafe,
     masterThreshold = null,
@@ -112,10 +112,10 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const BatchExchange = new web3.eth.Contract(BatchExchangeArtifact.abi, BatchExchangeArtifact.networks[networkId].address)
 
     const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, pageSize)
-    const bracketTraderAddresses = brackets.map(address => address.toLowerCase())
+    const bracketTraderAddresses = brackets.map((address) => address.toLowerCase())
 
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
-    const relevantOrders = auctionElementsDecoded.filter(order => bracketTraderAddresses.includes(order.user.toLowerCase()))
+    const relevantOrders = auctionElementsDecoded.filter((order) => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchangeContract.setProvider(web3.currentProvider)
     const exchange = await BatchExchangeContract.deployed()
@@ -140,7 +140,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("- Verify that orders are set up correctly")
     for (const bracketTrader of bracketTraderAddresses) {
-      const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+      const ownedOrders = relevantOrders.filter((order) => order.user.toLowerCase() == bracketTrader)
       assert(ownedOrders.length == 2, "order length is not correct")
 
       assert(
@@ -151,7 +151,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
     log("- Verify that each bracket can not lose tokens by selling and buying consecutively via their two orders")
     for (const bracketTrader of bracketTraderAddresses) {
-      const ownedOrders = relevantOrders.filter(order => order.user.toLowerCase() == bracketTrader)
+      const ownedOrders = relevantOrders.filter((order) => order.user.toLowerCase() == bracketTrader)
       const sellOrderPrice = new Fraction(ownedOrders[0].priceNumerator, ownedOrders[0].priceDenominator)
       const buyOrderPrice = new Fraction(ownedOrders[1].priceNumerator, ownedOrders[1].priceDenominator)
       const one = new Fraction(1, 1)

@@ -1,4 +1,4 @@
-module.exports = function(web3 = web3, artifacts = artifacts) {
+module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const axios = require("axios")
   const BN = require("bn.js")
@@ -24,12 +24,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
 
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
-    const bracketOrders = auctionElements.filter(order => order.user.toLowerCase() === bracketAddress.toLowerCase())
+    const bracketOrders = auctionElements.filter((order) => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 
     const currentUnitPrice = getUnitPrice(currentPrice, await targetToken.decimals(), await stableToken.decimals())
 
-    const buyTargetTokenOrders = bracketOrders.filter(order => order.buyToken == targetTokenId)
+    const buyTargetTokenOrders = bracketOrders.filter((order) => order.buyToken == targetTokenId)
     assert.equal(buyTargetTokenOrders.length, 1)
     const buyTargetTokenOrder = buyTargetTokenOrders[0]
     assert.equal(buyTargetTokenOrder.sellToken, stableTokenId)
@@ -39,7 +39,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
       buyTargetTokenOrder.priceDenominator
     ).inverted()
 
-    const sellTargetTokenOrders = bracketOrders.filter(order => order.sellToken == targetTokenId)
+    const sellTargetTokenOrders = bracketOrders.filter((order) => order.sellToken == targetTokenId)
     assert.equal(sellTargetTokenOrders.length, 1)
     const sellTargetTokenOrder = sellTargetTokenOrders[0]
     assert.equal(sellTargetTokenOrder.buyToken, stableTokenId)
@@ -65,7 +65,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     }
   }
 
-  const checkFundingInTheMiddleBracket = function(
+  const checkFundingInTheMiddleBracket = function (
     bracketExchangeBalanceStableToken,
     bracketExchangeBalanceTargetToken,
     investmentStableTokenPerBracket,
@@ -81,7 +81,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     )
   }
 
-  const areBoundsReasonable = function(currentPrice, lowestLimit, highestLimit) {
+  const areBoundsReasonable = function (currentPrice, lowestLimit, highestLimit) {
     const boundsCloseTocurrentPrice = currentPrice / 1.5 < lowestLimit && highestLimit < currentPrice * 1.5
     if (!boundsCloseTocurrentPrice) {
       console.log("Please double check your bounds. They seem to be unreasonable")
@@ -94,7 +94,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   }
 
   // returns undefined if the price was not available
-  const getDexagPrice = async function(tokenBought, tokenSold, globalPriceStorage = null) {
+  const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage = null) {
     if (globalPriceStorage !== null && tokenBought + "-" + tokenSold in globalPriceStorage) {
       return globalPriceStorage[tokenBought + "-" + tokenSold]
     }
@@ -151,7 +151,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer} stableTokenDecimals number of decimals of the stable token
    * @return {Fraction} fraction representing the amount of units of stable tokens in exchange for one unit of target token
    */
-  const getUnitPrice = function(price, targetTokenDecimals, stableTokenDecimals) {
+  const getUnitPrice = function (price, targetTokenDecimals, stableTokenDecimals) {
     return Fraction.fromNumber(price).mul(
       new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
     )
@@ -166,7 +166,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer} stableTokenDecimals number of decimals of the stable token
    * @return {BN} amount of output token units obtained
    */
-  const getOutputAmountFromPrice = function(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
+  const getOutputAmountFromPrice = function (price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
     const unitPriceFraction = getUnitPrice(price, targetTokenDecimals, stableTokenDecimals)
     const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
     return stableTokenAmountFraction.toBN()
@@ -179,7 +179,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer} stableTokenDecimals number of decimals of the stable token
    * @return {BN[2]} amounts of stable token and target token for an unlimited order at the input price
    */
-  const getUnlimitedOrderAmounts = function(price, targetTokenDecimals, stableTokenDecimals) {
+  const getUnlimitedOrderAmounts = function (price, targetTokenDecimals, stableTokenDecimals) {
     let targetTokenAmount = max128.clone()
     let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
     if (stableTokenAmount.gt(targetTokenAmount)) {

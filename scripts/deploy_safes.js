@@ -12,7 +12,7 @@ const argv = require("./utils/default_yargs")
     demandOption: true,
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     console.log("Master Safe:", argv.masterSafe)
     console.log(`Deploying a fleet of Safes of size ${argv.fleetSize}`)

@@ -13,7 +13,7 @@ const argv = require("./utils/default_yargs")
     demandOption: true,
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)

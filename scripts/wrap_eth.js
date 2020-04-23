@@ -16,7 +16,7 @@ const argv = require("./utils/default_yargs")
     demandOption: true,
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     const WETH = Contract(require("canonical-weth/build/contracts/WETH9"))
     WETH.setProvider(web3.currentProvider)

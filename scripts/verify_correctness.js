@@ -20,7 +20,7 @@ const argv = require("yargs")
     type: "string",
     describe:
       "Trader account addresses for displaying their information, they can be obtained via the script find_bracket_traders",
-    coerce: str => {
+    coerce: (str) => {
       return str.split(",")
     },
   })
@@ -31,25 +31,25 @@ const argv = require("yargs")
   .option("masterOwners", {
     type: "string",
     describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
-    coerce: str => {
+    coerce: (str) => {
       return str.split(",")
     },
   })
   .option("masterThreshold", {
     type: "number",
     describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
-    coerce: str => {
+    coerce: (str) => {
       return str.split(",")
     },
   })
   .option("allowanceExceptions", {
     type: "string",
     describe: "Addresses that are authorized to have nonzero allowances on any tokens on the master Safe",
-    coerce: str => {
+    coerce: (str) => {
       return str.split(",")
     },
   })
-  .check(function(argv) {
+  .check(function (argv) {
     if ((!argv.masterOwners && argv.masterThreshold) || (argv.masterOwners && !argv.masterThreshold))
       throw new Error("Master owners and master threshold must be either both absent or both specified")
     return true
@@ -60,7 +60,7 @@ const argv = require("yargs")
   )
   .version(false).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     await verifyCorrectSetup(
       argv.brackets,

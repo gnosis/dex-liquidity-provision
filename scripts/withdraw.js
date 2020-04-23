@@ -41,7 +41,7 @@ const argv = require("./utils/default_yargs")
     default: false,
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   })
-  .check(function(argv) {
+  .check(function (argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
     } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
@@ -50,7 +50,7 @@ const argv = require("./utils/default_yargs")
     return true
   }).argv
 
-const getAmount = async function(bracketAddress, tokenInfo, exchange) {
+const getAmount = async function (bracketAddress, tokenInfo, exchange) {
   let amount
   const token = tokenInfo.instance
   if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenInfo.address)).toString()
@@ -73,7 +73,7 @@ const getAmount = async function(bracketAddress, tokenInfo, exchange) {
   return amount
 }
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     let withdrawals = require(argv.withdrawalFile)
     const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
@@ -85,7 +85,7 @@ module.exports = async callback => {
       console.log("Retrieving amount of tokens to withdraw.")
       // get full amount to withdraw from the blockchain
       withdrawals = await Promise.all(
-        withdrawals.map(async withdrawal => ({
+        withdrawals.map(async (withdrawal) => ({
           bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
           amount: await getAmount(withdrawal.bracketAddress, await tokenInfoPromises[withdrawal.tokenAddress], exchange),

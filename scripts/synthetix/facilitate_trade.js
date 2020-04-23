@@ -37,7 +37,7 @@ const gasStationURL = {
   4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
 }
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     const networkId = await web3.eth.net.getId()
     const account = (await web3.eth.getAccounts())[0]
@@ -88,8 +88,8 @@ module.exports = async callback => {
     const validTos = Array(2).fill(batchId)
 
     // Avoid querying exchange by tokenAddress for fixed tokenId
-    const buyTokens = [sETH, sUSD].map(token => token.exchangeId)
-    const sellTokens = [sUSD, sETH].map(token => token.exchangeId)
+    const buyTokens = [sETH, sUSD].map((token) => token.exchangeId)
+    const sellTokens = [sUSD, sETH].map((token) => token.exchangeId)
 
     const gasPrices = (await fetch(gasStationURL[networkId])).json()
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
