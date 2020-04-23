@@ -12,6 +12,7 @@
     "ganache-cli": "6.9.0",
     "prettier": "^1.19.1",
     "run-with-testrpc": "^0.3.0",
+    "tmp-promise": "^2.0.2",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   },
   "scripts": {
@@ -44,7 +45,6 @@
     "openzeppelin-solidity": "^2.4.0",
     "sol-merger": "^2.0.1",
     "synthetix-js": "^2.21.6",
-    "tmp-promise": "^2.0.2",
     "truffle": "^5.1.18",
     "truffle-plugin-verify": "^0.3.10"
   },
