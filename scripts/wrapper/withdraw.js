@@ -4,6 +4,8 @@ module.exports = function (web3, artifacts) {
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
     getExchange,
+    fetchTokenInfoAtAddresses,
+    fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
     buildRequestWithdraw,
     buildWithdraw,
@@ -39,16 +41,16 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
+  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenData, exchange, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
-    const token = tokenInfo.instance
-    if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenInfo.address)).toString()
+    const token = tokenData.instance
+    if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
     else if (argv.withdraw) {
       const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
-      const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenInfo.address)
+      const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
       if (pendingWithdrawal[1].toNumber() == 0) {
-        log("Warning: no withdrawal was requested for address", bracketAddress, "and token", tokenInfo.symbol)
+        log("Warning: no withdrawal was requested for address", bracketAddress, "and token", tokenData.symbol)
         amount = "0"
       }
       if (amount != "0" && pendingWithdrawal[1].toNumber() >= currentBatchId) {
@@ -59,7 +61,7 @@ module.exports = function (web3, artifacts) {
     } else {
       amount = (await token.balanceOf(bracketAddress)).toString()
     }
-    if (amount == "0") log("Warning: address", bracketAddress, "has no balance to withdraw for token", tokenInfo.symbol)
+    if (amount == "0") log("Warning: address", bracketAddress, "has no balance to withdraw for token", tokenData.symbol)
     return amount
   }
 
@@ -68,25 +70,41 @@ module.exports = function (web3, artifacts) {
 
     assertGoodArguments(argv)
 
-    let withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
-    const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
-    const exchange = await getExchange(web3)
+    let withdrawals
+    let tokenInfoPromises
+    if (argv.withdrawalFile) {
+      withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
+      tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
+    } else {
+      const exchangePromise = getExchange(web3)
+      if (argv.tokens) tokenInfoPromises = fetchTokenInfoAtAddresses(argv.tokens)
+      else tokenInfoPromises = fetchTokenInfoFromExchange(await exchangePromise, argv.tokenIds)
 
-    if (argv.allTokens) {
       log("Retrieving amount of tokens to withdraw.")
       // get full amount to withdraw from the blockchain
-      withdrawals = await Promise.all(
-        withdrawals.map(async (withdrawal) => ({
-          bracketAddress: withdrawal.bracketAddress,
-          tokenAddress: withdrawal.tokenAddress,
-          amount: await getMaxWithdrawableAmount(
-            argv,
-            withdrawal.bracketAddress,
-            await tokenInfoPromises[withdrawal.tokenAddress],
-            await exchange
-          ),
-        }))
-      )
+      withdrawals = []
+      const candidateWithdrawalPromises = []
+      for (const tokenDataPromise of tokenInfoPromises)
+        for (const bracketAddress of argv.from)
+          candidateWithdrawalPromises.push(
+            (async () => {
+              const maxWithdrawableAmount = await getMaxWithdrawableAmount(
+                argv,
+                bracketAddress,
+                await tokenDataPromise,
+                await exchangePromise
+              )
+              return {
+                bracketAddress: bracketAddress,
+                tokenAddress: (await tokenDataPromise).address,
+                amount: maxWithdrawableAmount,
+              }
+            }).call()
+          )
+      for (const candidateWithdrawalPromise of candidateWithdrawalPromises) {
+        const candidateWithdrawal = await candidateWithdrawalPromise
+        if (candidateWithdrawal.amount !== "0") withdrawals.push(candidateWithdrawal)
+      }
     }
 
     log("Started building withdraw transaction.")
