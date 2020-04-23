@@ -204,9 +204,10 @@
     "@gnosis.pm/util-contracts" "^2.0.0"
     verify-on-etherscan "^1.1.1"
 
-"@gnosis.pm/safe-contracts@github:gnosis/safe-contracts#v1.1.1-dev.1":
-  version "1.1.1-dev.1"
-  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/6a6b642972d566136bf0b2506bb558db0a0528c3"
+"@gnosis.pm/safe-contracts@github:gnosis/safe-contracts#v1.1.1":
+  version "1.1.1"
+  uid "892448e93f6203b530630f20de45d8a55fde7463"
+  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/892448e93f6203b530630f20de45d8a55fde7463"
   dependencies:
     dotenv "^8.0.0"
     openzeppelin-solidity "^2.0.0"
