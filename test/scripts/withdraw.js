@@ -204,6 +204,44 @@ contract("Withdraw script", function (accounts) {
 
       depositFile.cleanup()
     })
+    it("withdraws and transfers simultaneously", async () => {
+      const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
+      const token = tokenInfo[0].token
+      const deposits = evenDeposits(bracketAddresses, tokenInfo[0], "1000")
+      await deposit(masterSafe, deposits)
+      const depositFile = await tmp.file()
+      await fs.writeFile(depositFile.path, JSON.stringify(deposits))
+
+      const argv1 = {
+        masterSafe: masterSafe.address,
+        withdrawalFile: depositFile.path,
+        requestWithdraw: true,
+      }
+      const transaction1 = await prepareWithdraw(argv1)
+      await execTransaction(masterSafe, lw, transaction1)
+      await waitForNSeconds(301)
+
+      const argv2 = {
+        masterSafe: masterSafe.address,
+        withdrawalFile: depositFile.path,
+        withdraw: true,
+        transferFundsToMaster: true,
+      }
+      const transaction2 = await prepareWithdraw(argv2)
+      await execTransaction(masterSafe, lw, transaction2)
+
+      for (const { tokenAddress, bracketAddress } of deposits) {
+        const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
+        const bracketBalance = (await token.balanceOf(bracketAddress)).toString()
+        assert.equal(requestedWithdrawal, "0", "A withdrawal request is still pending")
+        assert.equal(bracketBalance, "0", "Bracket balance is nonzero")
+      }
+      const masterBalance = (await token.balanceOf(masterSafe.address)).toString()
+      assert.equal(masterBalance, toErc20Units("1000", 18).toString(), "Master safe did not receive tokens")
+
+      depositFile.cleanup()
+    })
   })
   describe("using explicit from addresses", () => {
     it("requests withdrawals", async () => {
@@ -341,6 +379,51 @@ contract("Withdraw script", function (accounts) {
       }
       const transaction3 = await prepareWithdraw(argv3)
       await execTransaction(masterSafe, lw, transaction3)
+
+      for (const { tokenAddress, bracketAddress } of deposits) {
+        const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
+        const bracketBalance = (await (await ERC20.at(tokenAddress)).balanceOf(bracketAddress)).toString()
+        assert.equal(requestedWithdrawal, "0", "A withdrawal request is still pending")
+        assert.equal(bracketBalance, "0", "Bracket balance is nonzero")
+      }
+      const usdcMasterBalance = (await usdcToken.balanceOf(masterSafe.address)).toString()
+      const wethMasterBalance = (await wethToken.balanceOf(masterSafe.address)).toString()
+      assert.equal(usdcMasterBalance, toErc20Units("10000", 6).toString(), "Master safe did not receive USDC")
+      assert.equal(wethMasterBalance, toErc20Units("50", 18).toString(), "Master safe did not receive WETH")
+    })
+    it("withdraws and transfers simultaneously", async () => {
+      const amounts = [
+        { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
+        { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
+      ]
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
+      const usdcToken = await ERC20.at(tokenInfo[0].address)
+      const wethToken = await ERC20.at(tokenInfo[1].address)
+      // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
+      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "8000")
+      const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "40")
+      const deposits = depositsUsdc.concat(depositsWeth)
+      await deposit(masterSafe, deposits)
+
+      const argv1 = {
+        masterSafe: masterSafe.address,
+        from: bracketAddresses,
+        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+        requestWithdraw: true,
+      }
+      const transaction1 = await prepareWithdraw(argv1)
+      await execTransaction(masterSafe, lw, transaction1)
+      await waitForNSeconds(301)
+
+      const argv2 = {
+        masterSafe: masterSafe.address,
+        from: bracketAddresses,
+        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+        withdraw: true,
+        transferFundsToMaster: true,
+      }
+      const transaction2 = await prepareWithdraw(argv2)
+      await execTransaction(masterSafe, lw, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
