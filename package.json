@@ -38,7 +38,7 @@
     "canonical-weth": "^1.4.0",
     "dotenv": "^8.0.0",
     "eslint": "^6.8.0",
-    "eth-gas-reporter": "^0.2.16",
+    "eth-gas-reporter": "^0.2.17",
     "ethereumjs-util": "^6.2.0",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.4.0",
