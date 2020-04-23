@@ -529,8 +529,8 @@ contract("GnosisSafe", function (accounts) {
 
         assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
         assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
-        assert.equal(buyOrder.validFrom, currentBatch + 3)
-        assert.equal(buyOrder.validFrom, currentBatch + 3)
+        assert.equal(buyOrder.validFrom, currentBatch)
+        assert.equal(buyOrder.validFrom, currentBatch)
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {

@@ -221,7 +221,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     lowestLimit,
     highestLimit,
     debug = false,
-    validFrom = 3,
     expiry = maxU32 - 1 // We did not choose maxU32, in order to distinguish orders from "non-expiring" orders of the web interface
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
@@ -232,7 +231,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     log("Batch Exchange", exchange.address)
 
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const batchIndexPromise = exchange.getCurrentBatchId.call()
 
     const targetToken = await tokenInfoPromises[targetTokenId]
     const stableToken = await tokenInfoPromises[stableTokenId]
@@ -242,7 +240,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${stableToken.symbol} per ${targetToken.symbol}`
     )
 
-    const transactions = await Promise.all(
+    const buyAndSellOrderPromises = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
         assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
 
@@ -265,30 +263,33 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
         )
-        const validFromForAllOrders = (await batchIndexPromise).toNumber() + validFrom
-        log(`The orders will be valid from the batch: ${validFromForAllOrders}`)
 
-        const buyTokens = [targetTokenId, stableTokenId]
-        const sellTokens = [stableTokenId, targetTokenId]
-        const validFroms = [validFromForAllOrders, validFromForAllOrders]
-        const validTos = [expiry, expiry]
-        const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
-        const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
-
-        const orderData = exchange.contract.methods
-          .placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts)
+        const orderDataSell = exchange.contract.methods
+          .placeOrder(targetTokenId, stableTokenId, expiry, lowerBuyAmount.toString(), lowerSellAmount.toString())
           .encodeABI()
-        const orderTransaction = {
+        const orderDataBuy = exchange.contract.methods
+          .placeOrder(stableTokenId, targetTokenId, expiry, upperBuyAmount.toString(), upperSellAmount.toString())
+          .encodeABI()
+        const sellOrderTransaction = {
           operation: CALL,
           to: exchange.address,
           value: 0,
-          data: orderData,
+          data: orderDataSell,
+        }
+        const buyOrderTransaction = {
+          operation: CALL,
+          to: exchange.address,
+          value: 0,
+          data: orderDataBuy,
         }
 
-        return buildExecTransaction(masterAddress, bracketAddress, orderTransaction)
+        return [
+          buildExecTransaction(masterAddress, bracketAddress, sellOrderTransaction),
+          buildExecTransaction(masterAddress, bracketAddress, buyOrderTransaction),
+        ]
       })
     )
-
+    const transactions = await Promise.all([].concat(...buyAndSellOrderPromises))
     log("Transaction bundle size", transactions.length)
     return buildBundledTransaction(transactions)
   }
