@@ -209,6 +209,10 @@ contract("Withdraw script", function (accounts) {
     )
     const badInput = [
       {
+        argv: {},
+        error: "Argument error: --masterSafe is required",
+      },
+      {
         argv: {
           masterSafe: masterSafe.address,
           withdrawalFile: "/dev/null",
@@ -242,6 +246,68 @@ contract("Withdraw script", function (accounts) {
           withdrawalFile: "/dev/zero",
         },
         error: "Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          requestWithdraw: true,
+          withdrawalFile: "/dev/zero",
+          from: "0x0,0x1",
+        },
+        error: "Argument error: --from cannot be used with --withdrawalFile",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          requestWithdraw: true,
+        },
+        error: "Argument error: one of --withdrawalFile, --from must be given",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          requestWithdraw: true,
+          from: "0x0,0x1",
+        },
+        error: "Argument error: one of --tokens, --tokenIds must be given when using --from",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          requestWithdraw: true,
+          from: "0x0,0x1",
+          tokens: "0x0,0x1",
+          tokenIds: "0,1",
+        },
+        error: "Argument error: only one of --tokens, --tokenIds is required when using --from",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          requestWithdraw: true,
+          withdrawalFile: "/dev/zero",
+          tokens: "0x0,0x1",
+          tokenIds: "0,1",
+        },
+        error: "Argument error: --tokens or --tokenIds can only be used with --from",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          withdrawalFile: "/dev/zero",
+          requestWithdraw: true,
+          tokens: "0x0,0x1",
+        },
+        error: "Argument error: --tokens or --tokenIds can only be used with --from",
+      },
+      {
+        argv: {
+          masterSafe: masterSafe.address,
+          withdrawalFile: "/dev/zero",
+          requestWithdraw: true,
+          tokenIds: "0,1",
+        },
+        error: "Argument error: --tokens or --tokenIds can only be used with --from",
       },
     ]
     for (const { argv, error } of badInput)

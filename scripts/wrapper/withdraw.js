@@ -12,10 +12,30 @@ module.exports = function (web3, artifacts) {
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
   const assertGoodArguments = function (argv) {
+    if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
+
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
     } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
+    }
+
+    if (!argv.withdrawalFile && !argv.from) {
+      throw new Error("Argument error: one of --withdrawalFile, --from must be given")
+    } else if (argv.withdrawalFile && argv.from) {
+      throw new Error("Argument error: --from cannot be used with --withdrawalFile")
+    }
+
+    if (argv.from) {
+      if (!argv.tokens && !argv.tokenIds) {
+        throw new Error("Argument error: one of --tokens, --tokenIds must be given when using --from")
+      } else if (argv.tokens && argv.tokenIds) {
+        throw new Error("Argument error: only one of --tokens, --tokenIds is required when using --from")
+      }
+    } else {
+      if (argv.tokens || argv.tokenIds) {
+        throw new Error("Argument error: --tokens or --tokenIds can only be used with --from")
+      }
     }
   }
 
