@@ -21,7 +21,7 @@ module.exports = async (callback) => {
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const deposits = JSON.parse(await fs.readFile(argv.depositFile, "utf8"))
-    // TODO - make it simpler to construct deposit file style
+
     console.log("Preparing transaction data...")
     const transaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, true)
 
