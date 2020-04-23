@@ -17,7 +17,7 @@ yarn run networks-inject
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
 This Master Safe must have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface. This implies that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
 
-In order to have a save setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. _Otherwise, everyone can steal the funds from your account!_
+In order to have a secure setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. _Otherwise, everyone can steal the funds from your account!_
 
 Setup env variables for the deployment process:
 
