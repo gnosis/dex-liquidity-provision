@@ -5,7 +5,6 @@ module.exports = function (web3, artifacts) {
   const {
     getExchange,
     fetchTokenInfoAtAddresses,
-    fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
     buildRequestWithdraw,
     buildWithdraw,
@@ -41,13 +40,19 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenData, exchange, printOutput = false) {
+  const getMaxWithdrawableAmount = async function (
+    argv,
+    bracketAddress,
+    tokenData,
+    exchange,
+    currentBatchId,
+    printOutput = false
+  ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
     const token = tokenData.instance
     if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
     else if (argv.withdraw) {
-      const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
       const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
       amount = pendingWithdrawal[0].toString()
       if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
@@ -86,13 +91,20 @@ module.exports = function (web3, artifacts) {
     } else {
       const exchangePromise = getExchange(web3)
       if (argv.tokens) tokenInfoPromises = fetchTokenInfoAtAddresses(argv.tokens)
-      else tokenInfoPromises = fetchTokenInfoFromExchange(await exchangePromise, argv.tokenIds)
+      else {
+        const tokenAddresses = await Promise.all(
+          argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))
+        )
+        tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
+      }
+      const exchange = await exchangePromise
+      const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because testing would fail
 
       log("Retrieving amount of tokens to withdraw.")
       // get full amount to withdraw from the blockchain
       withdrawals = []
       const candidateWithdrawalPromises = []
-      for (const tokenDataPromise of tokenInfoPromises)
+      for (const [, tokenDataPromise] of Object.entries(tokenInfoPromises))
         for (const bracketAddress of argv.from)
           candidateWithdrawalPromises.push(
             (async () => {
@@ -100,7 +112,9 @@ module.exports = function (web3, artifacts) {
                 argv,
                 bracketAddress,
                 await tokenDataPromise,
-                await exchangePromise
+                exchange,
+                currentBatchId,
+                printOutput
               )
               return {
                 bracketAddress: bracketAddress,
