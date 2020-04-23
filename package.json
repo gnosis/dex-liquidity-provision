@@ -10,7 +10,7 @@
     "eth-lightwallet": "^4.0.0",
     "ethereumjs-abi": "^0.6.5",
     "ganache-cli": "6.9.1",
-    "prettier": "^1.19.1",
+    "prettier": "^2.0.5",
     "run-with-testrpc": "^0.3.0",
     "tmp-promise": "^2.0.2",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"

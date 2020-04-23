@@ -34,7 +34,7 @@ const argv = require("./utils/default_yargs")
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
   }).argv
 
-module.exports = async callback => {
+module.exports = async (callback) => {
   try {
     const masterSafe = getSafe(argv.masterSafe)
 

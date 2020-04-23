@@ -1,4 +1,4 @@
-module.exports = function(web3 = web3, artifacts = artifacts) {
+module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const BN = require("bn.js")
   const fs = require("fs")
@@ -84,7 +84,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
   /**
    * Returns an instance of the exchange contract
    */
-  const getExchange = function(web3) {
+  const getExchange = function (web3) {
     BatchExchange.setProvider(web3.currentProvider)
     return BatchExchange.deployed()
   }
@@ -93,7 +93,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * Returns an instance of the safe contract at the given address
    * @param {Address} safeAddress address of the safe of which to create an instance
    */
-  const getSafe = function(safeAddress) {
+  const getSafe = function (safeAddress) {
     return GnosisSafe.at(safeAddress)
   }
 
@@ -103,7 +103,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {SmartContract|Address} owned Safe that might be owned by master
    * @return {bool} whether owned is indeed owned only by master
    */
-  const isOnlySafeOwner = async function(masterAddress, owned) {
+  const isOnlySafeOwner = async function (masterAddress, owned) {
     const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
     const ownerAddresses = await ownedSafe.getOwners()
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
@@ -116,7 +116,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
-  const fetchTokenInfoAtAddresses = function(tokenAddresses, debug = false) {
+  const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
     const log = debug ? () => console.log.apply(arguments) : () => {}
     const ERC20 = artifacts.require("ERC20Detailed")
 
@@ -150,7 +150,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
-  const fetchTokenInfoFromExchange = function(exchange, tokenIds, debug = false) {
+  const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
     const log = debug ? () => console.log.apply(arguments) : () => {}
 
     log("Fetching token data from EVM")
@@ -173,8 +173,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
-  const fetchTokenInfoForFlux = function(flux, debug = false) {
-    const tokensInvolved = allElementsOnlyOnce(flux.map(entry => entry.tokenAddress))
+  const fetchTokenInfoForFlux = function (flux, debug = false) {
+    const tokensInvolved = allElementsOnlyOnce(flux.map((entry) => entry.tokenAddress))
     return fetchTokenInfoAtAddresses(tokensInvolved, debug)
   }
 
@@ -184,7 +184,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer} fleetSize number of safes to be created with masterAddress as owner
    * @return {Address[]} list of Ethereum Addresses for the brackets that were deployed
    */
-  const deployFleetOfSafes = async function(masterAddress, fleetSize, debug = false) {
+  const deployFleetOfSafes = async function (masterAddress, fleetSize, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const fleetFactory = await fleetFactoryPromise
@@ -213,7 +213,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildOrders = async function(
+  const buildOrders = async function (
     masterAddress,
     bracketAddresses,
     targetTokenId,
@@ -293,7 +293,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(transactions)
   }
 
-  const checkSufficiencyOfBalance = async function(token, owner, amount) {
+  const checkSufficiencyOfBalance = async function (token, owner, amount) {
     const depositor_balance = await token.balanceOf.call(owner)
     return depositor_balance.gte(amount)
   }
@@ -307,11 +307,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
  * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
 withdrawal of or to withdraw the desired funds
 */
-  const buildGenericFundMovement = async function(masterAddress, withdrawals, functionName) {
+  const buildGenericFundMovement = async function (masterAddress, withdrawals, functionName) {
     const exchange = await exchangePromise
 
     // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
-    const masterTransactionsPromises = withdrawals.map(withdrawal => {
+    const masterTransactionsPromises = withdrawals.map((withdrawal) => {
       // create transaction for the token
       let transactionData
       switch (functionName) {
@@ -353,14 +353,14 @@ withdrawal of or to withdraw the desired funds
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildTransferApproveDepositFromList = async function(masterAddress, depositList, debug = false) {
+  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
 
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     const transactionLists = await Promise.all(
-      depositList.map(async deposit => {
+      depositList.map(async (deposit) => {
         assert(
           await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
           "All depositors must be owned only by the master Safe"
@@ -388,7 +388,7 @@ withdrawal of or to withdraw the desired funds
     return buildBundledTransaction(transactions)
   }
 
-  const formatDepositString = function(depositsAsJsonString) {
+  const formatDepositString = function (depositsAsJsonString) {
     let result
     result = depositsAsJsonString.replace(/{"/g, '{\n    "')
     result = result.replace(/,"/g, ',\n    "')
@@ -412,7 +412,7 @@ withdrawal of or to withdraw the desired funds
    * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildTransferApproveDepositFromOrders = async function(
+  const buildTransferApproveDepositFromOrders = async function (
     masterAddress,
     bracketAddresses,
     targetTokenAddress,
@@ -457,7 +457,7 @@ withdrawal of or to withdraw the desired funds
     }
     if (storeDepositsAsFile) {
       const depositsAsJsonString = formatDepositString(JSON.stringify(deposits))
-      fs.writeFile("./automaticallyGeneratedDeposits.json", depositsAsJsonString, function(err) {
+      fs.writeFile("./automaticallyGeneratedDeposits.json", depositsAsJsonString, function (err) {
         if (err) {
           console.log("Warning: deposits could not be stored as a file.")
           console.log(err)
@@ -512,7 +512,7 @@ withdrawal of or to withdraw the desired funds
  * @return {Transaction} Multisend transaction that has to be sent from the master address to request
 withdrawal of the desired funds
 */
-  const buildRequestWithdraw = function(masterAddress, withdrawals) {
+  const buildRequestWithdraw = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw")
   }
 
@@ -526,7 +526,7 @@ withdrawal of the desired funds
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
    */
-  const buildWithdraw = function(masterAddress, withdrawals) {
+  const buildWithdraw = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "withdraw")
   }
 
@@ -536,12 +536,12 @@ withdrawal of the desired funds
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
-  const buildTransferFundsToMaster = async function(masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
+  const buildTransferFundsToMaster = async function (masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
     const tokeinInfoPromises = fetchTokenInfoForFlux(withdrawals)
 
     // TODO: enforce that there are no overlapping withdrawals
     const masterTransactions = await Promise.all(
-      withdrawals.map(async withdrawal => {
+      withdrawals.map(async (withdrawal) => {
         const tokenInfo = await tokeinInfoPromises[withdrawal.tokenAddress]
         const token = tokenInfo.instance
         let amount
@@ -574,23 +574,23 @@ withdrawal of the desired funds
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
    */
-  const buildWithdrawAndTransferFundsToMaster = async function(masterAddress, withdrawals) {
+  const buildWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
     const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals)
     const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false)
     return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
   }
 
-  const getAllowances = async function(owner, tokenInfo) {
+  const getAllowances = async function (owner, tokenInfo) {
     const allowances = {}
     await Promise.all(
       Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
         const token = (await tokenData).instance
         const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
-        const spenders = allElementsOnlyOnce(eventList.map(event => event.returnValues.spender))
+        const spenders = allElementsOnlyOnce(eventList.map((event) => event.returnValues.spender))
         const tokenAllowances = {}
         // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
         await Promise.all(
-          spenders.map(async spender => {
+          spenders.map(async (spender) => {
             tokenAllowances[spender] = await token.allowance(owner, spender)
           })
         )
@@ -600,7 +600,7 @@ withdrawal of the desired funds
     return allowances
   }
 
-  const assertNoAllowances = async function(address, tokenInfo, exceptions = []) {
+  const assertNoAllowances = async function (address, tokenInfo, exceptions = []) {
     const allowances = await getAllowances(address, tokenInfo)
     for (const [tokenAddress, tokenAllowances] of Object.entries(allowances)) {
       for (const spender in tokenAllowances) {

@@ -1,4 +1,4 @@
-module.exports = function(web3 = web3, artifacts = artifacts) {
+module.exports = function (web3 = web3, artifacts = artifacts) {
   const util = require("util")
   const lightwallet = require("eth-lightwallet")
   const ethUtil = require("ethereumjs-util")
@@ -32,8 +32,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
 
   const jsonrpc = "2.0"
   const id = 0
-  const send = function(method, params, web3Provider) {
-    return new Promise(function(resolve, reject) {
+  const send = function (method, params, web3Provider) {
+    return new Promise(function (resolve, reject) {
       web3Provider.currentProvider.send({ id, jsonrpc, method, params }, (error, result) => {
         if (error) {
           reject(error)
@@ -48,12 +48,12 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * Wait for n (evm) seconds to pass
    * @param seconds: int
    */
-  const waitForNSeconds = async function(seconds) {
+  const waitForNSeconds = async function (seconds) {
     await send("evm_increaseTime", [seconds], web3)
     await send("evm_mine", [], web3)
   }
 
-  const execTransaction = async function(safe, lightWallet, transaction) {
+  const execTransaction = async function (safe, lightWallet, transaction) {
     const nonce = await safe.nonce()
     const transactionHash = await safe.getTransactionHash(
       transaction.to,
@@ -110,11 +110,11 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return signatureBytes
   }
 
-  const encodeMultiSend = function(multiSend, txs) {
+  const encodeMultiSend = function (multiSend, txs) {
     return multiSend.contract.methods
       .multiSend(
         `0x${txs
-          .map(tx =>
+          .map((tx) =>
             [
               web3.eth.abi.encodeParameter("uint8", tx.operation).slice(-2),
               web3.eth.abi.encodeParameter("address", tx.to).slice(-40),
@@ -133,7 +133,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
    * @return {Transaction} Multisend transaction bundling all input transactions
    */
-  const buildBundledTransaction = async function(transactions) {
+  const buildBundledTransaction = async function (transactions) {
     // TODO: do we really need to await the concrete instance of multiSend, since we are only using it to compute the data of a transaction?
     const multiSend = await multiSendPromise
     const transactionData = encodeMultiSend(multiSend, transactions)
@@ -146,7 +146,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return bundledTransaction
   }
 
-  const execTransactionData = function(gnosisSafeMasterCopy, owner, transaction) {
+  const execTransactionData = function (gnosisSafeMasterCopy, owner, transaction) {
     const sigs =
       "0x" +
       "000000000000000000000000" +
@@ -176,7 +176,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Transaction} transaction The transaction to be executed by execTransaction
    * @return {Transaction} Transaction calling execTransaction; should be executed by master
    */
-  const buildExecTransaction = async function(masterAddress, bracketAddress, transaction) {
+  const buildExecTransaction = async function (masterAddress, bracketAddress, transaction) {
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise // TODO: do we need the master copy instance?
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
@@ -189,7 +189,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     return execTransaction
   }
 
-  const getMasterCopy = async function(safeAddress) {
+  const getMasterCopy = async function (safeAddress) {
     const safe = await IProxy.at(safeAddress)
     return safe.masterCopy()
   }
@@ -202,7 +202,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address} transactions Address of a Gnosis Safe
    * @return {Address} Fallback contract of the input Gnosis Safe
    */
-  const getFallbackHandler = async function(safeAddress) {
+  const getFallbackHandler = async function (safeAddress) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 

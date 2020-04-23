@@ -1,4 +1,4 @@
-module.exports = function(web3, artifacts) {
+module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
 
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
@@ -11,7 +11,7 @@ module.exports = function(web3, artifacts) {
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
-  const assertGoodArguments = function(argv) {
+  const assertGoodArguments = function (argv) {
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
     } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
@@ -19,7 +19,7 @@ module.exports = function(web3, artifacts) {
     }
   }
 
-  const getMaxWithdrawableAmount = async function(argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
+  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
     const token = tokenInfo.instance
@@ -43,7 +43,7 @@ module.exports = function(web3, artifacts) {
     return amount
   }
 
-  return async function(argv, printOutput = false) {
+  return async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -56,7 +56,7 @@ module.exports = function(web3, artifacts) {
       log("Retrieving amount of tokens to withdraw.")
       // get full amount to withdraw from the blockchain
       withdrawals = await Promise.all(
-        withdrawals.map(async withdrawal => ({
+        withdrawals.map(async (withdrawal) => ({
           bracketAddress: withdrawal.bracketAddress,
           tokenAddress: withdrawal.tokenAddress,
           amount: await getMaxWithdrawableAmount(

@@ -1,4 +1,4 @@
-module.exports = function(web3 = web3, artifacts = artifacts) {
+module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const readline = require("readline")
 
@@ -15,8 +15,8 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
     mainnet: "",
   }
 
-  const promptUser = function(message) {
-    return new Promise(resolve => rl.question(message, answer => resolve(answer)))
+  const promptUser = function (message) {
+    return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
   }
 
   /**
@@ -24,7 +24,7 @@ module.exports = function(web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
    */
-  const signAndSend = async function(masterSafe, transaction, network) {
+  const signAndSend = async function (masterSafe, transaction, network) {
     const nonce = await masterSafe.nonce()
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(

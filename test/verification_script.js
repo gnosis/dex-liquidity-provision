@@ -21,7 +21,7 @@ const {
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { buildExecTransaction, CALL } = require("../scripts/utils/internals")(web3, artifacts)
 
-contract("verification checks - for allowances", async accounts => {
+contract("verification checks - for allowances", async (accounts) => {
   describe("allowances", async () => {
     let tokenInfo
 
@@ -104,14 +104,14 @@ contract("verification checks - for allowances", async accounts => {
   })
 })
 
-contract("Verification checks", function(accounts) {
+contract("Verification checks", function (accounts) {
   let exchange
   let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let targetToken
   let stableToken
-  beforeEach(async function() {
+  beforeEach(async function () {
     // Create lightwallet
     lw = await utils.createLightwallet()
 

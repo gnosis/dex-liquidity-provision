@@ -90,31 +90,31 @@ const goodTwoWayPairs = [
   },
 ]
 
-const invalidDecimals = function(decimals) {
+const invalidDecimals = function (decimals) {
   return "Invalid number of decimals for ERC20 token: " + decimals.toString()
 }
-const tooLargeNumber = function() {
+const tooLargeNumber = function () {
   return "Number larger than ERC20 token maximum amount (uint256)"
 }
-const invalidNumber = function(amount) {
+const invalidNumber = function (amount) {
   return "Failed to parse decimal representation of " + amount
 }
-const tooManyDecimals = function() {
+const tooManyDecimals = function () {
   return "Too many decimals for the token in input string"
 }
-const invalidCharacter = function() {
+const invalidCharacter = function () {
   return "Invalid character"
 }
 
 // takes an integer and produces an array containing the same value expressed in all types accepted for "decimals"
-const decimalTypesToTest = function(decimals) {
+const decimalTypesToTest = function (decimals) {
   return [decimals, decimals.toString(), new BN(decimals)]
 }
 
 describe("toErc20Units", () => {
-  const testGoodEntries = function(entries) {
+  const testGoodEntries = function (entries) {
     for (const { user, machine, decimals } of entries) {
-      decimalTypesToTest(decimals).map(_decimals => {
+      decimalTypesToTest(decimals).map((_decimals) => {
         assert.equal(
           toErc20Units(user, _decimals).toString(),
           machine,
@@ -123,7 +123,7 @@ describe("toErc20Units", () => {
       })
     }
   }
-  const testBadEntries = function(entries) {
+  const testBadEntries = function (entries) {
     for (const { user, decimals, error } of entries) {
       let errorMessage
       switch (error) {
@@ -142,9 +142,9 @@ describe("toErc20Units", () => {
         default:
           throw Error("Invalid error to test")
       }
-      decimalTypesToTest(decimals).map(_decimals => {
+      decimalTypesToTest(decimals).map((_decimals) => {
         assert.throws(
-          function() {
+          function () {
             return toErc20Units(user, _decimals)
           },
           Error(errorMessage),
@@ -299,26 +299,12 @@ describe("toErc20Units", () => {
         error: "tooLargeNumber",
       },
       {
-        user:
-          "0." +
-          bnMaxUint
-            .add(bnOne)
-            .toString()
-            .padStart(255, "0"),
+        user: "0." + bnMaxUint.add(bnOne).toString().padStart(255, "0"),
         decimals: 255,
         error: "tooLargeNumber",
       },
       {
-        user:
-          bnMaxUint
-            .add(bnOne)
-            .toString()
-            .slice(0, -18) +
-          "." +
-          bnMaxUint
-            .add(bnOne)
-            .toString()
-            .slice(-18),
+        user: bnMaxUint.add(bnOne).toString().slice(0, -18) + "." + bnMaxUint.add(bnOne).toString().slice(-18),
         decimals: 18,
         error: "tooLargeNumber",
       },
@@ -329,9 +315,9 @@ describe("toErc20Units", () => {
 
 describe("fromErc20Units", () => {
   // takes an entry and produces an array containing the same entry expressed in all accepted input types
-  const allTypesForEntry = function(entry) {
+  const allTypesForEntry = function (entry) {
     const entriesToTest = []
-    decimalTypesToTest(entry.decimals).map(decimals => {
+    decimalTypesToTest(entry.decimals).map((decimals) => {
       entriesToTest.push({ user: entry.user, error: entry.error, decimals: decimals, machine: entry.machine })
       let machineToBn = null
       try {
@@ -346,7 +332,7 @@ describe("fromErc20Units", () => {
     })
     return entriesToTest
   }
-  const testGoodEntries = function(entries) {
+  const testGoodEntries = function (entries) {
     for (const entry of entries) {
       allTypesForEntry(entry).map(({ machine, decimals, user }) => {
         assert.equal(
@@ -357,7 +343,7 @@ describe("fromErc20Units", () => {
       })
     }
   }
-  const testBadEntries = function(entries) {
+  const testBadEntries = function (entries) {
     for (const entry of entries) {
       allTypesForEntry(entry).map(({ machine, decimals }) => {
         let errorMessage
@@ -375,7 +361,7 @@ describe("fromErc20Units", () => {
             throw Error("Invalid error to test")
         }
         assert.throws(
-          function() {
+          function () {
             return fromErc20Units(machine, decimals)
           },
           Error(errorMessage),

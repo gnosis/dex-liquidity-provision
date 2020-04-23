@@ -32,7 +32,7 @@ const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tool
 
 const TEN = new BN(10)
 
-const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, bracketSafes, exchange) {
+const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
   const multiplicator = new BN("100000000")
 
@@ -70,14 +70,14 @@ const checkPricesOfBracketStrategy = async function(lowestLimit, highestLimit, b
     )
   }
 }
-contract("GnosisSafe", function(accounts) {
+contract("GnosisSafe", function (accounts) {
   let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let testToken
   let exchange
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     // Create lightwallet
     // TODO - can we just use accounts provided by ganache?
     lw = await utils.createLightwallet()
@@ -90,19 +90,19 @@ contract("GnosisSafe", function(accounts) {
     exchange = await BatchExchange.deployed()
   })
 
-  describe("Exchange interaction test:", async function() {
+  describe("Exchange interaction test:", async function () {
     it("Adds tokens to the exchange", async () => {
       await prepareTokenRegistration(accounts[0], exchange)
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
       assert.equal(await exchange.tokenAddressToIdMap(testToken.address), 1)
     })
-    const checkTokenInfo = async function(token, tokenInfo) {
+    const checkTokenInfo = async function (token, tokenInfo) {
       assert.equal((await token.decimals()).toString(), tokenInfo.decimals.toString(), "wrong number of decimals")
       assert.equal(await token.address, tokenInfo.address, "wrong address")
       assert.equal(await token.symbol(), tokenInfo.symbol, "wrong symbol")
     }
-    it("Asynchronously fetches tokens at addresses", async function() {
+    it("Asynchronously fetches tokens at addresses", async function () {
       const token1 = await TestToken.new("TEST", 18)
       const token2 = await TestToken.new("TEST", 9)
       assert(token1.address != token2.address, "The two newly generated tokens should be different")
@@ -117,7 +117,7 @@ contract("GnosisSafe", function(accounts) {
       await checkTokenInfo(token1, token1Info2)
       await checkTokenInfo(token2, token2Info2)
     })
-    it("Fetches tokens from exchange", async function() {
+    it("Fetches tokens from exchange", async function () {
       const owlToken = await TokenOWL.at(await exchange.feeToken())
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
@@ -134,7 +134,7 @@ contract("GnosisSafe", function(accounts) {
       await checkTokenInfo(testToken, token1Info2)
     })
   })
-  describe("Gnosis Safe deployments:", async function() {
+  describe("Gnosis Safe deployments:", async function () {
     it("Deploys Fleet of Gnosis Safes", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -144,8 +144,8 @@ contract("GnosisSafe", function(accounts) {
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
     })
   })
-  describe("transfer tests:", async function() {
-    const testManualDeposits = async function(tokenDecimals, readableDepositAmount) {
+  describe("transfer tests:", async function () {
+    const testManualDeposits = async function (tokenDecimals, readableDepositAmount) {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
@@ -157,7 +157,7 @@ contract("GnosisSafe", function(accounts) {
       await token.transfer(masterSafe.address, totalTokenNeeded)
       // Note that we are have NOT registered the tokens on the exchange but we can deposit them nevertheless.
 
-      const deposits = bracketAddresses.map(bracketAddress => ({
+      const deposits = bracketAddresses.map((bracketAddress) => ({
         amount: depositAmount.toString(),
         tokenAddress: token.address,
         bracketAddress: bracketAddress,
@@ -194,7 +194,7 @@ contract("GnosisSafe", function(accounts) {
       ]
       await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
-    const testAutomaticDeposits = async function(tradeInfo, expectedDistribution) {
+    const testAutomaticDeposits = async function (tradeInfo, expectedDistribution) {
       const {
         fleetSize,
         lowestLimit,
@@ -490,7 +490,7 @@ contract("GnosisSafe", function(accounts) {
     })
   })
 
-  describe("bracket order placement test:", async function() {
+  describe("bracket order placement test:", async function () {
     it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
       const masterSafe = await GnosisSafe.at(
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
@@ -696,8 +696,8 @@ contract("GnosisSafe", function(accounts) {
     })
   })
 
-  describe("Test withdrawals", async function() {
-    const setupAndRequestWithdraw = async function(masterSafe, bracketAddresses, deposits, withdrawals) {
+  describe("Test withdrawals", async function () {
+    const setupAndRequestWithdraw = async function (masterSafe, bracketAddresses, deposits, withdrawals) {
       const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits)
 
       await execTransaction(masterSafe, lw, batchTransaction)
@@ -775,13 +775,13 @@ contract("GnosisSafe", function(accounts) {
       await testToken.mint(accounts[0], fullTokenAmount.toString())
       await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
 
-      const deposits = bracketAddresses.map(bracketAddress => ({
+      const deposits = bracketAddresses.map((bracketAddress) => ({
         amount: depositAmount,
         tokenAddress: testToken.address,
         bracketAddress: bracketAddress,
       }))
       // build withdrawal lists mirroring deposits
-      const withdrawals = deposits.map(deposit => ({
+      const withdrawals = deposits.map((deposit) => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
         bracketAddress: deposit.bracketAddress,
@@ -792,7 +792,7 @@ contract("GnosisSafe", function(accounts) {
       // withdrawalsModified has the original withdraw amounts plus an extra. It is used to test
       // that extra amounts are ignored by the script and just the maximal possible value is withdrawn
       const withdrawalsModified = withdrawals
-      withdrawalsModified.map(withdraw => {
+      withdrawalsModified.map((withdraw) => {
         withdraw.amount = withdraw.amount.add(toErc20Units(1, 18))
         withdraw
       })
@@ -851,13 +851,13 @@ contract("GnosisSafe", function(accounts) {
       await testToken.mint(accounts[0], fullTokenAmount.toString())
       await testToken.transfer(masterSafe.address, fullTokenAmount.toString())
 
-      const deposits = bracketAddresses.map(bracketAddress => ({
+      const deposits = bracketAddresses.map((bracketAddress) => ({
         amount: depositAmount,
         tokenAddress: testToken.address,
         bracketAddress: bracketAddress,
       }))
       // build withdrawal lists mirroring deposits
-      const withdrawals = deposits.map(deposit => ({
+      const withdrawals = deposits.map((deposit) => ({
         amount: deposit.amount,
         tokenAddress: deposit.tokenAddress,
         bracketAddress: deposit.bracketAddress,

@@ -8,7 +8,7 @@ const { deploySafe } = require("./test_utils")
  * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
  * Returns the address of the newly created proxy.
  */
-const decodeCreateProxy = function(rawEvent) {
+const decodeCreateProxy = function (rawEvent) {
   const { data, topics } = rawEvent
   const eventSignature = web3.eth.abi.encodeEventSignature("ProxyCreation(address)")
   assert.equal(topics[0], eventSignature, "Input raw event is not a CreateProxy event")
@@ -25,14 +25,14 @@ const decodeCreateProxy = function(rawEvent) {
   return decoded.proxy
 }
 
-contract("FleetFactory", function(accounts) {
+contract("FleetFactory", function (accounts) {
   let gnosisSafeMasterCopy
   let proxyFactory
   let fleetFactory
   let master
   const masterController = accounts[1]
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
     fleetFactory = await FleetFactory.new(proxyFactory.address)
@@ -68,7 +68,7 @@ contract("FleetFactory", function(accounts) {
     assert.equal(emittedOwner, master.address, "FleetFactory did not log the correct owner")
   })
 
-  describe("created safes", async function() {
+  describe("created safes", async function () {
     it("are owned by master", async () => {
       const numberOfSafes = 13
       const transcript = await fleetFactory.deployFleet(master.address, numberOfSafes, gnosisSafeMasterCopy.address)

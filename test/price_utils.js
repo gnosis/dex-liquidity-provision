@@ -15,7 +15,7 @@ const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strateg
 const max128 = new BN(2).pow(new BN(128)).subn(1)
 const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
 
-const assertEqualUpToFloatPrecision = function(value, expected) {
+const assertEqualUpToFloatPrecision = function (value, expected) {
   const differenceFromExpected = value.sub(expected).abs()
   assert(differenceFromExpected.mul(floatTolerance).lt(expected))
 }
@@ -135,9 +135,9 @@ describe("getUnlimitedOrderAmounts", () => {
   })
 })
 
-contract("PriceOracle", function(accounts) {
+contract("PriceOracle", function (accounts) {
   let exchange
-  beforeEach(async function() {
+  beforeEach(async function () {
     // Create lightwallet
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchange.setProvider(web3.currentProvider)

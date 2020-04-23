@@ -19,13 +19,13 @@ const { waitForNSeconds, execTransaction } = require("../../scripts/utils/intern
 const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
 
-contract("Withdraw script", function(accounts) {
+contract("Withdraw script", function (accounts) {
   let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let exchange
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     // Create lightwallet
     // TODO - can we just use accounts provided by ganache?
     lw = await utils.createLightwallet()
@@ -37,7 +37,7 @@ contract("Withdraw script", function(accounts) {
     exchange = await BatchExchange.deployed()
   })
 
-  const setup = async function(numberOfBrackets, amounts) {
+  const setup = async function (numberOfBrackets, amounts) {
     const masterSafe = await GnosisSafe.at(
       await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
     )
@@ -56,19 +56,17 @@ contract("Withdraw script", function(accounts) {
     return [masterSafe, bracketAddresses, tokenInfo]
   }
 
-  const evenDeposits = function(bracketAddresses, tokenData, amount) {
+  const evenDeposits = function (bracketAddresses, tokenData, amount) {
     const numberOfBrackets = bracketAddresses.length
-    const amountToEach = toErc20Units(amount, tokenData.decimals)
-      .div(new BN(numberOfBrackets))
-      .toString()
-    return bracketAddresses.map(bracketAddress => ({
+    const amountToEach = toErc20Units(amount, tokenData.decimals).div(new BN(numberOfBrackets)).toString()
+    return bracketAddresses.map((bracketAddress) => ({
       amount: amountToEach,
       tokenAddress: tokenData.address,
       bracketAddress: bracketAddress,
     }))
   }
 
-  const deposit = async function(masterSafe, deposits) {
+  const deposit = async function (masterSafe, deposits) {
     const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits)
     await execTransaction(masterSafe, lw, batchTransaction)
     // Close auction for deposits to be reflected in exchange balance
