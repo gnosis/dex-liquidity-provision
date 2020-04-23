@@ -48,6 +48,7 @@
     "truffle-plugin-verify": "^0.3.10"
   },
   "resolutions": {
-    "bitcore-lib": "8.1.1"
+    "bitcore-lib": "8.1.1",
+    "lodash": "^4.17.12"
   }
 }
