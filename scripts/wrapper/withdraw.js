@@ -49,19 +49,27 @@ module.exports = function (web3, artifacts) {
     else if (argv.withdraw) {
       const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
       const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
-      if (pendingWithdrawal[1].toNumber() == 0) {
-        log("Warning: no withdrawal was requested for address", bracketAddress, "and token", tokenData.symbol)
-        amount = "0"
-      }
-      if (amount != "0" && pendingWithdrawal[1].toNumber() >= currentBatchId) {
-        log("Warning: amount cannot be withdrawn from the exchange right now, withdrawing zero")
-        amount = "0"
-      }
       amount = pendingWithdrawal[0].toString()
+      if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
+        const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
+        log(
+          "Warning: requested withdrawal of " +
+            amount +
+            " " +
+            tokenData.symbol +
+            " for bracket " +
+            bracketAddress +
+            " cannot be executed until " +
+            batchIdsLeft +
+            " " +
+            (batchIdsLeft == 1 ? "batch" : "batches") +
+            " from now, skipping"
+        )
+        amount = "0"
+      }
     } else {
       amount = (await token.balanceOf(bracketAddress)).toString()
     }
-    if (amount == "0") log("Warning: address", bracketAddress, "has no balance to withdraw for token", tokenData.symbol)
     return amount
   }
 
