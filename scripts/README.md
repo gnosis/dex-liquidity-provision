@@ -16,48 +16,57 @@ yarn run networks-inject
 
 Create a gnosis-safe wallet [here](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
 This Master Safe must have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface. This implies that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
-In order to have a save setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. Otherwise, everyone can steal the funds from your account!
 
-and export the Master save as an env:
+In order to have a save setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. _Otherwise, everyone can steal the funds from your account!_
 
-```
-export MASTER_SAFE=<master safe>
-```
-
-Setup more env variables for the deployment process:
+Setup env variables for the deployment process:
 
 ```
 export PK=<Your Key>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
+export MASTER_SAFE=<master safe>
 
 ```
 
 ### Confirming multisig-transactions on gnosis-safe with Metamask
 
-For the signing process, note that the gas consumption is underestimated. There is currently no proper way to estimate the gas limit. In order to make sure that the gas limit of your transaction is sufficient, increase it to 5 million gas. In practice, this limit suffices to deploy a strategy with 20 brackets
+For the signing process, note that the gas consumption is underestimated. There is currently no proper way to estimate the gas limit. In order to make sure that the gas limit of your transaction is sufficient, increase it to 5 million gas. In practice, this limit suffices to deploy a strategy with 20 brackets.
 
-### Deploy a the bracket-strategy:
+### Deploy the bracket-strategy:
 
-In order to deploy new bracket-trader contracts, place orders on behalf of the newly minted contracts and fund their accounts on the exchange, one only has to run the complete_liquidity_provision script.
+In order to deploy new bracket-trader contracts, place orders on behalf of the newly mined contracts and fund their accounts on the exchange, one only has to run the `complete_liquidity_provision` script.
 It will create one ethereum transaction for creating the safes, and send two transactions request to the gnosis-safe interface.
+
 The first request will generate orders on behalf of the bracket-traders.
-Please sign this transaction in the gnosis-safe interface and double check that the prices of the orders are as intended(for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-mainnet](https://t.me/gnosis_protocol_dev).
-Only then continue the script and send out the second request, which will fund the bracket-traders' accounts on the exchange. Here is an example script invocation:
+Please sign this transaction in the gnosis-safe interface and double check that the prices of the orders are as intended -for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-rinkeby](https://t.me/gnosis_protocol_dev) channels.
+Then continue the script and send out the second request, which will fund the bracket-traders' accounts on the exchange.
+
+Here is an example script invocation:
 
 ```js
 npx truffle exec scripts/complete_liquidity_provision.js --targetToken=1 --stableToken=4 --lowestLimit=150 --hig
 hestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentTargetToken=10 --investmentStableToken=1000 --fleetSize=20 --network=$NETWORK_NAME
 ```
 
-This example deploys a liquidity strategy with 20 brackets between the prices 150-200 between WETH-USDC.
-In this script the targetToken is 1, which happens to be WETH and the stableToken is 4, which happens to be USDC. The token ids of the exchange contract can be read from etherscan, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
+This example deploys a liquidity strategy with 20 brackets between the prices 150-200 on the pair WETH-USDC.
+In this script the targetToken is 1, which happens to be WETH and the stableToken is 4, which happens to be USDC. The token ids of the exchange contract can be read from Etherscan.info in the 'Contract/Read Contract' tab, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
 
-The fleet size should be smaller than or equal to 20, to ensure that the transactions can be send via Metamask - otherwise, it can happen that the payload is too high for Metamask.
+The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be send via Metamask - otherwise, it can happen that the payload is too high for Metamask.
 
-Please document the displayed bracket-trader addresses. They are require for the withdrawals later. They can also be retrieved from the created transactions, but it is quite cumbersome to extract them right now.
+Please document the displayed bracket-trader addresses. They are require for the withdrawals later. They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
 
-Instead of doing all the steps with one script, the different steps can also be done individually
+Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
+
+### Deploy safes
+
+Requires that Master is already deployed.
+
+An example of the usage would be:
+
+```js
+truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --fleet-size=20 --network=$NETWORK_NAME
+```
 
 ### Place Orders
 
