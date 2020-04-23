@@ -14,7 +14,7 @@ npx truffle compile
 yarn run networks-inject
 ```
 
-Create a gnosis-safe wallet (here)[https://rinkeby.gnosis-safe.io]. This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
+Create a gnosis-safe wallet [here](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
 This Master Safe must have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface. This implies that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
 In order to have a save setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. Otherwise, everyone can steal the funds from your account!
 
@@ -42,7 +42,7 @@ For the signing process, note that the gas consumption is underestimated. There 
 In order to deploy new bracket-trader contracts, place orders on behalf of the newly minted contracts and fund their accounts on the exchange, one only has to run the complete_liquidity_provision script.
 It will create one ethereum transaction for creating the safes, and send two transactions request to the gnosis-safe interface.
 The first request will generate orders on behalf of the bracket-traders.
-Please sign this transaction in the gnosis-safe interface and double check that the prices of the orders are as intended(for example in (telegram-mainnet)[https://t.me/gnosis_protocol] or (telegram-mainnet)[https://t.me/gnosis_protocol_dev]).
+Please sign this transaction in the gnosis-safe interface and double check that the prices of the orders are as intended(for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-mainnet](https://t.me/gnosis_protocol_dev).
 Only then continue the script and send out the second request, which will fund the bracket-traders' accounts on the exchange. Here is an example script invocation:
 
 ```js
@@ -51,7 +51,7 @@ hestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentTargetTok
 ```
 
 This example deploys a liquidity strategy with 20 brackets between the prices 150-200 between WETH-USDC.
-In this script the targetToken is 1, which happens to be WETH and the stableToken is 4, which happens to be USDC. The token ids of the exchange contract can be read from etherscan, e.g. (here for mainnet)[https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f]
+In this script the targetToken is 1, which happens to be WETH and the stableToken is 4, which happens to be USDC. The token ids of the exchange contract can be read from etherscan, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
 
 The fleet size should be smaller than or equal to 20, to ensure that the transactions can be send via Metamask - otherwise, it can happen that the payload is too high for Metamask.
 
@@ -61,7 +61,9 @@ Instead of doing all the steps with one script, the different steps can also be 
 
 ### Place Orders
 
-Requires that Master and bracket Safes are already deployed.
+Requires that Master and bracket-traders are already deployed.
+
+An example of the usage would be:
 
 ```js
 truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --currentPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
@@ -69,7 +71,9 @@ truffle exec scripts/bracket_orders.js --targetToken=1 --stableToken=7 --current
 
 ### Transfer-Approve-Deposit
 
-Here, a deposit file like the one available in `./data/depostList.json`, needs to be created with the correct funding amounts of the brackets and their correct address.
+For this script, a deposit file like the one available in `./data/depostList.json`, needs to be created with the correct funding amounts of the brackets and their correct address.
+
+Then the script can be used like that:
 
 ```js
 truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE --depositFile="./data/depositList.json" --network=$NETWORK_NAME
