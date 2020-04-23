@@ -2,7 +2,7 @@
 
 ## Disclaimer:
 
-Using own risk!
+Use at your own risk!
 
 ### Prerequisites
 
@@ -47,8 +47,7 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 Here is an example script invocation:
 
 ```js
-npx truffle exec scripts/complete_liquidity_provision.js --targetToken=1 --stableToken=4 --lowestLimit=150 --hig
-hestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentTargetToken=10 --investmentStableToken=1000 --fleetSize=20 --network=$NETWORK_NAME
+npx truffle exec scripts/complete_liquidity_provision.js --targetToken=1 --stableToken=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentTargetToken=10 --investmentStableToken=1000 --fleetSize=20 --network=$NETWORK_NAME
 ```
 
 The prices must be specified in terms of 1 target token = x stable tokens.
