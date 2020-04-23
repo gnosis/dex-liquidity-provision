@@ -19,7 +19,7 @@ module.exports = async (callback) => {
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const deposits = require(argv.depositFile)
-    // TODO - make a simpler to construct deposit file style
+    // TODO - make it simpler to construct deposit file style
     console.log("Preparing transaction data...")
     const transaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits, true)
 
