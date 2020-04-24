@@ -1,6 +1,7 @@
 {
   "name": "liquidity-provision-scripts",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
+  "private": true,
   "keywords": [
     "Gnosis Protocol",
     "liquidity",
