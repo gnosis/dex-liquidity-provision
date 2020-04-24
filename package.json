@@ -1,6 +1,5 @@
 {
   "name": "liquidity-provision-scripts",
-  "version": "0.1.0",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
