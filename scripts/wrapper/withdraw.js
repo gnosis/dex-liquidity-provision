@@ -98,7 +98,7 @@ module.exports = function (web3, artifacts) {
         tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
       }
       const exchange = await exchangePromise
-      const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because testing would fail
+      const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because time of testing blockchain is not consistent with system clock
 
       log("Retrieving amount of tokens to withdraw.")
       // get full amount to withdraw from the blockchain
