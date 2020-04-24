@@ -43,11 +43,6 @@ const argv = require("./utils/default_yargs")
     type: "float",
     describe: "Price for the bracket selling at the highest price",
   })
-  .option("validFrom", {
-    type: "int",
-    describe: "Number of batches (from current) until order become valid",
-    default: 3,
-  })
   .option("expiry", {
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
@@ -79,7 +74,6 @@ module.exports = async (callback) => {
           argv.lowestLimit,
           argv.highestLimit,
           true,
-          argv.validFrom,
           argv.expiry
         )
 
