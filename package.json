@@ -1,6 +1,11 @@
 {
   "name": "liquidity-provision-scripts",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
+  "keywords": [
+    "Gnosis Protocol",
+    "liquidity",
+    "trading"
+  ],
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
     "eslint": "^6.8.0",
