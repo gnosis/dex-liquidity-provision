@@ -174,10 +174,10 @@
     "@ethersproject/constants" ">=5.0.0-beta.128"
     "@ethersproject/logger" ">=5.0.0-beta.129"
 
-"@gnosis.pm/dex-contracts@^0.2.9":
-  version "0.2.9"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.2.9.tgz#0f18c96f4d511d0bb9259cc56ee336523292b562"
-  integrity sha512-Fn0Co3QH01a2/sj3EC1U/QsXLv/H4d/2+KMn7r1KmuLajDe5iv+jlnCo6neknpWpes5Gjg/5nwxJJfHE0W/YLw==
+"@gnosis.pm/dex-contracts@^0.2.12":
+  version "0.2.12"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.2.12.tgz#22f7db7424755c381ada58c6788efa41c68c0bd7"
+  integrity sha512-PZMX+byoPH3zBWlemVxxfQmCE6yGhmxC33TflWMYYe4fzmnKPyG/trSBkBjtGte7xu0T1iQ2RwGl0WPVpej71g==
   dependencies:
     bn.js "^5.1.1"
 
