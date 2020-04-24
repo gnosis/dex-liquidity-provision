@@ -58,17 +58,11 @@ module.exports = function (web3, artifacts) {
       if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
         const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
         log(
-          "Warning: requested withdrawal of " +
-            amount +
-            " " +
-            tokenData.symbol +
-            " for bracket " +
-            bracketAddress +
-            " cannot be executed until " +
-            batchIdsLeft +
-            " " +
-            (batchIdsLeft == 1 ? "batch" : "batches") +
-            " from now, skipping"
+          `Warning: requested withdrawal of ${amount} ${
+            tokenData.symbol
+          } for bracket ${bracketAddress} cannot be executed until ${batchIdsLeft} ${
+            batchIdsLeft == 1 ? "batch" : "batches"
+          } from now, skipping`
         )
         amount = "0"
       }
