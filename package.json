@@ -6,6 +6,13 @@
     "liquidity",
     "trading"
   ],
+  "repository": {
+    "type": "git",
+    "url": "github:https://github.com/gnosis/dex-liquidity-provision"
+  },
+  "bugs": {
+    "url": "https://github.com/gnosis/dex-liquidity-provision/issues"
+  },
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
     "eslint": "^6.8.0",
