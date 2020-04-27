@@ -84,13 +84,9 @@ module.exports = function (web3, artifacts) {
       tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
     } else {
       const exchangePromise = getExchange(web3)
-      if (argv.tokens) tokenInfoPromises = fetchTokenInfoAtAddresses(argv.tokens)
-      else {
-        const tokenAddresses = await Promise.all(
-          argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))
-        )
-        tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
-      }
+      const tokenAddresses =
+        argv.tokens || (await Promise.all(argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
+      tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
       const exchange = await exchangePromise
       const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because time of testing blockchain is not consistent with system clock
 
