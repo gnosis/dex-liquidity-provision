@@ -21,21 +21,21 @@ module.exports = function (web3, artifacts) {
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
 
-    if (!argv.withdrawalFile && !argv.from) {
-      throw new Error("Argument error: one of --withdrawalFile, --from must be given")
-    } else if (argv.withdrawalFile && argv.from) {
-      throw new Error("Argument error: --from cannot be used with --withdrawalFile")
+    if (!argv.withdrawalFile && !argv.brackets) {
+      throw new Error("Argument error: one of --withdrawalFile, --brackets must be given")
+    } else if (argv.withdrawalFile && argv.brackets) {
+      throw new Error("Argument error: --brackets cannot be used with --withdrawalFile")
     }
 
-    if (argv.from) {
+    if (argv.brackets) {
       if (!argv.tokens && !argv.tokenIds) {
-        throw new Error("Argument error: one of --tokens, --tokenIds must be given when using --from")
+        throw new Error("Argument error: one of --tokens, --tokenIds must be given when using --brackets")
       } else if (argv.tokens && argv.tokenIds) {
-        throw new Error("Argument error: only one of --tokens, --tokenIds is required when using --from")
+        throw new Error("Argument error: only one of --tokens, --tokenIds is required when using --brackets")
       }
     } else {
       if (argv.tokens || argv.tokenIds) {
-        throw new Error("Argument error: --tokens or --tokenIds can only be used with --from")
+        throw new Error("Argument error: --tokens or --tokenIds can only be used with --brackets")
       }
     }
   }
@@ -99,7 +99,7 @@ module.exports = function (web3, artifacts) {
       withdrawals = []
       const candidateWithdrawalPromises = []
       for (const [, tokenDataPromise] of Object.entries(tokenInfoPromises))
-        for (const bracketAddress of argv.from)
+        for (const bracketAddress of argv.brackets)
           candidateWithdrawalPromises.push(
             (async () => {
               const maxWithdrawableAmount = await getMaxWithdrawableAmount(

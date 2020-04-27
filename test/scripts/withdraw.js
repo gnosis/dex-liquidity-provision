@@ -258,7 +258,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         requestWithdraw: true,
       }
@@ -287,7 +287,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokenIds: [usdcId, wethId],
         requestWithdraw: true,
       }
@@ -314,7 +314,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv1 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         requestWithdraw: true,
       }
@@ -324,7 +324,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv2 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         withdraw: true,
       }
@@ -354,7 +354,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv1 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         requestWithdraw: true,
       }
@@ -364,7 +364,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv2 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         withdraw: true,
       }
@@ -373,7 +373,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv3 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         transferFundsToMaster: true,
       }
@@ -407,7 +407,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv1 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         requestWithdraw: true,
       }
@@ -417,7 +417,7 @@ contract("Withdraw script", function (accounts) {
 
       const argv2 = {
         masterSafe: masterSafe.address,
-        from: bracketAddresses,
+        brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
         withdraw: true,
         transferFundsToMaster: true,
@@ -486,34 +486,34 @@ contract("Withdraw script", function (accounts) {
           masterSafe: masterSafe.address,
           requestWithdraw: true,
           withdrawalFile: "/dev/zero",
-          from: "0x0,0x1",
+          brackets: "0x0,0x1",
         },
-        error: "Argument error: --from cannot be used with --withdrawalFile",
+        error: "Argument error: --brackets cannot be used with --withdrawalFile",
       },
       {
         argv: {
           masterSafe: masterSafe.address,
           requestWithdraw: true,
         },
-        error: "Argument error: one of --withdrawalFile, --from must be given",
+        error: "Argument error: one of --withdrawalFile, --brackets must be given",
       },
       {
         argv: {
           masterSafe: masterSafe.address,
           requestWithdraw: true,
-          from: "0x0,0x1",
+          brackets: "0x0,0x1",
         },
-        error: "Argument error: one of --tokens, --tokenIds must be given when using --from",
+        error: "Argument error: one of --tokens, --tokenIds must be given when using --brackets",
       },
       {
         argv: {
           masterSafe: masterSafe.address,
           requestWithdraw: true,
-          from: "0x0,0x1",
+          brackets: "0x0,0x1",
           tokens: "0x0,0x1",
           tokenIds: "0,1",
         },
-        error: "Argument error: only one of --tokens, --tokenIds is required when using --from",
+        error: "Argument error: only one of --tokens, --tokenIds is required when using --brackets",
       },
       {
         argv: {
@@ -523,7 +523,7 @@ contract("Withdraw script", function (accounts) {
           tokens: "0x0,0x1",
           tokenIds: "0,1",
         },
-        error: "Argument error: --tokens or --tokenIds can only be used with --from",
+        error: "Argument error: --tokens or --tokenIds can only be used with --brackets",
       },
       {
         argv: {
@@ -532,7 +532,7 @@ contract("Withdraw script", function (accounts) {
           requestWithdraw: true,
           tokens: "0x0,0x1",
         },
-        error: "Argument error: --tokens or --tokenIds can only be used with --from",
+        error: "Argument error: --tokens or --tokenIds can only be used with --brackets",
       },
       {
         argv: {
@@ -541,7 +541,7 @@ contract("Withdraw script", function (accounts) {
           requestWithdraw: true,
           tokenIds: "0,1",
         },
-        error: "Argument error: --tokens or --tokenIds can only be used with --from",
+        error: "Argument error: --tokens or --tokenIds can only be used with --brackets",
       },
     ]
     for (const { argv, error } of badInput)

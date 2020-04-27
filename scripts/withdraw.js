@@ -22,14 +22,14 @@ const argv = require("./utils/default_yargs")
   })
   .option("tokens", {
     type: "string",
-    describe: "comma separated address list of tokens to withdraw, to use in combination with --from",
+    describe: "comma separated address list of tokens to withdraw, to use in combination with --brackets",
     coerce: (str) => {
       return str.split(",")
     },
   })
   .option("tokenIds", {
     type: "string",
-    describe: "comma separated list of exchange ids for the tokens to withdraw, to use in combination with --from",
+    describe: "comma separated list of exchange ids for the tokens to withdraw, to use in combination with --brackets",
     coerce: (str) => {
       return str.split(",")
     },
