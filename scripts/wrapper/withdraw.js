@@ -91,32 +91,24 @@ module.exports = function (web3, artifacts) {
       const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because time of testing blockchain is not consistent with system clock
 
       log("Retrieving amount of tokens to withdraw.")
-      // get full amount to withdraw from the blockchain
+      const tokenDataList = await Promise.all(Object.entries(tokenInfoPromises).map(([, tokenDataPromise]) => tokenDataPromise))
+      const tokenBracketPairs = []
+      for (const tokenData of tokenDataList)
+        for (const bracketAddress of argv.brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+      const maxWithdrawableAmounts = await Promise.all(
+        tokenBracketPairs.map(([bracketAddress, tokenData]) =>
+          getMaxWithdrawableAmount(argv, bracketAddress, tokenData, exchange, currentBatchId, printOutput)
+        )
+      )
       withdrawals = []
-      const candidateWithdrawalPromises = []
-      for (const [, tokenDataPromise] of Object.entries(tokenInfoPromises))
-        for (const bracketAddress of argv.brackets)
-          candidateWithdrawalPromises.push(
-            (async () => {
-              const maxWithdrawableAmount = await getMaxWithdrawableAmount(
-                argv,
-                bracketAddress,
-                await tokenDataPromise,
-                exchange,
-                currentBatchId,
-                printOutput
-              )
-              return {
-                bracketAddress: bracketAddress,
-                tokenAddress: (await tokenDataPromise).address,
-                amount: maxWithdrawableAmount,
-              }
-            }).call()
-          )
-      for (const candidateWithdrawalPromise of candidateWithdrawalPromises) {
-        const candidateWithdrawal = await candidateWithdrawalPromise
-        if (candidateWithdrawal.amount !== "0") withdrawals.push(candidateWithdrawal)
-      }
+      maxWithdrawableAmounts.forEach((amount, index) => {
+        if (amount !== "0")
+          withdrawals.push({
+            bracketAddress: tokenBracketPairs[index][0],
+            tokenAddress: tokenBracketPairs[index][1].address,
+            amount: amount,
+          })
+      })
     }
 
     log("Started building withdraw transaction.")
