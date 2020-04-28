@@ -159,8 +159,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       if (!(id in globalTokenPromisesFromId)) {
         globalTokenPromisesFromId[id] = (async () => {
           const tokenAddress = await exchange.tokenIdToAddressMap(id)
-          log(`Token id ${id} corresponds to token at address ${tokenAddress}`)
-          return fetchTokenInfoAtAddresses([tokenAddress], debug)[tokenAddress]
+          const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
+          log(
+            `Found token ${tokenInfo.symbol} for exchange id ${id} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`
+          )
+          return tokenInfo
         }).call()
       }
       tokenPromises[id] = globalTokenPromisesFromId[id]
