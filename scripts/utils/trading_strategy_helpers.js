@@ -120,10 +120,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const log = debug ? (...a) => console.log(...a) : () => {}
     const ERC20 = artifacts.require("ERC20Detailed")
 
-    log("Fetching token data from EVM")
+    let requiresFetching = false
     const tokenPromises = {}
     for (const tokenAddress of tokenAddresses) {
       if (!(tokenAddress in globalTokenPromisesFromAddress)) {
+        requiresFetching = true
         globalTokenPromisesFromAddress[tokenAddress] = (async () => {
           const tokenInstance = await ERC20.at(tokenAddress)
           const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
@@ -139,6 +140,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       }
       tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
     }
+    if (requiresFetching) log("Fetching token data from EVM")
     return tokenPromises
   }
 
@@ -153,10 +155,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    log("Fetching token data from EVM")
+    let requiresFetching = false
     const tokenPromises = {}
     for (const id of tokenIds) {
       if (!(id in globalTokenPromisesFromId)) {
+        requiresFetching = true
         globalTokenPromisesFromId[id] = (async () => {
           const tokenAddress = await exchange.tokenIdToAddressMap(id)
           const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
@@ -168,6 +171,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       }
       tokenPromises[id] = globalTokenPromisesFromId[id]
     }
+    if (requiresFetching) log("Fetching token data from EVM")
     return tokenPromises
   }
 
