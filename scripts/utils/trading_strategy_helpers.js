@@ -117,7 +117,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
-    const log = debug ? () => console.log.apply(arguments) : () => {}
+    const log = debug ? (...a) => console.log(...a) : () => {}
     const ERC20 = artifacts.require("ERC20Detailed")
 
     log("Fetching token data from EVM")
@@ -151,7 +151,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
-    const log = debug ? () => console.log.apply(arguments) : () => {}
+    const log = debug ? (...a) => console.log(...a) : () => {}
 
     log("Fetching token data from EVM")
     const tokenPromises = {}
