@@ -41,7 +41,7 @@ It will send one ethereum transaction and send two transactions request to the g
 The ethereum transasction will create the bracket-traders. For this transaction the provided private key will be used to pay for the gas.
 The first request of the script will generate orders on behalf of the bracket-traders.
 Please sign this transaction in the gnosis-safe interface and double check that the prices of the orders are as intended - for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-rinkeby](https://t.me/gnosis_protocol_dev) channels.
-Then continue the script and send out the second request, which will fund the bracket-traders' accounts on the exchange. Notice: One has to wait until the transaction is mined, as otherwise the nonce for the next request will be incorrect.
+The second request generates a transaction funding the bracket-traders' accounts on the exchange.
 Making the requests to the gnosis-interfaces does not cost any gas. However, signing and executing the transactions in the gnosis-safe interface will incur gas costs.
 
 Here is an example script invocation:
