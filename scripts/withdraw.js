@@ -12,7 +12,7 @@ const argv = require("./utils/default_yargs")
     type: "string",
     describe: "file name (and path) to the list of withdrawals",
   })
-  .option("from", {
+  .option("brackets", {
     type: "string",
     describe:
       "comma-separated list of brackets from which to withdraw the entire balance. Compatible with all valid combinations of --requestWithdraw, --withdraw, --transferFundsToMaster",
