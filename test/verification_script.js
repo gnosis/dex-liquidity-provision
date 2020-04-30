@@ -269,30 +269,7 @@ contract("Verification checks", function (accounts) {
         await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
       )
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-      const targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
-      const stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
-      const lowestLimit = 90
-      const highestLimit = 120
-      //first round of order building
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken,
-        stableToken,
-        lowestLimit,
-        highestLimit
-      )
-      await execTransaction(masterSafe, lw, transaction)
-      // second round of order building
-      const transaction2 = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken,
-        stableToken,
-        lowestLimit,
-        highestLimit
-      )
-      await execTransaction(masterSafe, lw, transaction2)
+      // check that order length is not 2, since it is zero
       await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address), {
         message: "order length is not correct",
       })

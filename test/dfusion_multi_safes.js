@@ -3,6 +3,7 @@ const assertNodejs = require("assert")
 const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
+const { checkNoOrdersPlaced } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const ERC20 = artifacts.require("ERC20Detailed")
@@ -694,6 +695,34 @@ contract("GnosisSafe", function (accounts) {
         }
       )
     })
+    it("Failing when brackets have already orders", async () => {
+      const masterSafe = await GnosisSafe.at(
+        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
+      )
+      const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
+      const targetToken = 0 // ETH
+      const stableToken = 1 // DAI
+      const lowestLimit = 10
+      const highestLimit = 90
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+      const transactions = await buildOrders(
+        masterSafe.address,
+        bracketSafes,
+        targetToken,
+        stableToken,
+        lowestLimit,
+        highestLimit
+      )
+      await execTransaction(masterSafe, lw, transactions)
+      await assertNodejs.rejects(
+        buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, lowestLimit, highestLimit),
+        {
+          name: "AssertionError [ERR_ASSERTION]",
+          message: "each bracket should be owned only by the master Safe",
+        }
+      )
+    })
   })
 
   describe("Test withdrawals", async function () {
@@ -892,6 +921,37 @@ contract("GnosisSafe", function (accounts) {
           "0",
           "Fund retrieval failed: trader Safes still hold some funds"
         )
+    })
+  })
+})
+
+contract("GnosisSafe II", async (accounts) => {
+  describe("testing fn noOrderCheck", async () => {
+    let exchange
+
+    beforeEach(async function () {
+      const testToken = await TestToken.new("TEST6", 6)
+
+      BatchExchange.setProvider(web3.currentProvider)
+      exchange = await BatchExchange.deployed()
+
+      await prepareTokenRegistration(accounts[0], exchange)
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+    })
+
+    it("returns true, if the no orders are place", async () => {
+      const testAccount = accounts[2]
+      await exchange.placeOrder(0, 1, 0, 10, 10, { from: testAccount })
+      assert.equal(await checkNoOrdersPlaced(testAccount, exchange), false)
+    })
+    it("returns false, if the orders are place from this account", async () => {
+      const testAccount = accounts[3]
+      assert.equal(await checkNoOrdersPlaced(testAccount, exchange), true)
+    })
+    it("returns true, if the orders are place from another account", async () => {
+      const testAccount = accounts[4]
+      await exchange.placeOrder(0, 1, 0, 10, 10, { from: accounts[0] })
+      assert.equal(await checkNoOrdersPlaced(testAccount, exchange), true)
     })
   })
 })

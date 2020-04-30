@@ -109,6 +109,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
 
+  /**
+   * Checks that a bracket has not yet made any orders
+   */
+  const checkNoOrdersPlaced = async function (bracket, exchange) {
+    const orders = await exchange.getEncodedUserOrders.call(bracket)
+    if (orders === null) {
+      return true
+    } else {
+      return false
+    }
+  }
+
   const globalTokenPromisesFromAddress = {}
   /**
    * Queries EVM for ERC20 token details by address
@@ -250,7 +262,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const buyAndSellOrderPromises = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
         assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
-
+        assert(await checkNoOrdersPlaced(bracketAddress, exchange), "each bracket should be owned only by the master Safe")
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
@@ -649,6 +661,7 @@ withdrawal of the desired funds
     isOnlySafeOwner,
     getAllowances,
     assertNoAllowances,
+    checkNoOrdersPlaced,
     maxU32,
     maxUINT,
     ADDRESS_0,
