@@ -136,11 +136,11 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log("4. Sending the order placing transaction to gnosis-safe interface, please sign this transaction first")
+    console.log("4. Sending the order placing transaction to gnosis-safe interface, please execute this transaction first")
     const nonce = (await masterSafe.nonce()).toNumber()
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
 
-    console.log("5. Sending the funds transferring transaction, please sign this transaction second")
+    console.log("5. Sending the funds transferring transaction, please execute this transaction second")
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
 
     callback()
