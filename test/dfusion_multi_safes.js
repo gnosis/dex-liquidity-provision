@@ -939,16 +939,16 @@ contract("GnosisSafe II", async (accounts) => {
       await exchange.addToken(testToken.address, { from: accounts[0] })
     })
 
-    it("returns true, if the no orders are place", async () => {
+    it("returns false, if orders have been placed beforehand", async () => {
       const testAccount = accounts[2]
       await exchange.placeOrder(0, 1, 0, 10, 10, { from: testAccount })
       assert.equal(await checkNoOrdersPlaced(testAccount, exchange), false)
     })
-    it("returns false, if the orders are place from this account", async () => {
+    it("returns true, if the no orders have been placed", async () => {
       const testAccount = accounts[3]
       assert.equal(await checkNoOrdersPlaced(testAccount, exchange), true)
     })
-    it("returns true, if the orders are place from another account", async () => {
+    it("returns true, if orders have been placed only from another account", async () => {
       const testAccount = accounts[4]
       await exchange.placeOrder(0, 1, 0, 10, 10, { from: accounts[0] })
       assert.equal(await checkNoOrdersPlaced(testAccount, exchange), true)
