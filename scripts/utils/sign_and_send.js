@@ -24,8 +24,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
    */
-  const signAndSend = async function (masterSafe, transaction, network) {
-    const nonce = await masterSafe.nonce()
+  const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
+    if (nonce === null) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
       transaction.to,
@@ -55,7 +57,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       gasPrice: 0, // important that this is zero
       gasToken: ADDRESS_0,
       refundReceiver: ADDRESS_0,
-      nonce: nonce.toNumber(),
+      nonce: nonce,
       contractTransactionHash: transactionHash,
       sender: web3.utils.toChecksumAddress(account),
       signature: sigs,
