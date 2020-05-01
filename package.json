@@ -57,7 +57,7 @@
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.5.1",
     "synthetix-js": "^2.21.12",
-    "truffle": "^5.1.23",
+    "truffle": "^5.1.24",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   },
   "resolutions": {
