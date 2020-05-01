@@ -100,6 +100,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
   }
 
+  function signHashWithPrivateKey(hash, privateKey) {
+    const Util = require("ethereumjs-util")
+
+    const msgBuff = new Buffer(Util.stripHexPrefix(hash), "hex")
+    const sig = Util.ecsign(msgBuff, new Buffer(privateKey, "hex"))
+    return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
+  }
+
   function signTransaction(lw, signers, transactionHash) {
     let signatureBytes = "0x"
     signers.sort()
@@ -214,6 +222,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     encodeMultiSend,
     createLightwallet,
     signTransaction,
+    signHashWithPrivateKey,
     buildBundledTransaction,
     buildExecTransaction,
     CALL,
