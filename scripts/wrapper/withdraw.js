@@ -54,22 +54,26 @@ module.exports = function (web3, artifacts) {
     const token = tokenData.instance
     if (argv.requestWithdraw) {
       amount = bnMaxUint.toString()
-    } else if (argv.withdraw) {
-      const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
-      amount = pendingWithdrawal[0].toString()
-      if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
-        const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
-        log(
-          `Warning: requested withdrawal of ${amount} ${
-            tokenData.symbol
-          } for bracket ${bracketAddress} cannot be executed until ${batchIdsLeft} ${
-            batchIdsLeft == 1 ? "batch" : "batches"
-          } from now, skipping`
-        )
-        amount = "0"
-      }
     } else {
-      amount = (await token.balanceOf(bracketAddress)).toString()
+      if (argv.withdraw) {
+        // replace with getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
+        const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
+        amount = pendingWithdrawal[0].toString()
+        if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
+          const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
+          log(
+            `Warning: requested withdrawal of ${amount} ${
+              tokenData.symbol
+            } for bracket ${bracketAddress} cannot be executed until ${batchIdsLeft} ${
+              batchIdsLeft == 1 ? "batch" : "batches"
+            } from now, skipping`
+          )
+          amount = "0"
+        }
+      }
+      if (argv.transferFundsToMaster) {
+        amount = amount || (await token.balanceOf(bracketAddress)).toString()
+      }
     }
     return amount
   }
