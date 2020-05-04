@@ -214,7 +214,7 @@
     solc "^0.5.9"
     truffle-hdwallet-provider "0.0.7-beta.1"
 
-"@gnosis.pm/solidity-data-structures@^1.2.2":
+"@gnosis.pm/solidity-data-structures@=1.2.4":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@gnosis.pm/solidity-data-structures/-/solidity-data-structures-1.2.4.tgz#e7e0a2e4c3460a0166e7b985e7851e3a54e86607"
   integrity sha512-s5AV1cTf1ERYPCWdC8+Zgx0oZDJTClpkbtXs8RcBFnuhADLd0QTwBowlS8iDsnQtfLNhcF0bDB1rzokJOSUGhg==
