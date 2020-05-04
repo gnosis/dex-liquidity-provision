@@ -11,6 +11,7 @@ module.exports = function (web3, artifacts) {
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+  const { bnMaxUint } = require("../utils/printing_tools.js")
 
   const assertGoodArguments = function (argv) {
     if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
@@ -51,8 +52,9 @@ module.exports = function (web3, artifacts) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
     const token = tokenData.instance
-    if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
-    else if (argv.withdraw) {
+    if (argv.requestWithdraw) {
+      amount = bnMaxUint.toString()
+    } else if (argv.withdraw) {
       const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
       amount = pendingWithdrawal[0].toString()
       if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
