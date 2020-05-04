@@ -19,6 +19,8 @@ const { waitForNSeconds, execTransaction } = require("../../scripts/utils/intern
 const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
 
+const bnMaxUint256 = new BN(2).pow(new BN(256)).subn(1)
+
 contract("Withdraw script", function (accounts) {
   let lw
   let gnosisSafeMasterCopy
@@ -265,10 +267,10 @@ contract("Withdraw script", function (accounts) {
       const transaction = await prepareWithdraw(argv)
       await execTransaction(masterSafe, lw, transaction)
 
-      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+      for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
         assert.notEqual(requestedWithdrawal, "0", "Withdrawal was not requested")
-        assert.equal(requestedWithdrawal, amount, "Bad amount requested to withdraw")
+        assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
     it("requests withdrawals with token Ids", async () => {
@@ -294,10 +296,10 @@ contract("Withdraw script", function (accounts) {
       const transaction = await prepareWithdraw(argv)
       await execTransaction(masterSafe, lw, transaction)
 
-      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+      for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
         assert.notEqual(requestedWithdrawal, "0", "Withdrawal was not requested")
-        assert.equal(requestedWithdrawal, amount, "Bad amount requested to withdraw")
+        assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
     it("withdraws", async () => {
