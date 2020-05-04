@@ -14,17 +14,6 @@
   "bugs": {
     "url": "https://github.com/gnosis/dex-liquidity-provision/issues"
   },
-  "devDependencies": {
-    "@gnosis.pm/mock-contract": "^3.0.0",
-    "eslint": "^6.8.0",
-    "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.19.0",
-    "ganache-cli": "6.9.1",
-    "prettier": "^2.0.5",
-    "sol-merger": "^2.0.1",
-    "tmp-promise": "^2.1.0",
-    "truffle-plugin-verify": "^0.3.10"
-  },
   "engines": {
     "node": "^10.0.0"
   },
@@ -39,6 +28,17 @@
     "flatten": "export FLATTENED_DIR=\"./build/flattenedContracts\" && mkdir -p $FLATTENED_DIR && npx sol-merger \"contracts/*.sol\" $FLATTENED_DIR && echo \"Flattened contracts stored in $FLATTENED_DIR\" && unset FLATTENED_DIR",
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
+  },
+  "devDependencies": {
+    "@gnosis.pm/mock-contract": "^3.0.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-no-only-tests": "^2.4.0",
+    "eslint-plugin-react": "^7.19.0",
+    "ganache-cli": "6.9.1",
+    "prettier": "^2.0.5",
+    "sol-merger": "^2.0.1",
+    "tmp-promise": "^2.0.2",
+    "truffle-plugin-verify": "^0.3.10"
   },
   "dependencies": {
     "@gnosis.pm/dex-contracts": "^0.2.13",
