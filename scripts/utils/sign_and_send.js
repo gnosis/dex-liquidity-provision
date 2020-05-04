@@ -65,12 +65,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       signature: sigs,
     }
     await axios.post(endpoint, postData).catch(function (error) {
-      console.log("Show error notification!")
-      return Promise.reject(error)
+      throw new Error("Error while talking to the gnosis-interface: " + error.response.data)
     })
     const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
-    console.log("Remember to increase the gas limit!")
   }
 
   return {
