@@ -29,10 +29,6 @@ export MASTER_SAFE=<master safe>
 
 ```
 
-### Confirming multisig-transactions on gnosis-safe with Metamask
-
-For the signing process, note that the gas consumption is underestimated. There is currently no proper way to estimate the gas limit. In order to make sure that the gas limit of your transaction is sufficient, increase it to 5.9 million gas. In practice, this limit suffices to deploy a strategy with 20 brackets.
-
 ### Deploy the bracket-strategy:
 
 In order to deploy new bracket-trader contracts, place orders on behalf of the newly mined contracts and fund their accounts on the exchange, one only has to run the `complete_liquidity_provision` script.
@@ -126,3 +122,7 @@ truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdraw
 ```js
 truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
 ```
+
+### Confirming multisig-transactions on gnosis-safe with Metamask
+
+The gas limit for the transactions going through the gnosis-safe interface can not yet be correctly estimated. Hence, the proposed gas limits are very high. Usually, for a liquidity deployment with 20 brackets, not more than 6m gas is consumed.
