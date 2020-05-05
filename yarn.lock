@@ -290,6 +290,11 @@
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-4.72.0.tgz#43df23af013ad1135407e5cf33ca6e4c4c7708d5"
   integrity sha512-o+TYF8vBcyySRsb2kqBDv/KMeme8a2nwWoG+lAWzbDmWfb2/MrVWYCVYDYvjXdSoI/Cujqy1i0gIDrkdxa9chA==
 
+"@openzeppelin/contracts@=2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-2.5.0.tgz#e327a98ba1d26b7756ff62885a0aa0967a375449"
+  integrity sha512-t3jm8FrhL9tkkJTofkznTqo/XXdHi21w5yXwalEnaMOp22ZwZ0f/mmKdlgMMLPFa6bSVHbY88mKESwJT/7m5Lg==
+
 "@resolver-engine/core@^0.2.1":
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/@resolver-engine/core/-/core-0.2.1.tgz#0d71803f6d3b8cb2e9ed481a1bf0ca5f5256d0c0"
@@ -5076,7 +5081,7 @@ openzeppelin-solidity@^1.12.0:
   resolved "https://registry.yarnpkg.com/openzeppelin-solidity/-/openzeppelin-solidity-1.12.0.tgz#7b9c55975e73370d4541e3442b30cb3d91ac973a"
   integrity sha512-WlorzMXIIurugiSdw121RVD5qA3EfSI7GybTn+/Du0mPNgairjt29NpVTAaH8eLjAeAwlw46y7uQKy0NYem/gA==
 
-openzeppelin-solidity@^2.0.0, openzeppelin-solidity@^2.5.1:
+openzeppelin-solidity@^2.0.0:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/openzeppelin-solidity/-/openzeppelin-solidity-2.5.1.tgz#1cdcce30c4c6a7b6625dab62ccd0440a813ab597"
   integrity sha512-oCGtQPLOou4su76IMr4XXJavy9a8OZmAXeUZ8diOdFznlL/mlkIlYr7wajqCzH4S47nlKPS7m0+a2nilCTpVPQ==
@@ -6540,7 +6545,7 @@ timers-ext@^0.1.5:
     es5-ext "~0.10.46"
     next-tick "1"
 
-tmp-promise@^2.1.0:
+tmp-promise@^2.0.2:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/tmp-promise/-/tmp-promise-2.1.0.tgz#b3e70d34ec294279e7c3abbf12b20c7290a3b084"
   integrity sha512-vpg4MiaO80NeB53/tj8RHVHOGkCGOXZ8FMrJqDtJVlgrslkBNNkrAScfE7oJBTry06kc1MrV7SPVVc1auoY0lA==
