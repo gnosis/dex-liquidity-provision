@@ -5,6 +5,19 @@ const fetch = require("node-fetch")
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 const { getUnlimitedOrderAmounts } = require("../utils/price_utils")(web3, artifacts)
 
+const argv = require("../utils/default_yargs")
+  .option("gasPrice", {
+    type: "string",
+    describe: "Gas price to be used for order submission",
+    choices: ["lowest", "safeLow", "standard", "fast", "fastest"],
+    default: "standard",
+  })
+  .option("gasPriceScale", {
+    type: "float",
+    describe: "Scale used as a multiplier to the gas price",
+    default: 1.0,
+  }).argv
+
 // These are fixed constants for the current version of the dex-contracts
 const sETHByNetwork = {
   1: {
@@ -91,10 +104,12 @@ module.exports = async (callback) => {
     const buyTokens = [sETH, sUSD].map((token) => token.exchangeId)
     const sellTokens = [sUSD, sETH].map((token) => token.exchangeId)
 
-    const gasPrices = (await fetch(gasStationURL[networkId])).json()
+    const gasPrices = await (await fetch(gasStationURL[networkId])).json()
+    const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
+    console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
-      gasPrice: gasPrices.fast,
+      gasPrice: scaledGasPrice,
     })
     callback()
   } catch (error) {
