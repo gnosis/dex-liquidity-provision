@@ -9,7 +9,7 @@ const {
   checkSufficiencyOfBalance,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
-const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
@@ -109,9 +109,9 @@ module.exports = async (callback) => {
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
     console.log("List of bracket traders in one line:", bracketAddresses.join())
 
-    // Sleeping for 1 seconds to make sure Infura nodes have processed all newly deployed contracts so that
+    // Sleeping for 3 seconds to make sure Infura nodes have processed all newly deployed contracts so that
     // they can be awaited.
-    await sleep(1000)
+    await sleep(3000)
 
     console.log("3. Building orders and deposits")
     const orderTransaction = await buildOrders(
@@ -136,16 +136,12 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log("4. Sending out orders")
-    await signAndSend(masterSafe, orderTransaction, argv.network)
+    console.log("4. Sending the order placing transaction to gnosis-safe interface, please execute this transaction first")
+    const nonce = (await masterSafe.nonce()).toNumber()
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
 
-    console.log("5. Sending out funds")
-    const answer = await promptUser(
-      "Are you sure you that the order placement was correct, did you check the telegram bot? [yN] "
-    )
-    if (answer == "y" || answer.toLowerCase() == "yes") {
-      await signAndSend(masterSafe, bundledFundingTransaction, argv.network)
-    }
+    console.log("5. Sending the funds transferring transaction, please execute this transaction second")
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
 
     callback()
   } catch (error) {

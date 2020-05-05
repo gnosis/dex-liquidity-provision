@@ -5,18 +5,34 @@ const prepareWithdraw = require("./wrapper/withdraw")(web3, artifacts)
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning bracketSafes",
+    describe: "address of Gnosis Safe owning bracketSafes",
     demandOption: true,
   })
   .option("withdrawalFile", {
     type: "string",
     describe: "file name (and path) to the list of withdrawals",
-    demandOption: true,
   })
-  .option("allTokens", {
-    type: "boolean",
-    default: false,
-    describe: "ignore amounts from withdrawalFile and try to withdraw the maximum amount available for each bracket",
+  .option("brackets", {
+    type: "string",
+    describe:
+      "comma-separated list of brackets from which to withdraw the entire balance. Compatible with all valid combinations of --requestWithdraw, --withdraw, --transferFundsToMaster",
+    coerce: (str) => {
+      return str.split(",")
+    },
+  })
+  .option("tokens", {
+    type: "string",
+    describe: "comma separated address list of tokens to withdraw, to use in combination with --brackets",
+    coerce: (str) => {
+      return str.split(",")
+    },
+  })
+  .option("tokenIds", {
+    type: "string",
+    describe: "comma separated list of exchange ids for the tokens to withdraw, to use in combination with --brackets",
+    coerce: (str) => {
+      return str.split(",")
+    },
   })
   .option("requestWithdraw", {
     type: "boolean",

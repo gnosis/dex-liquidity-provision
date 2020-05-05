@@ -117,13 +117,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
-    const log = debug ? () => console.log.apply(arguments) : () => {}
+    const log = debug ? (...a) => console.log(...a) : () => {}
     const ERC20 = artifacts.require("ERC20Detailed")
 
-    log("Fetching token data from EVM")
+    let requiresFetching = false
     const tokenPromises = {}
     for (const tokenAddress of tokenAddresses) {
       if (!(tokenAddress in globalTokenPromisesFromAddress)) {
+        requiresFetching = true
         globalTokenPromisesFromAddress[tokenAddress] = (async () => {
           const tokenInstance = await ERC20.at(tokenAddress)
           const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
@@ -139,6 +140,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       }
       tokenPromises[tokenAddress] = globalTokenPromisesFromAddress[tokenAddress]
     }
+    if (requiresFetching) log("Fetching token data from EVM")
     return tokenPromises
   }
 
@@ -151,20 +153,25 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @return {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
-    const log = debug ? () => console.log.apply(arguments) : () => {}
+    const log = debug ? (...a) => console.log(...a) : () => {}
 
-    log("Fetching token data from EVM")
+    let requiresFetching = false
     const tokenPromises = {}
     for (const id of tokenIds) {
       if (!(id in globalTokenPromisesFromId)) {
+        requiresFetching = true
         globalTokenPromisesFromId[id] = (async () => {
           const tokenAddress = await exchange.tokenIdToAddressMap(id)
-          log(`Token id ${id} corresponds to token at address ${tokenAddress}`)
-          return fetchTokenInfoAtAddresses([tokenAddress], debug)[tokenAddress]
+          const tokenInfo = await fetchTokenInfoAtAddresses([tokenAddress], false)[tokenAddress]
+          log(
+            `Found token ${tokenInfo.symbol} for exchange id ${id} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`
+          )
+          return tokenInfo
         }).call()
       }
       tokenPromises[id] = globalTokenPromisesFromId[id]
     }
+    if (requiresFetching) log("Fetching token data from EVM")
     return tokenPromises
   }
 

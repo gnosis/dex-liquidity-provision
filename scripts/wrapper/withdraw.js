@@ -4,6 +4,7 @@ module.exports = function (web3, artifacts) {
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
     getExchange,
+    fetchTokenInfoAtAddresses,
     fetchTokenInfoForFlux,
     buildRequestWithdraw,
     buildWithdraw,
@@ -12,34 +13,62 @@ module.exports = function (web3, artifacts) {
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
   const assertGoodArguments = function (argv) {
+    if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
+
     if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
       throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
     } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
       throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
     }
+
+    if (!argv.withdrawalFile && !argv.brackets) {
+      throw new Error("Argument error: one of --withdrawalFile, --brackets must be given")
+    } else if (argv.withdrawalFile && argv.brackets) {
+      throw new Error("Argument error: --brackets cannot be used with --withdrawalFile")
+    }
+
+    if (argv.brackets) {
+      if (!argv.tokens && !argv.tokenIds) {
+        throw new Error("Argument error: one of --tokens, --tokenIds must be given when using --brackets")
+      } else if (argv.tokens && argv.tokenIds) {
+        throw new Error("Argument error: only one of --tokens, --tokenIds is required when using --brackets")
+      }
+    } else {
+      if (argv.tokens || argv.tokenIds) {
+        throw new Error("Argument error: --tokens or --tokenIds can only be used with --brackets")
+      }
+    }
   }
 
-  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenInfo, exchange, printOutput = false) {
+  const getMaxWithdrawableAmount = async function (
+    argv,
+    bracketAddress,
+    tokenData,
+    exchange,
+    currentBatchId,
+    printOutput = false
+  ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
     let amount
-    const token = tokenInfo.instance
-    if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenInfo.address)).toString()
+    const token = tokenData.instance
+    if (argv.requestWithdraw) amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
     else if (argv.withdraw) {
-      const currentBatchId = Math.floor(Date.now() / (5 * 60 * 1000)) // definition of BatchID, it avoids making a web3 request for each withdrawal to get BatchID
-      const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenInfo.address)
-      if (pendingWithdrawal[1].toNumber() == 0) {
-        log("Warning: no withdrawal was requested for address", bracketAddress, "and token", tokenInfo.symbol)
-        amount = "0"
-      }
-      if (amount != "0" && pendingWithdrawal[1].toNumber() >= currentBatchId) {
-        log("Warning: amount cannot be withdrawn from the exchange right now, withdrawing zero")
-        amount = "0"
-      }
+      const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
       amount = pendingWithdrawal[0].toString()
+      if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
+        const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
+        log(
+          `Warning: requested withdrawal of ${amount} ${
+            tokenData.symbol
+          } for bracket ${bracketAddress} cannot be executed until ${batchIdsLeft} ${
+            batchIdsLeft == 1 ? "batch" : "batches"
+          } from now, skipping`
+        )
+        amount = "0"
+      }
     } else {
       amount = (await token.balanceOf(bracketAddress)).toString()
     }
-    if (amount == "0") log("Warning: address", bracketAddress, "has no balance to withdraw for token", tokenInfo.symbol)
     return amount
   }
 
@@ -48,25 +77,38 @@ module.exports = function (web3, artifacts) {
 
     assertGoodArguments(argv)
 
-    let withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
-    const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
-    const exchange = await getExchange(web3)
+    let withdrawals
+    let tokenInfoPromises
+    if (argv.withdrawalFile) {
+      withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
+      tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
+    } else {
+      const exchangePromise = getExchange(web3)
+      const tokenAddresses =
+        argv.tokens || (await Promise.all(argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
+      tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
+      const exchange = await exchangePromise
+      const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because time of testing blockchain is not consistent with system clock
 
-    if (argv.allTokens) {
       log("Retrieving amount of tokens to withdraw.")
-      // get full amount to withdraw from the blockchain
-      withdrawals = await Promise.all(
-        withdrawals.map(async (withdrawal) => ({
-          bracketAddress: withdrawal.bracketAddress,
-          tokenAddress: withdrawal.tokenAddress,
-          amount: await getMaxWithdrawableAmount(
-            argv,
-            withdrawal.bracketAddress,
-            await tokenInfoPromises[withdrawal.tokenAddress],
-            await exchange
-          ),
-        }))
+      const tokenDataList = await Promise.all(Object.entries(tokenInfoPromises).map(([, tokenDataPromise]) => tokenDataPromise))
+      const tokenBracketPairs = []
+      for (const tokenData of tokenDataList)
+        for (const bracketAddress of argv.brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+      const maxWithdrawableAmounts = await Promise.all(
+        tokenBracketPairs.map(([bracketAddress, tokenData]) =>
+          getMaxWithdrawableAmount(argv, bracketAddress, tokenData, exchange, currentBatchId, printOutput)
+        )
       )
+      withdrawals = []
+      maxWithdrawableAmounts.forEach((amount, index) => {
+        if (amount !== "0")
+          withdrawals.push({
+            bracketAddress: tokenBracketPairs[index][0],
+            tokenAddress: tokenBracketPairs[index][1].address,
+            amount: amount,
+          })
+      })
     }
 
     log("Started building withdraw transaction.")

@@ -24,8 +24,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
    */
-  const signAndSend = async function (masterSafe, transaction, network) {
-    const nonce = await masterSafe.nonce()
+  const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
+    if (nonce === null) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
     const safeTxGas = 4000000 // Since the gas can not yet be estimated reliably, we are hard coding it.
     // 4000000 is a magic value: This value ensures that the user gets a gas limit proposal in Metask
     // of roughly 6m - MetaMask adds a buffer of roughly 50% here.
@@ -59,7 +61,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       gasPrice: 0, // important that this is zero
       gasToken: ADDRESS_0,
       refundReceiver: ADDRESS_0,
-      nonce: nonce.toNumber(),
+      nonce: nonce,
       contractTransactionHash: transactionHash,
       sender: web3.utils.toChecksumAddress(account),
       signature: sigs,
