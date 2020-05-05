@@ -46,7 +46,7 @@
     "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#v1.1.1-dev.1",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
     "@gnosis.pm/util-contracts": "^2.0.6",
-    "@truffle/contract": "^4.2.2",
+    "@truffle/contract": "4.1.15",
     "axios": "^0.19.2",
     "bn.js": "^5.1.1",
     "canonical-weth": "^1.4.0",
@@ -56,7 +56,7 @@
     "ethereumjs-util": "^6.2.0",
     "node-fetch": "^2.6.0",
     "openzeppelin-solidity": "^2.5.1",
-    "synthetix-js": "^2.21.12",
+    "synthetix-js": "=2.21.9",
     "truffle": "^5.1.24",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   },

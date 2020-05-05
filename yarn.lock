@@ -353,7 +353,7 @@
   dependencies:
     source-map-support "^0.5.16"
 
-"@truffle/contract-schema@^3.0.14", "@truffle/contract-schema@^3.1.0":
+"@truffle/contract-schema@^3.0.14", "@truffle/contract-schema@^3.0.23":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.1.0.tgz#00c04c427a2ecd74fe4399e1896dda49820959c4"
   integrity sha512-eCMc1CwAmxIpQDsuGM9rCp4q/6GMcdQLTw3Tzd1qufyuti0vWGQwJbBAgSvfofr9ItXHueGwn7I5lVsIbOVYpQ==
@@ -362,13 +362,13 @@
     crypto-js "^3.1.9-1"
     debug "^4.1.0"
 
-"@truffle/contract@^4.2.2":
-  version "4.2.2"
-  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.2.2.tgz#13f14b1becfcfefd73247e1acfef6bc4f3e48050"
-  integrity sha512-SxwXITIgBYysyMa6/G9zU3yZCzPfHjqDrbPa5QSlS6n3NKMd06mz1L8slV9iZdzqFWe1Rd7U9/bGP+UXmNiScA==
+"@truffle/contract@4.1.15":
+  version "4.1.15"
+  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.1.15.tgz#c82ef6e98e02d069f3cbf9c6d2fc88e142769ad1"
+  integrity sha512-3LHxoVYBziLguvPq6u0VdZsc1l2OIXjDuVGJDYdddfKuDNX/2NuH1JYRP2FM0PA8OYBuGyFolmlldPWRzuucng==
   dependencies:
     "@truffle/blockchain-utils" "^0.0.18"
-    "@truffle/contract-schema" "^3.1.0"
+    "@truffle/contract-schema" "^3.0.23"
     "@truffle/error" "^0.0.8"
     "@truffle/interface-adapter" "^0.4.6"
     bignumber.js "^7.2.1"
@@ -6401,10 +6401,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@^2.21.12:
-  version "2.21.12"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.12.tgz#ac61baf7df93005402c30c8a7493ba7649a11d9c"
-  integrity sha512-K/Q5d3ddJtHysbHxpIHJeMmNE0s4UbGUxIaz3q6GCPb7jPAdSlTtVi8Jml0Kj4zZ6Us0hiQp75fMLpI/RuelAw==
+synthetix-js@=2.21.9:
+  version "2.21.9"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.9.tgz#0cb1ed221ffd5a45afa0230f24c7d5f179e79e87"
+  integrity sha512-jmGqqqF6yR6AmWDaG9afY2E+vCG/ZTizGMLJIpsEidmetTWKuqjlAG9yY2SRUH2NF+yJA8rNj3igWqjhjglfYg==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -6415,14 +6415,14 @@ synthetix-js@^2.21.12:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.21.12"
+    synthetix "2.21.9"
     trezor-connect "7.0.3"
     walletlink "1.0.0"
 
-synthetix@2.21.12:
-  version "2.21.12"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.21.12.tgz#7eac93362d1184e269524167913e75dd6da26bcf"
-  integrity sha512-wyN+P2hYnRBL4SxUIc/JkoOL3IjYPB1mVxe+SEuIuRTk9uKiQoBWcOmAMZNLlvbmwByb3OnLHg+rEtM4oReLrA==
+synthetix@2.21.9:
+  version "2.21.9"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.21.9.tgz#7e11e3ba8603683a975b1b724c18c36279dca78b"
+  integrity sha512-ScXk6IS148tDtq7fA+YHG64FoQ9S5LVmXHmp1qwzIScoeNbdHeeWaQ6rmBa+fbAq4Ej1S3WHNN5jqQ1N7TGIYA==
   dependencies:
     chainlink "0.7.10"
     commander "^2.19.0"
