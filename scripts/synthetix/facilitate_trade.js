@@ -106,10 +106,7 @@ module.exports = async (callback) => {
 
     const gasPrices = await (await fetch(gasStationURL[networkId])).json()
     const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
-    console.log(
-      `Using current "${argv.gasPrice}" gas price (${gasPrices[argv.gasPrice]}) 
-      scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`
-    )
+    console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
     await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
       from: account,
       gasPrice: scaledGasPrice,
