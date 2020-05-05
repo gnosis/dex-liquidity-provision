@@ -125,4 +125,4 @@ truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SA
 
 ### Confirming multisig-transactions on gnosis-safe with Metamask
 
-The gas limit for the transactions going through the gnosis-safe interface can not yet be correctly estimated. Hence, the proposed gas limits are very high. Usually, for a liquidity deployment with 20 brackets, not more than 5.8m gas is consumed.
+The gas limit for the transactions going through the gnosis-safe interface can not yet be correctly estimated. Hence, the proposed gas limits are very high. Usually, for a liquidity deployment with 20 brackets, not more than 6m gas is consumed.
