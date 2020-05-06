@@ -15,14 +15,16 @@ yarn run networks-inject
 ```
 
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
-This Master Safe must have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface. This implies that the mnemonic phrase for this "Proposer" account is available in plain text within this project.
 
-In order to have a secure setup, make sure your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. Otherwise, everyone can steal the funds from your account!_
+### Setup env variables for the deployment process:
 
-Setup env variables for the deployment process:
+This Master Safe must have an additional owner (referred to as the "Proposer" account) with a private key exported to this project via the PK environment variable.
+The following scripts will use this account to propose transactions to the interface and to deploy brackets.
+
+Setup the following env variables for the deployment process:
 
 ```
-export PK=<Your Key>
+export PK=<your private key for the proposer account>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
 export MASTER_SAFE=<master safe>
@@ -36,7 +38,7 @@ It will send one ethereum transaction and send two transactions request to the g
 
 The ethereum transaction will create the bracket-traders. For this transaction the provided private key will be used to pay for the gas.
 The first request of the script will generate orders on behalf of the bracket-traders.
-Please sign this transaction in the gnosis-safe interface and double check the order prices are intended - for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-rinkeby](https://t.me/gnosis_protocol_dev) channels.
+Please sign this transaction in the gnosis-safe interface and double check the order prices are as expected before signing the next - for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-rinkeby](https://t.me/gnosis_protocol_dev) channels.
 The second request generates a transaction funding the bracket-traders' accounts on the exchange.
 Making the requests to the gnosis-interfaces does not cost any gas. However, signing and executing the transactions in the gnosis-safe interface will incur gas costs.
 
@@ -49,11 +51,13 @@ npx truffle exec scripts/complete_liquidity_provision.js --targetToken=1 --stabl
 The prices must be specified in terms of 1 target token = x stable tokens.
 
 This example deploys a liquidity strategy with 20 brackets between the prices 150-200 on the pair WETH-USDC.
-In this script the targetToken is 1, which happens to be WETH and the stableToken is 4, which happens to be USDC. The token ids of the exchange contract can be read from Etherscan.info in the 'Contract/Read Contract' tab, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
+In this script the targetToken is 1, which happens to be WETH, and the stableToken is 4, which happens to be USDC.
+The token ids of the exchange contract can be read from Etherscan info in the 'Contract/Read Contract' tab, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
 
-The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be send via Metamask - otherwise, it can happen that the payload is too high for Metamask.
+The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be sent via MetaMask - otherwise, it can happen that the payload is too high for Metamask.
 
-Please document the displayed bracket-trader addresses. They are required for future withdrawals. They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
+Please document the displayed bracket-trader addresses. They are required for future withdrawals. 
+They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
 
 Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
 
