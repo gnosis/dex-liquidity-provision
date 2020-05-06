@@ -15,6 +15,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     mainnet: "",
   }
 
+  const withHexPrefix = (string) => (string.startsWith("0x") ? string : `0x${string}`)
+
   const promptUser = function (message) {
     return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
   }
@@ -45,7 +47,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
-    const privateKey = process.env.PK
+    const privateKey = withHexPrefix(process.env.PK)
     const account = web3.eth.accounts.privateKeyToAccount(privateKey)
     console.log(`Signing and posting multi-send transaction request from proposer account ${account.address}`)
     const sigs = signHashWithPrivateKey(transactionHash, privateKey)
