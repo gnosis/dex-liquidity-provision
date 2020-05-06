@@ -88,10 +88,7 @@ module.exports = async (callback) => {
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
     if (argv.brackets.length > 0) {
-      assert(
-        argv.fleetSize === argv.brackets.length, 
-        "Please ensure fleetSize equals number of brackets"
-      )
+      assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
     }
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
@@ -135,7 +132,7 @@ module.exports = async (callback) => {
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
       console.log("List of bracket traders in one line:", bracketAddresses.join())
-      // Sleeping for 3 seconds to make sure Infura nodes have processed 
+      // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
     }
