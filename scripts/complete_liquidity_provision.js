@@ -7,6 +7,7 @@ const {
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
+  isOnlySafeOwner,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
@@ -87,8 +88,10 @@ module.exports = async (callback) => {
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
     if (argv.brackets.length > 0) {
-      // Override fleetSize with num brackets when provided.
-      argv.fleetSize = argv.brackets.length
+      assert(
+        argv.fleetSize === argv.brackets.length, 
+        "Please ensure fleetSize equals number of brackets"
+      )
     }
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
@@ -121,22 +124,21 @@ module.exports = async (callback) => {
       console.log("==> Skipping safe deployment and using brackets safeOwners")
       bracketAddresses = argv.brackets
       // Ensure that safes are all owned solely by masterSafe
-      for (const safeAddr of argv.brackets) {
-        const safeOwners = await (await GnosisSafe.at(safeAddr)).getOwners()
-        // TODO: write function like safeOwnedSolelyBy(safe, owner) -> Bool
-        if (!(safeOwners.length === 1 && safeOwners.includes(masterSafe.address))) {
-          callback(`Error: Bracket ${safeAddr} is not owned (or at least not solely) by master safe ${masterSafe.address}`)
-        }
-      }
+      await Promise.all(
+        bracketAddresses.map(async (safeAddr) => {
+          if (!(await isOnlySafeOwner(masterSafe.address, safeAddr))) {
+            callback(`Error: Bracket ${safeAddr} is not owned (or at least not solely) by master safe ${masterSafe.address}`)
+          }
+        })
+      )
     } else {
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
       console.log("List of bracket traders in one line:", bracketAddresses.join())
+      // Sleeping for 3 seconds to make sure Infura nodes have processed 
+      // all newly deployed contracts so they can be awaited.
+      await sleep(3000)
     }
-
-    // Sleeping for 3 seconds to make sure Infura nodes have processed all newly deployed contracts so that
-    // they can be awaited.
-    await sleep(3000)
 
     console.log("==> Building orders and deposits")
     const orderTransaction = await buildOrders(
