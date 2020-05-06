@@ -710,12 +710,7 @@ contract("GnosisSafe", function (accounts) {
       }
 
       const requestWithdrawalTransaction = await buildRequestWithdraw(masterSafe.address, withdrawals)
-      await execTransaction(
-        masterSafe,
-        safeOwner.privateKey,
-        requestWithdrawalTransaction,
-        "request withdrawal for all brackets"
-      )
+      await execTransaction(masterSafe, safeOwner.privateKey, requestWithdrawalTransaction)
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
@@ -802,12 +797,7 @@ contract("GnosisSafe", function (accounts) {
       // tries to transfer more funds to master than available, script should be aware of it
       const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterSafe.address, withdrawalsModified, true)
 
-      await execTransaction(
-        masterSafe,
-        safeOwner.privateKey,
-        transferFundsToMasterTransaction,
-        "transfer funds to master for all brackets"
-      )
+      await execTransaction(masterSafe, safeOwner.privateKey, transferFundsToMasterTransaction)
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
