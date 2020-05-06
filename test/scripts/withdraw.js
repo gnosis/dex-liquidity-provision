@@ -7,6 +7,7 @@ const Contract = require("@truffle/contract")
 
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const ERC20 = artifacts.require("ERC20Detailed")
+const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
@@ -437,6 +438,25 @@ contract("Withdraw script", function (accounts) {
       const wethMasterBalance = (await wethToken.balanceOf(masterSafe.address)).toString()
       assert.equal(usdcMasterBalance, toErc20Units("10000", 6).toString(), "Master safe did not receive USDC")
       assert.equal(wethMasterBalance, toErc20Units("50", 18).toString(), "Master safe did not receive WETH")
+    })
+    it("combines withdraw and transfer ignoring bracket token balance", async () => {
+      const amounts = [{ tokenData: { decimals: 18, symbol: "WETH" }, amount: "0" }]
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
+      const wethToken = await MintableToken.at(tokenInfo[0].address)
+      await wethToken.mint(bracketAddresses[0], toErc20Units("10", 18))
+
+      // no withdraw requested
+      const argv = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+        tokens: [tokenInfo[0].address],
+        withdraw: true,
+        transferFundsToMaster: true,
+      }
+      const transaction = await prepareWithdraw(argv)
+      // if the built transaction used the token balance of the bracket instead of zero, then
+      // the following transaction would fail.
+      await execTransaction(masterSafe, lw, transaction)
     })
   })
   it("fails on bad input", async () => {
