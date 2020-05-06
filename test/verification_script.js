@@ -111,9 +111,10 @@ contract("Verification checks", function (accounts) {
   let stableToken
   let safeOwner
   beforeEach(async function () {
-    // For the safeOwner, the privateKey needs to be known to sign transactions. Since ganache is
-    // started in deterministic mode, we know the privateKey upfront and can hardcode it.
-    safeOwner = { account: accounts[0], privateKey: "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d" }
+    safeOwner = {
+      account: "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1",
+      privateKey: "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d",
+    }
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
