@@ -29,12 +29,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       data: estimateCall,
       gasPrice: 0,
     })
-    console.log(estimateResponse)
     // https://docs.gnosis.io/safe/docs/contracts_tx_execution/#safe-transaction-gas-limit-estimation
     // The value returned by requiredTxGas is encoded in a revert error message. For retrieving the hex
     // encoded uint value the first 68 bytes of the error message need to be removed.
     const txGasEstimate = parseInt(estimateResponse.substring(138), 16)
-    console.log(txGasEstimate)
     return txGasEstimate
   }
 
