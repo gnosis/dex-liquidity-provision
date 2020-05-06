@@ -1,5 +1,6 @@
 module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
+  const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts/src")
 
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
@@ -41,35 +42,14 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const getMaxWithdrawableAmount = async function (
-    argv,
-    bracketAddress,
-    tokenData,
-    exchange,
-    currentBatchId,
-    printOutput = false
-  ) {
-    const log = printOutput ? (...a) => console.log(...a) : () => {}
+  const getMaxWithdrawableAmount = async function (argv, bracketAddress, tokenData, exchange) {
     let amount
     const token = tokenData.instance
     if (argv.requestWithdraw) {
       amount = bnMaxUint.toString()
     } else {
       if (argv.withdraw) {
-        // replace with getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
-        const pendingWithdrawal = await exchange.getPendingWithdraw(bracketAddress, tokenData.address)
-        amount = pendingWithdrawal[0].toString()
-        if (pendingWithdrawal[1].toNumber() >= currentBatchId) {
-          const batchIdsLeft = pendingWithdrawal[1].toNumber() - currentBatchId + 1
-          log(
-            `Warning: requested withdrawal of ${amount} ${
-              tokenData.symbol
-            } for bracket ${bracketAddress} cannot be executed until ${batchIdsLeft} ${
-              batchIdsLeft == 1 ? "batch" : "batches"
-            } from now, skipping`
-          )
-          amount = "0"
-        }
+        amount = await getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
       }
       if (argv.transferFundsToMaster) {
         amount = amount || (await token.balanceOf(bracketAddress)).toString()
@@ -94,7 +74,6 @@ module.exports = function (web3, artifacts) {
         argv.tokens || (await Promise.all(argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
       tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
       const exchange = await exchangePromise
-      const currentBatchId = (await exchange.getCurrentBatchId()).toNumber() // cannot be computed directly from Date() because time of testing blockchain is not consistent with system clock
 
       log("Retrieving amount of tokens to withdraw.")
       const tokenDataList = await Promise.all(Object.entries(tokenInfoPromises).map(([, tokenDataPromise]) => tokenDataPromise))
@@ -103,7 +82,7 @@ module.exports = function (web3, artifacts) {
         for (const bracketAddress of argv.brackets) tokenBracketPairs.push([bracketAddress, tokenData])
       const maxWithdrawableAmounts = await Promise.all(
         tokenBracketPairs.map(([bracketAddress, tokenData]) =>
-          getMaxWithdrawableAmount(argv, bracketAddress, tokenData, exchange, currentBatchId, printOutput)
+          getMaxWithdrawableAmount(argv, bracketAddress, tokenData, exchange)
         )
       )
       withdrawals = []
