@@ -3,7 +3,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const readline = require("readline")
 
   const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
-  const { signTransaction, createLightwallet } = require("../utils/internals")(web3, artifacts)
+  const { signHashWithPrivateKey } = require("../utils/internals")(web3, artifacts)
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -45,10 +45,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
-    const lightWallet = await createLightwallet()
-    const account = lightWallet.accounts[0]
-    console.log(`Signing and posting multi-send transaction request from proposer account ${account}`)
-    const sigs = signTransaction(lightWallet, [account], transactionHash)
+    const privateKey = process.env.PK
+    const account = web3.eth.accounts.privateKeyToAccount(privateKey)
+    console.log(`Signing and posting multi-send transaction request from proposer account ${account.address}`)
+    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
 
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
     const postData = {
@@ -63,7 +63,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       refundReceiver: ADDRESS_0,
       nonce: nonce,
       contractTransactionHash: transactionHash,
-      sender: web3.utils.toChecksumAddress(account),
+      sender: web3.utils.toChecksumAddress(account.address),
       signature: sigs,
     }
     await axios.post(endpoint, postData).catch(function (error) {
