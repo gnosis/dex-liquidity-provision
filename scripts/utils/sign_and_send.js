@@ -46,7 +46,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       nonce
     )
     const privateKey = process.env.PK
-    const account = web3.eth.accounts.privateKeyToAccount("0x" + privateKey)
+    const account = web3.eth.accounts.privateKeyToAccount(privateKey)
     console.log(`Signing and posting multi-send transaction request from proposer account ${account.address}`)
     const sigs = signHashWithPrivateKey(transactionHash, privateKey)
 
