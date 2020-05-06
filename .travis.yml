@@ -9,7 +9,7 @@ before_install:
   - npm install -g ganache-cli@latest
   - ganache-cli --version
 before_script:
-  - ganache-cli -g -l 8e6 > /dev/null &
+  - ganache-cli -d -l 8e6 > /dev/null &
 script:
   - yarn lint
   - yarn pretty-check
