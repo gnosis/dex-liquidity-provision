@@ -2,7 +2,6 @@ const BN = require("bn.js")
 const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
-const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const Contract = require("@truffle/contract")
 
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
@@ -20,15 +19,14 @@ const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifact
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
 
 contract("Withdraw script", function (accounts) {
-  let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let exchange
-
+  let safeOwner
   beforeEach(async function () {
-    // Create lightwallet
-    // TODO - can we just use accounts provided by ganache?
-    lw = await utils.createLightwallet()
+    // For the safeOwner, the privateKey needs to be known to sign transactions. Since ganache is
+    // started in deterministic mode, we know the privateKey upfront and can hardcode it.
+    safeOwner = { account: accounts[0], privateKey: "4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d" }
 
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
@@ -38,9 +36,7 @@ contract("Withdraw script", function (accounts) {
   })
 
   const setup = async function (numberOfBrackets, amounts) {
-    const masterSafe = await GnosisSafe.at(
-      await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    )
+    const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, numberOfBrackets)
     const tokenInfo = []
     for (const { tokenData = {}, amount } of amounts) {
@@ -68,7 +64,7 @@ contract("Withdraw script", function (accounts) {
 
   const deposit = async function (masterSafe, deposits) {
     const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits)
-    await execTransaction(masterSafe, lw, batchTransaction)
+    await execTransaction(masterSafe, safeOwner.privateKey, batchTransaction)
     // Close auction for deposits to be reflected in exchange balance
     await waitForNSeconds(301)
 
@@ -114,7 +110,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction = await prepareWithdraw(argv)
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -139,7 +135,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -148,7 +144,7 @@ contract("Withdraw script", function (accounts) {
         withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const bracketBalance = (await token.balanceOf(bracketAddress)).toString()
@@ -174,7 +170,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -183,7 +179,7 @@ contract("Withdraw script", function (accounts) {
         withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       const argv3 = {
         masterSafe: masterSafe.address,
@@ -191,7 +187,7 @@ contract("Withdraw script", function (accounts) {
         transferFundsToMaster: true,
       }
       const transaction3 = await prepareWithdraw(argv3)
-      await execTransaction(masterSafe, lw, transaction3)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -219,7 +215,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -229,7 +225,7 @@ contract("Withdraw script", function (accounts) {
         transferFundsToMaster: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -263,7 +259,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction = await prepareWithdraw(argv)
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -292,7 +288,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction = await prepareWithdraw(argv)
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -319,7 +315,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -329,7 +325,7 @@ contract("Withdraw script", function (accounts) {
         withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const bracketBalance = (await (await ERC20.at(tokenAddress)).balanceOf(bracketAddress)).toString()
@@ -359,7 +355,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -369,7 +365,7 @@ contract("Withdraw script", function (accounts) {
         withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       const argv3 = {
         masterSafe: masterSafe.address,
@@ -378,7 +374,7 @@ contract("Withdraw script", function (accounts) {
         transferFundsToMaster: true,
       }
       const transaction3 = await prepareWithdraw(argv3)
-      await execTransaction(masterSafe, lw, transaction3)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -412,7 +408,7 @@ contract("Withdraw script", function (accounts) {
         requestWithdraw: true,
       }
       const transaction1 = await prepareWithdraw(argv1)
-      await execTransaction(masterSafe, lw, transaction1)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -423,7 +419,7 @@ contract("Withdraw script", function (accounts) {
         transferFundsToMaster: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -438,9 +434,7 @@ contract("Withdraw script", function (accounts) {
     })
   })
   it("fails on bad input", async () => {
-    const masterSafe = await GnosisSafe.at(
-      await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-    )
+    const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
     const badInput = [
       {
         argv: {},

@@ -1,7 +1,6 @@
 const BN = require("bn.js")
 const assert = require("assert")
 const Contract = require("@truffle/contract")
-const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
@@ -106,15 +105,15 @@ contract("verification checks - for allowances", async (accounts) => {
 
 contract("Verification checks", function (accounts) {
   let exchange
-  let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let targetToken
   let stableToken
+  let safeOwner
   beforeEach(async function () {
-    // Create lightwallet
-    lw = await utils.createLightwallet()
-
+    // For the safeOwner, the privateKey needs to be known to sign transactions. Since ganache is
+    // started in deterministic mode, we know the privateKey upfront and can hardcode it.
+    safeOwner = { account: accounts[0], privateKey: "4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d" }
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
     const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
@@ -129,9 +128,7 @@ contract("Verification checks", function (accounts) {
   describe("Owner is master safe", async () => {
     it("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
       await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address), {
         message: "Owners are not set correctly",
@@ -140,7 +137,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Master safe has specified owners", async () => {
     it("throws if the masterSafe has different threshold", async () => {
-      const owners = [lw.accounts[0], lw.accounts[1]]
+      const owners = [accounts[0], accounts[1]]
       const realThreshold = 2
       const fakeThreshold = 1
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, owners, realThreshold))
@@ -149,8 +146,8 @@ contract("Verification checks", function (accounts) {
       })
     })
     it("throws if the masterSafe has different owners", async () => {
-      const realOwners = [lw.accounts[0], lw.accounts[1]]
-      const fakeOwners = [lw.accounts[0], lw.accounts[2]]
+      const realOwners = [accounts[0], accounts[1]]
+      const fakeOwners = [accounts[0], accounts[2]]
       const threshold = 2
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, realOwners, threshold))
       await assert.rejects(verifyCorrectSetup([], masterSafe.address, threshold, fakeOwners), {
@@ -161,9 +158,7 @@ contract("Verification checks", function (accounts) {
   describe("MasterCopy is usual GnosisSafeMasterCopy", async () => {
     it("throws if the proxy contract is not gnosis safe template", async () => {
       const notMasterCopy = await GnosisSafe.new()
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const brackets = [(await deploySafe(notMasterCopy, proxyFactory, [masterSafe.address], 1)).toLowerCase()]
       await assert.rejects(verifyCorrectSetup(brackets, masterSafe.address), {
         message: "MasterCopy not set correctly",
@@ -172,9 +167,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy", async () => {
     it("throws if bytecode differs", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
       const evilSafe = await GnosisSafe.at(evilProxy.address)
       await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
@@ -185,9 +178,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("No modules are installed", async () => {
     it("throws if module is present in master", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const bracket = await GnosisSafe.at(bracketAddress)
       const moduleAddress = "0x" + "2".padStart(40, "0")
@@ -198,15 +189,13 @@ contract("Verification checks", function (accounts) {
         operation: CALL,
       }
       // modules can only be added with a transaction from the contract to itself
-      await execTransaction(masterSafe, lw, addModuleTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, addModuleTransaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Modules present in Safe " + masterSafe.address,
       })
     })
     it("throws if module is present in bracket", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const bracket = await GnosisSafe.at(bracketAddress)
       const moduleAddress = "0x" + "2".padStart(40, "0")
@@ -217,7 +206,7 @@ contract("Verification checks", function (accounts) {
         operation: CALL,
       }
       const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
-      await execTransaction(masterSafe, lw, execAddModuleTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, execAddModuleTransaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Modules present in Safe " + bracketAddress,
       })
@@ -225,9 +214,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Fallback handler did not change", async () => {
     it("throws if master's fallback handler changed", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const bracket = await GnosisSafe.at(bracketAddress)
       const handlerAddress = "0x" + "2".padStart(40, "0")
@@ -238,15 +225,13 @@ contract("Verification checks", function (accounts) {
         operation: CALL,
       }
       // fallback address can only be added with a transaction from the contract to itself
-      await execTransaction(masterSafe, lw, addModuleTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, addModuleTransaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Fallback handler of Safe " + masterSafe.address + " changed",
       })
     })
     it("throws if bracket's fallback handler changed", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const bracket = await GnosisSafe.at(bracketAddress)
       const handlerAddress = "0x" + "2".padStart(40, "0")
@@ -257,7 +242,7 @@ contract("Verification checks", function (accounts) {
         operation: CALL,
       }
       const execAddModuleTransaction = await buildExecTransaction(masterSafe.address, bracketAddress, addModuleTransaction)
-      await execTransaction(masterSafe, lw, execAddModuleTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, execAddModuleTransaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Fallback handler of Safe " + bracketAddress + " changed",
       })
@@ -265,9 +250,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Each bracket has only two orders", async () => {
     it("throws if a bracket does not have two orders", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
       const stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
@@ -282,7 +265,7 @@ contract("Verification checks", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
       // second round of order building
       const transaction2 = await buildOrders(
         masterSafe.address,
@@ -292,15 +275,13 @@ contract("Verification checks", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction2)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
       await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address), {
         message: "order length is not correct",
       })
     })
     it("throws if orders do not buy and sell the same tokens in a loop", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
@@ -330,7 +311,7 @@ contract("Verification checks", function (accounts) {
       }
 
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
         message: "The two orders are not set up to trade back and forth on the same token pair",
       })
@@ -338,9 +319,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("The orders of a bracket are profitable to trade against each other", async () => {
     it("throws if orders of one bracket are not profitable", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
@@ -370,7 +349,7 @@ contract("Verification checks", function (accounts) {
       }
 
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
       await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
         message: "Brackets do not gain money when trading",
       })
@@ -378,9 +357,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
     it("throws if there are profitable orders", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 3)
       const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
@@ -401,7 +378,7 @@ contract("Verification checks", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
         masterSafe.address,
@@ -415,7 +392,7 @@ contract("Verification checks", function (accounts) {
         investmentTargetToken,
         true
       )
-      await execTransaction(masterSafe, lw, bundledFundingTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, bundledFundingTransaction)
 
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
