@@ -201,22 +201,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * Deploys specified number singler-owner Gnosis Safes having specified ownership
    * @param {Address} masterAddress address of Gnosis Safe (Multi-Sig) owning the newly created Safes
    * @param {integer} fleetSize number of safes to be created with masterAddress as owner
+   * @param {boolean} dry_run if true, tx will only be simulated, no safe will be created
    * @return {Address[]} list of Ethereum Addresses for the brackets that were deployed
    */
-  const deployFleetOfSafes = async function (masterAddress, fleetSize, debug = false) {
-    const log = debug ? (...a) => console.log(...a) : () => {}
-
+  const deployFleetOfSafes = async function (masterAddress, fleetSize, dry_run = false) {
     const fleetFactory = await fleetFactoryPromise
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
-    const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
-    const createdSafes = transcript.logs[0].args.fleet
-    log("New Safes created:")
-    createdSafes.forEach((safeAddress, index) => {
-      log("Safe " + index + ":", safeAddress)
-    })
-
-    return createdSafes
+    if (dry_run) {
+      return await fleetFactory.contract.methods.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address).call()
+    } else {
+      const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
+      return transcript.logs[0].args.fleet
+    }
   }
 
   /**

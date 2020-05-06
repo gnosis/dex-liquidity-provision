@@ -66,6 +66,14 @@ const argv = require("./utils/default_yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
+  })
+  .option("dry-run", {
+    type: "boolean",
+    describe: "Do not actually send transactions, just simulate their submission",
+  })
+  .option("nonce", {
+    type: "int",
+    describe: "Use this specific nonce instead of the next available one",
   }).argv
 
 module.exports = async (callback) => {
@@ -84,6 +92,8 @@ module.exports = async (callback) => {
     const stableTokenData = await tokenInfoPromises[stableTokenId]
     const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
     const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
+
+    const dry_run = argv["dry-run"]
 
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
@@ -144,8 +154,7 @@ module.exports = async (callback) => {
       }
     } else {
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
-      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, dry_run)
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
@@ -177,13 +186,22 @@ module.exports = async (callback) => {
     console.log(
       "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
     )
-    const nonce = (await masterSafe.nonce()).toNumber()
-    await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
+    let nonce = argv.nonce
+    if (nonce === undefined) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, dry_run)
 
     console.log(
       "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
     )
-    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, dry_run)
+
+    if (!dry_run) {
+      console.log(
+        `To verify the transactions run the same script with --dry-run --nonce ${nonce} --brackets ${bracketAddresses.join()}`
+      )
+    }
 
     callback()
   } catch (error) {
