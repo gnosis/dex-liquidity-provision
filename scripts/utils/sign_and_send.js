@@ -28,9 +28,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
-    const safeTxGas = 4000000 // Since the gas can not yet be estimated reliably, we are hard coding it.
-    // 4000000 is a magic value: This value ensures that the user gets a gas limit proposal in Metask
-    // of roughly 6m - MetaMask adds a buffer of roughly 50% here.
+    const safeTxGas = 6000000 // Since the gas can not be estimated reliably yet, we are hard coding it.
+    // This is the gas limit enforced by the gnosis-safe transaction. Metamask will show a even higher gas
+    // limit as it adds a buffer of roughly 50%.
     const baseGas = 0
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
