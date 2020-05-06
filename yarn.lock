@@ -6399,10 +6399,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.21.9:
-  version "2.21.9"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.9.tgz#0cb1ed221ffd5a45afa0230f24c7d5f179e79e87"
-  integrity sha512-jmGqqqF6yR6AmWDaG9afY2E+vCG/ZTizGMLJIpsEidmetTWKuqjlAG9yY2SRUH2NF+yJA8rNj3igWqjhjglfYg==
+synthetix-js@=2.21.12:
+  version "2.21.12"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.12.tgz#ac61baf7df93005402c30c8a7493ba7649a11d9c"
+  integrity sha512-K/Q5d3ddJtHysbHxpIHJeMmNE0s4UbGUxIaz3q6GCPb7jPAdSlTtVi8Jml0Kj4zZ6Us0hiQp75fMLpI/RuelAw==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -6413,14 +6413,14 @@ synthetix-js@=2.21.9:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.21.9"
+    synthetix "2.21.12"
     trezor-connect "7.0.3"
     walletlink "1.0.0"
 
-synthetix@2.21.9:
-  version "2.21.9"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.21.9.tgz#7e11e3ba8603683a975b1b724c18c36279dca78b"
-  integrity sha512-ScXk6IS148tDtq7fA+YHG64FoQ9S5LVmXHmp1qwzIScoeNbdHeeWaQ6rmBa+fbAq4Ej1S3WHNN5jqQ1N7TGIYA==
+synthetix@2.21.12:
+  version "2.21.12"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.21.12.tgz#7eac93362d1184e269524167913e75dd6da26bcf"
+  integrity sha512-wyN+P2hYnRBL4SxUIc/JkoOL3IjYPB1mVxe+SEuIuRTk9uKiQoBWcOmAMZNLlvbmwByb3OnLHg+rEtM4oReLrA==
   dependencies:
     chainlink "0.7.10"
     commander "^2.19.0"
