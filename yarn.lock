@@ -214,7 +214,7 @@
     solc "^0.5.9"
     truffle-hdwallet-provider "0.0.7-beta.1"
 
-"@gnosis.pm/solidity-data-structures@^1.2.2":
+"@gnosis.pm/solidity-data-structures@=1.2.4":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@gnosis.pm/solidity-data-structures/-/solidity-data-structures-1.2.4.tgz#e7e0a2e4c3460a0166e7b985e7851e3a54e86607"
   integrity sha512-s5AV1cTf1ERYPCWdC8+Zgx0oZDJTClpkbtXs8RcBFnuhADLd0QTwBowlS8iDsnQtfLNhcF0bDB1rzokJOSUGhg==
@@ -290,6 +290,11 @@
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-4.72.0.tgz#43df23af013ad1135407e5cf33ca6e4c4c7708d5"
   integrity sha512-o+TYF8vBcyySRsb2kqBDv/KMeme8a2nwWoG+lAWzbDmWfb2/MrVWYCVYDYvjXdSoI/Cujqy1i0gIDrkdxa9chA==
 
+"@openzeppelin/contracts@=2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-2.5.0.tgz#e327a98ba1d26b7756ff62885a0aa0967a375449"
+  integrity sha512-t3jm8FrhL9tkkJTofkznTqo/XXdHi21w5yXwalEnaMOp22ZwZ0f/mmKdlgMMLPFa6bSVHbY88mKESwJT/7m5Lg==
+
 "@resolver-engine/core@^0.2.1":
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/@resolver-engine/core/-/core-0.2.1.tgz#0d71803f6d3b8cb2e9ed481a1bf0ca5f5256d0c0"
@@ -353,7 +358,7 @@
   dependencies:
     source-map-support "^0.5.16"
 
-"@truffle/contract-schema@^3.0.14", "@truffle/contract-schema@^3.1.0":
+"@truffle/contract-schema@^3.0.14", "@truffle/contract-schema@^3.0.23":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.1.0.tgz#00c04c427a2ecd74fe4399e1896dda49820959c4"
   integrity sha512-eCMc1CwAmxIpQDsuGM9rCp4q/6GMcdQLTw3Tzd1qufyuti0vWGQwJbBAgSvfofr9ItXHueGwn7I5lVsIbOVYpQ==
@@ -362,13 +367,13 @@
     crypto-js "^3.1.9-1"
     debug "^4.1.0"
 
-"@truffle/contract@^4.2.2":
-  version "4.2.2"
-  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.2.2.tgz#13f14b1becfcfefd73247e1acfef6bc4f3e48050"
-  integrity sha512-SxwXITIgBYysyMa6/G9zU3yZCzPfHjqDrbPa5QSlS6n3NKMd06mz1L8slV9iZdzqFWe1Rd7U9/bGP+UXmNiScA==
+"@truffle/contract@4.1.15":
+  version "4.1.15"
+  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.1.15.tgz#c82ef6e98e02d069f3cbf9c6d2fc88e142769ad1"
+  integrity sha512-3LHxoVYBziLguvPq6u0VdZsc1l2OIXjDuVGJDYdddfKuDNX/2NuH1JYRP2FM0PA8OYBuGyFolmlldPWRzuucng==
   dependencies:
     "@truffle/blockchain-utils" "^0.0.18"
-    "@truffle/contract-schema" "^3.1.0"
+    "@truffle/contract-schema" "^3.0.23"
     "@truffle/error" "^0.0.8"
     "@truffle/interface-adapter" "^0.4.6"
     bignumber.js "^7.2.1"
@@ -5076,7 +5081,7 @@ openzeppelin-solidity@^1.12.0:
   resolved "https://registry.yarnpkg.com/openzeppelin-solidity/-/openzeppelin-solidity-1.12.0.tgz#7b9c55975e73370d4541e3442b30cb3d91ac973a"
   integrity sha512-WlorzMXIIurugiSdw121RVD5qA3EfSI7GybTn+/Du0mPNgairjt29NpVTAaH8eLjAeAwlw46y7uQKy0NYem/gA==
 
-openzeppelin-solidity@^2.0.0, openzeppelin-solidity@^2.5.1:
+openzeppelin-solidity@^2.0.0:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/openzeppelin-solidity/-/openzeppelin-solidity-2.5.1.tgz#1cdcce30c4c6a7b6625dab62ccd0440a813ab597"
   integrity sha512-oCGtQPLOou4su76IMr4XXJavy9a8OZmAXeUZ8diOdFznlL/mlkIlYr7wajqCzH4S47nlKPS7m0+a2nilCTpVPQ==
@@ -6394,7 +6399,7 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@^2.21.12:
+synthetix-js@=2.21.12:
   version "2.21.12"
   resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.12.tgz#ac61baf7df93005402c30c8a7493ba7649a11d9c"
   integrity sha512-K/Q5d3ddJtHysbHxpIHJeMmNE0s4UbGUxIaz3q6GCPb7jPAdSlTtVi8Jml0Kj4zZ6Us0hiQp75fMLpI/RuelAw==
@@ -6533,10 +6538,10 @@ timers-ext@^0.1.5:
     es5-ext "~0.10.46"
     next-tick "1"
 
-tmp-promise@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/tmp-promise/-/tmp-promise-2.0.2.tgz#ee605edb10f100954be5dd8b9dbe1bfd56194202"
-  integrity sha512-zl71nFWjPKW2KXs+73gEk8RmqvtAeXPxhWDkTUoa3MSMkjq3I+9OeknjF178MQoMYsdqL730hfzvNfEkePxq9Q==
+tmp-promise@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/tmp-promise/-/tmp-promise-2.1.1.tgz#eb97c038995af74efbfe8156f5e07fdd0c935539"
+  integrity sha512-Z048AOz/w9b6lCbJUpevIJpRpUztENl8zdv1bmAKVHimfqRFl92ROkmT9rp7TVBnrEw2gtMTol/2Cp2S2kJa4Q==
   dependencies:
     tmp "0.1.0"
 

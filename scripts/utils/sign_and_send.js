@@ -28,14 +28,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
+    const safeTxGas = 4000000 // Since the gas can not yet be estimated reliably, we are hard coding it.
+    // 4000000 is a magic value: This value ensures that the user gets a gas limit proposal in Metask
+    // of roughly 6m - MetaMask adds a buffer of roughly 50% here.
+    const baseGas = 0
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
       transaction.to,
       transaction.value,
       transaction.data,
       transaction.operation,
-      0,
-      0,
+      safeTxGas,
+      baseGas,
       0,
       ADDRESS_0,
       ADDRESS_0,
@@ -52,8 +56,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       value: transaction.value,
       data: transaction.data,
       operation: transaction.operation,
-      safeTxGas: 0, // TODO: magic later
-      baseGas: 0,
+      safeTxGas: safeTxGas,
+      baseGas: baseGas,
       gasPrice: 0, // important that this is zero
       gasToken: ADDRESS_0,
       refundReceiver: ADDRESS_0,
@@ -65,10 +69,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     await axios.post(endpoint, postData).catch(function (error) {
       throw new Error("Error while talking to the gnosis-interface: " + error.response.data)
     })
-
     const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
-    console.log("Remember to increase the gas limit!")
   }
 
   return {
