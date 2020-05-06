@@ -7,3 +7,5 @@ node_modules
 automaticallyGeneratedDeposits.json
 
 package-lock.json
+
+bracket-addresses.csv
