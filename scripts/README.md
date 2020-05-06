@@ -15,23 +15,17 @@ yarn run networks-inject
 ```
 
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
-This Master Safe must have an additional owner `0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1`, known as the "Proposer" account. The following scripts will use this account to propose transactions to the interface. This implies that the mnemonic phrase for this "Proposer" account is stored in plain text within this project.
+This Master Safe must have an additional owner with a private key exported to this project via the PK environment variable. This additional account is called the "Proposer" account. The following scripts will use this account to propose transactions to the interface and to deploy brackets.
 
-In order to have a secure setup, make sure that _your Master Safe always requires one more signature than just the signature of the Proposer account to send a transaction_. _Otherwise, everyone can steal the funds from your account!_
-
-Setup env variables for the deployment process:
+Setup the following env variables for the deployment process:
 
 ```
-export PK=<Your Key>
+export PK=<your private key of the proposer account>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
 export MASTER_SAFE=<master safe>
 
 ```
-
-### Confirming multisig-transactions on gnosis-safe with Metamask
-
-For the signing process, note that the gas consumption is underestimated. There is currently no proper way to estimate the gas limit. In order to make sure that the gas limit of your transaction is sufficient, increase it to 5.9 million gas. In practice, this limit suffices to deploy a strategy with 20 brackets.
 
 ### Deploy the bracket-strategy:
 
@@ -126,3 +120,7 @@ truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdraw
 ```js
 truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
 ```
+
+### Confirming multisig-transactions on gnosis-safe with Metamask
+
+The gas limit for the transactions going through the gnosis-safe interface can not yet be correctly estimated. Hence, the proposed gas limits are very high. Usually, for a liquidity deployment with 20 brackets, not more than 6m gas is consumed.
