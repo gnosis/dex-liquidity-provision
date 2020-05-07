@@ -21,6 +21,24 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
   }
 
+  const estimateGas = async function (masterSafe, transaction) {
+    const estimateCall = masterSafe.contract.methods
+      .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
+      .encodeABI()
+    const estimateResponse = await web3.eth.call({
+      to: masterSafe.address,
+      from: masterSafe.address,
+      data: estimateCall,
+      gasPrice: 0,
+    })
+    // https://docs.gnosis.io/safe/docs/contracts_tx_execution/#safe-transaction-gas-limit-estimation
+    // The value returned by requiredTxGas is encoded in a revert error message. For retrieving the hex
+    // encoded uint value the first 68 bytes of the error message need to be removed.
+    const txGasEstimate = parseInt(estimateResponse.substring(138), 16)
+    // Multiply with 64/63 due to EIP-150 (https://github.com/ethereum/EIPs/blob/master/EIPS/eip-150.md)
+    return Math.ceil((txGasEstimate * 64) / 63)
+  }
+
   /**
    * Signs and sends the transaction to the gnosis-safe UI
    * @param {Address} masterAddress Address of the master safe owning the brackets
@@ -30,9 +48,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
-    const safeTxGas = 4000000 // Since the gas can not yet be estimated reliably, we are hard coding it.
-    // 4000000 is a magic value: This value ensures that the user gets a gas limit proposal in Metask
-    // of roughly 6m - MetaMask adds a buffer of roughly 50% here.
+    const safeTxGas = await estimateGas(masterSafe, transaction)
     const baseGas = 0
     console.log("Aquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
@@ -69,7 +85,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       signature: sigs,
     }
     await axios.post(endpoint, postData).catch(function (error) {
-      throw new Error("Error while talking to the gnosis-interface: " + error.response.data)
+      throw new Error("Error while talking to the gnosis-interface: " + JSON.stringify(error.response.data))
     })
     const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
