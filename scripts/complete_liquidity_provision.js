@@ -8,6 +8,7 @@ const {
   buildOrders,
   checkSufficiencyOfBalance,
   isOnlySafeOwner,
+  hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
@@ -128,6 +129,14 @@ module.exports = async (callback) => {
           }
         })
       )
+      // Detect if provided brackets have existing orders.
+      const existingOrders = await Promise.all(
+        bracketAddresses.map(async (safeAddr) => { return await hasExistingOrders(safeAddr, exchange) })
+      )
+      const dirtyBrackets = bracketAddresses.filter((_, i) => existingOrders[i] == true)
+      if (existingOrders.some(t => t == true) && !(await proceedAnyways(`The following brackets have existing orders:\n  ${dirtyBrackets.join()}\n`))) {
+        callback("Error: Existing order verification failed.")
+      }
     } else {
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
@@ -160,11 +169,11 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log("==> Sending the order placing transaction to gnosis-safe interface, please execute this transaction first")
+    console.log("==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!")
     const nonce = (await masterSafe.nonce()).toNumber()
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
 
-    console.log("==> Sending the funds transferring transaction, please execute this transaction second")
+    console.log("==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!")
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
 
     callback()
