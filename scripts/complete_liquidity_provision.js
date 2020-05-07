@@ -7,13 +7,13 @@ const {
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
-  isOnlySafeOwner,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
+const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
@@ -120,14 +120,7 @@ module.exports = async (callback) => {
     if (argv.brackets) {
       console.log("==> Skipping safe deployment and using brackets safeOwners")
       bracketAddresses = argv.brackets
-      // Ensure that safes are all owned solely by masterSafe
-      await Promise.all(
-        bracketAddresses.map(async (safeAddr) => {
-          if (!(await isOnlySafeOwner(masterSafe.address, safeAddr))) {
-            callback(`Error: Bracket ${safeAddr} is not owned (or at least not solely) by master safe ${masterSafe.address}`)
-          }
-        })
-      )
+      await verifyBracketsWellFormed(masterSafe.address, bracketAddresses, null, null, true)
     } else {
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
