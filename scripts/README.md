@@ -24,11 +24,10 @@ The following scripts will use this account to propose transactions to the inter
 Setup the following env variables for the deployment process:
 
 ```
- export PK=<private key of proposer account>  \\ Note that the additional space at the beginning excludes this command from your bash history.
+ export PK=<private key of proposer account>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
 export MASTER_SAFE=<master safe>
-
 ```
 
 ### Deploy the bracket-strategy:
