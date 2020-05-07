@@ -129,7 +129,9 @@ module.exports = async (callback) => {
       )
       const badSafes = masterNotOnlyOwner.filter((_, i) => masterNotOnlyOwner[i] == true)
       if (badSafes.some((t) => t)) {
-        callback(`Error: Brackets ${badSafes.join()} is/are not owned (or at least not solely) by master safe ${masterSafe.address}`)
+        callback(
+          `Error: Brackets ${badSafes.join()} is/are not owned (or at least not solely) by master safe ${masterSafe.address}`
+        )
       }
       // Detect if provided brackets have existing orders.
       const existingOrders = await Promise.all(
