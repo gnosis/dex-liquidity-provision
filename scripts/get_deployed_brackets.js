@@ -49,8 +49,8 @@ module.exports = async (callback) => {
         return {
           Address: bracketAddress,
           Type: "liquidity",
-          Description: "bracket-strategy",
-          Tags: "bracket-strategy on the pair " + tradingPair,
+          Description: "bracket-strategy on the pair " + tradingPair,
+          Tags: "bracket-strategy",
           EL: "https://etherscan.io/address/" + bracketAddress,
           CP: '"' + bracketAddress + '"',
         }
