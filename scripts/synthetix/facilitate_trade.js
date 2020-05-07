@@ -80,16 +80,8 @@ module.exports = async (callback) => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [buyETHAmount, sellSUSDAmount] = getLargeOrderAmounts(
-      formatedRate * (1 - sUSDTosETHFee),
-      sETH.decimals,
-      sUSD.decimals
-    )
-    const [sellETHAmount, buySUSDAmount] = getLargeOrderAmounts(
-      formatedRate * (1 + sETHTosUSDFee),
-      sUSD.decimals,
-      sETH.decimals
-    )
+    const [buyETHAmount, sellSUSDAmount] = getLargeOrderAmounts(formatedRate * (1 - sUSDTosETHFee), sETH.decimals, sUSD.decimals)
+    const [sellETHAmount, buySUSDAmount] = getLargeOrderAmounts(formatedRate * (1 + sETHTosUSDFee), sUSD.decimals, sETH.decimals)
 
     const buyAmounts = [buyETHAmount, buySUSDAmount]
     const sellAmounts = [sellSUSDAmount, sellETHAmount]
