@@ -109,18 +109,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
   }
 
-  /**
-   * Checks that a bracket has not yet made any orders
-   * @param {Address} bracketAddress for trader account
-   * @param {SmartContract} exchange Batch exchange for which we are checking for orders
-   * @return {bool} true if bracket has existing orders, otherwise false
-   */
-  const hasExistingOrders = async function (bracket, exchange) {
-    const orders = await exchange.getEncodedUserOrders.call(bracket)
-    // TODO if orders is not null, could return orders.length / 225 (which is numOrders)
-    return orders != null
-  }
-
   const globalTokenPromisesFromAddress = {}
   /**
    * Queries EVM for ERC20 token details by address
@@ -201,19 +189,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * Deploys specified number singler-owner Gnosis Safes having specified ownership
    * @param {Address} masterAddress address of Gnosis Safe (Multi-Sig) owning the newly created Safes
    * @param {integer} fleetSize number of safes to be created with masterAddress as owner
-   * @param {boolean} dry_run if true, tx will only be simulated, no safe will be created
    * @return {Address[]} list of Ethereum Addresses for the brackets that were deployed
    */
-  const deployFleetOfSafes = async function (masterAddress, fleetSize, dry_run = false) {
+  const deployFleetOfSafes = async function (masterAddress, fleetSize) {
     const fleetFactory = await fleetFactoryPromise
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
-    if (dry_run) {
-      return fleetFactory.contract.methods.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address).call()
-    } else {
-      const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
-      return transcript.logs[0].args.fleet
-    }
+    const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
+    return transcript.logs[0].args.fleet
   }
 
   /**
@@ -258,6 +241,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const buyAndSellOrderPromises = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
+        assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
+
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
@@ -656,7 +641,6 @@ withdrawal of the desired funds
     isOnlySafeOwner,
     getAllowances,
     assertNoAllowances,
-    hasExistingOrders,
     maxU32,
     maxUINT,
     ADDRESS_0,

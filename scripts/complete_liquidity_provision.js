@@ -67,7 +67,7 @@ const argv = require("./utils/default_yargs")
     type: "float",
     describe: "Price for the bracket selling at the highest price",
   })
-  .option("dry-run", {
+  .option("verify", {
     type: "boolean",
     default: false,
     describe: "Do not actually send transactions, just simulate their submission",
@@ -93,8 +93,6 @@ module.exports = async (callback) => {
     const stableTokenData = await tokenInfoPromises[stableTokenId]
     const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
     const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
-
-    const dry_run = argv["dry-run"]
 
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
@@ -154,8 +152,9 @@ module.exports = async (callback) => {
         callback("Error: Existing order verification failed.")
       }
     } else {
+      assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
-      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, dry_run)
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
@@ -191,16 +190,16 @@ module.exports = async (callback) => {
     if (nonce === undefined) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
-    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, dry_run)
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
     console.log(
       "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
     )
-    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, dry_run)
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
 
-    if (!dry_run) {
+    if (!argv.verify) {
       console.log(
-        `To verify the transactions run the same script with --dry-run --nonce=${nonce} --brackets=${bracketAddresses.join()}`
+        `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
       )
     }
 
