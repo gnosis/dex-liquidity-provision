@@ -98,6 +98,8 @@ To withdraw funds from the bracket traders, all withdrawals have to be specified
 ]
 ```
 
+If you have forgotten the addresses of your brackets, then you should read in the next section how to retrieve them.
+
 The script can automatically determine the amount, instead of having to specify it on the file.
 This is achieved by adding the flag `--allTokens` to the withraw command. This is possible in any of the following commands.
 
@@ -120,6 +122,16 @@ truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdraw
 ```js
 truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
 ```
+
+### Documenting brackets
+
+In order to document the brackets deployed form a specific MASTER_SAFE, one can run the following script:
+
+```
+npx truffle exec scripts/getDeployedBrackets.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
+```
+
+This command will print the brackets comma separated and it will put them into csv file.
 
 ### Confirming multisig-transactions on gnosis-safe with Metamask
 

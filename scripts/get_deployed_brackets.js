@@ -20,6 +20,7 @@ const argv = require("./utils/default_yargs")
 module.exports = async (callback) => {
   try {
     const bracketAddresses = await getDeployedBrackets(argv.masterSafe)
+    console.log("The following addresses have been deployed from your MASTER SAFE: ", bracketAddresses)
 
     // writing the brackets into a csv file
     const csvWriter = createCsvWriter({
@@ -29,8 +30,6 @@ module.exports = async (callback) => {
         { id: "Type", title: "Type" },
         { id: "Description", title: "Description" },
         { id: "Tags", title: "Tags" },
-        { id: "EL", title: "Etherscan link" },
-        { id: "CP", title: "Easy C&P for JSON/SQL" },
       ],
     })
 
@@ -49,10 +48,8 @@ module.exports = async (callback) => {
         return {
           Address: bracketAddress,
           Type: "liquidity",
-          Description: "bracket-strategy on the pair " + tradingPair,
+          Description: "bracket-strategy on the pair " + tradingPair + " controlled by master safe: " + argv.masterSafe,
           Tags: "bracket-strategy",
-          EL: "https://etherscan.io/address/" + bracketAddress,
-          CP: '"' + bracketAddress + '"',
         }
       })
     )
