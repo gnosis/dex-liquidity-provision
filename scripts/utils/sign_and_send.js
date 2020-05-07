@@ -1,4 +1,5 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
+  const assert = require("assert")
   const axios = require("axios")
   const readline = require("readline")
 
@@ -45,6 +46,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Transaction} transaction The transaction to be signed and sent
    */
   const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
+    assert(process.env.PK != null, "This script requires a private key be explicitly provided. Please export PK")
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
@@ -63,6 +65,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
+
     const privateKey = withHexPrefix(process.env.PK)
     const account = web3.eth.accounts.privateKeyToAccount(privateKey)
     console.log(`Signing and posting multi-send transaction request from proposer account ${account.address}`)

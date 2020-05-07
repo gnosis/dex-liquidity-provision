@@ -253,30 +253,8 @@ contract("Verification checks", function (accounts) {
     it("throws if a bracket does not have two orders", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
-      const targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
-      const stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
-      const lowestLimit = 90
-      const highestLimit = 120
-      //first round of order building
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken,
-        stableToken,
-        lowestLimit,
-        highestLimit
-      )
-      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
-      // second round of order building
-      const transaction2 = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        targetToken,
-        stableToken,
-        lowestLimit,
-        highestLimit
-      )
-      await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
+
+      // check that order length is not 2, since it is zero
       await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address), {
         message: "order length is not correct",
       })
