@@ -132,7 +132,7 @@ module.exports = async (callback) => {
       // Detect if provided brackets have existing orders.
       const existingOrders = await Promise.all(
         bracketAddresses.map(async (safeAddr) => {
-          return await hasExistingOrders(safeAddr, exchange)
+          return hasExistingOrders(safeAddr, exchange)
         })
       )
       const dirtyBrackets = bracketAddresses.filter((_, i) => existingOrders[i] == true)
