@@ -416,7 +416,21 @@ withdrawal of or to withdraw the desired funds
     result = result.replace(/]/g, "\n]")
     return result
   }
-
+  /**
+   * Fetches the brackets deployed by a given masterSafe from the blockchain
+   * via events
+   **/
+  const getDeployedBrackets = async function (masterSafe) {
+    const FleetFactory = artifacts.require("FleetFactory")
+    const fleetFactory = await FleetFactory.deployed()
+    const events = await fleetFactory.getPastEvents("FleetDeployed", {
+      filter: { owner: masterSafe },
+      fromBlock: 0,
+      toBlock: "latest",
+    })
+    const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
+    return [].concat(...bracketsAsObjects)
+  }
   /**
    * Batches together a collection of transfer-related transaction information.
    * Particularly, the resulting transaction is that of transfering all sufficient funds from master
@@ -656,6 +670,7 @@ withdrawal of the desired funds
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
+    getDeployedBrackets,
     isOnlySafeOwner,
     getAllowances,
     assertNoAllowances,
