@@ -6,7 +6,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
 
-  const max128 = new BN(2).pow(new BN(128)).subn(1)
+  const { MAX_ORDER_AMOUNT } = require("./constants.js")
 
   const checkCorrectnessOfDeposits = async (
     currentPrice,
@@ -179,11 +179,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {integer} stableTokenDecimals number of decimals of the stable token
    * @return {BN[2]} amounts of stable token and target token for an unlimited order at the input price
    */
-  const getUnlimitedOrderAmounts = function (price, targetTokenDecimals, stableTokenDecimals) {
-    let targetTokenAmount = max128.clone()
+  const getLargeOrderAmounts = function (price, targetTokenDecimals, stableTokenDecimals) {
+    let targetTokenAmount = MAX_ORDER_AMOUNT.clone()
     let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
     if (stableTokenAmount.gt(targetTokenAmount)) {
-      stableTokenAmount = max128.clone()
+      stableTokenAmount = MAX_ORDER_AMOUNT.clone()
       targetTokenAmount = getOutputAmountFromPrice(1 / price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
       assert(stableTokenAmount.gte(targetTokenAmount), "Error: unable to create unlimited order")
     }
@@ -225,9 +225,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     areBoundsReasonable,
     checkCorrectnessOfDeposits,
     getOutputAmountFromPrice,
-    getUnlimitedOrderAmounts,
+    getLargeOrderAmounts,
     getDexagPrice,
     checkNoProfitableOffer,
-    max128,
   }
 }
