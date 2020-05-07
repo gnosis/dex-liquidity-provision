@@ -69,6 +69,7 @@ const argv = require("./utils/default_yargs")
   })
   .option("dry-run", {
     type: "boolean",
+    default: false,
     describe: "Do not actually send transactions, just simulate their submission",
   })
   .option("nonce", {
