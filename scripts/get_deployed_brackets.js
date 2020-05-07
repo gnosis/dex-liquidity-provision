@@ -20,7 +20,7 @@ const argv = require("./utils/default_yargs")
 module.exports = async (callback) => {
   try {
     const bracketAddresses = await getDeployedBrackets(argv.masterSafe)
-    console.log("The following addresses have been deployed from your MASTER SAFE: ", bracketAddresses)
+    console.log("The following addresses have been deployed from your MASTER SAFE: ", bracketAddresses.join())
 
     // writing the brackets into a csv file
     const csvWriter = createCsvWriter({

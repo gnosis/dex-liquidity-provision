@@ -128,10 +128,10 @@ truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SA
 In order to document the brackets deployed form a specific MASTER_SAFE, one can run the following script:
 
 ```
-npx truffle exec scripts/getDeployedBrackets.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
+npx truffle exec scripts/get_deployed_brackets.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
 ```
 
-This command will print the brackets comma separated and it will put them into csv file.
+This command will print the brackets comma separated and it will put them into csv file. In order to copy the csv file's content into a google spread sheet, you can just copy the text within the csv file and paste it into the spread sheet. Then, in google sheet use the paste option "split text into columns" and use the ',' as separator.
 
 ### Confirming multisig-transactions on gnosis-safe with Metamask
 
