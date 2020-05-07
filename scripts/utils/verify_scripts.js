@@ -52,7 +52,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       brackets.map(async (bracketTrader) => {
         assert(
           await isOnlySafeOwner(masterAddress, bracketTrader),
-          `Error: Bracket ${bracketTrader} is not owned (or at least not solely) by master safe ${masterAddress}`
+          `Error: Bracket ${bracketTrader.address} is not owned (or at least not solely) by master safe ${masterAddress}`
         )
       })
     )

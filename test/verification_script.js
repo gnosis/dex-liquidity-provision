@@ -132,7 +132,7 @@ contract("Verification checks", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
       await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address), {
-        message: "Owners are not set correctly",
+        message: `Error: Bracket ${notOwnedBracket.address} is not owned (or at least not solely) by master safe ${masterSafe.address}`,
       })
     })
   })
