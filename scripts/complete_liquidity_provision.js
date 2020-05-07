@@ -117,7 +117,7 @@ module.exports = async (callback) => {
     }
 
     let bracketAddresses
-    if (argv.brackets.length > 0) {
+    if (argv.brackets) {
       console.log("==> Skipping safe deployment and using brackets safeOwners")
       bracketAddresses = argv.brackets
       // Ensure that safes are all owned solely by masterSafe
