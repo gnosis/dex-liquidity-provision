@@ -51,7 +51,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     await Promise.all(
       brackets.map(async (bracketTrader) => {
         assert(
-          await isOnlySafeOwner(masterAddress, bracketTrader), 
+          await isOnlySafeOwner(masterAddress, bracketTrader),
           `Error: Bracket ${bracketTrader} is not owned (or at least not solely) by master safe ${masterAddress}`
         )
       })
@@ -60,13 +60,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     log("- Verify that masterCopy of brackets is the known masterCopy")
     await Promise.all(
       bracketAddresses.map(async (addr) => {
-        console.log(getMasterCopy(addr))
-        // console.log(gnosisSafe.address)
-        // assert.equal(
-        //   (await getMasterCopy(bracketAddress)).toString().toLowerCase(),
-        //   gnosisSafe.address.toString().toLowerCase(),
-        //   "MasterCopy not set correctly"
-        // )
+        assert.equal(
+          (await getMasterCopy(addr)).toString().toLowerCase(),
+          gnosisSafe.address.toString().toLowerCase(),
+          "MasterCopy not set correctly"
+        )
       })
     )
 
