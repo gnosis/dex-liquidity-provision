@@ -200,7 +200,7 @@ module.exports = async (callback) => {
 
     if (!dry_run) {
       console.log(
-        `To verify the transactions run the same script with --dry-run --nonce ${nonce} --brackets ${bracketAddresses.join()}`
+        `To verify the transactions run the same script with --dry-run --nonce=${nonce} --brackets=${bracketAddresses.join()}`
       )
     }
 
