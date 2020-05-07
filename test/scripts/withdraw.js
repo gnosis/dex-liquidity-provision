@@ -453,7 +453,7 @@ contract("Withdraw script", function (accounts) {
       const transaction = await prepareWithdraw(argv)
       // if the built transaction used the token balance of the bracket instead of zero, then
       // the following transaction would fail.
-      await await execTransaction(masterSafe, safeOwner.privateKey, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
     })
   })
   it("fails on bad input", async () => {
