@@ -45,8 +45,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
    */
-  const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
-    assert(process.env.PK != null, "This script requires a private key be explicitly provided. Please export PK")
+  const signAndSend = async function (masterSafe, transaction, network, nonce = null, dryRun = false) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
@@ -66,9 +65,15 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       nonce
     )
 
+    if (dryRun) {
+      console.log(`Would send tx with hash ${transactionHash} and nonce ${nonce}`)
+      return
+    }
+
+    assert(process.env.PK != null, "This script requires a private key be explicitly provided. Please export PK")
     const privateKey = withHexPrefix(process.env.PK)
     const account = web3.eth.accounts.privateKeyToAccount(privateKey)
-    console.log(`Signing and posting multi-send transaction request from proposer account ${account.address}`)
+    console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${account.address}`)
     const sigs = signHashWithPrivateKey(transactionHash, privateKey)
 
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`

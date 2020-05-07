@@ -203,20 +203,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {integer} fleetSize number of safes to be created with masterAddress as owner
    * @return {Address[]} list of Ethereum Addresses for the brackets that were deployed
    */
-  const deployFleetOfSafes = async function (masterAddress, fleetSize, debug = false) {
-    const log = debug ? (...a) => console.log(...a) : () => {}
-
+  const deployFleetOfSafes = async function (masterAddress, fleetSize) {
     const fleetFactory = await fleetFactoryPromise
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
-    const createdSafes = transcript.logs[0].args.fleet
-    log("New Safes created:")
-    createdSafes.forEach((safeAddress, index) => {
-      log("Safe " + index + ":", safeAddress)
-    })
-
-    return createdSafes
+    return transcript.logs[0].args.fleet
   }
 
   /**

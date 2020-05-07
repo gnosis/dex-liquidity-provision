@@ -66,6 +66,15 @@ const argv = require("./utils/default_yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
+  })
+  .option("verify", {
+    type: "boolean",
+    default: false,
+    describe: "Do not actually send transactions, just simulate their submission",
+  })
+  .option("nonce", {
+    type: "int",
+    describe: "Use this specific nonce instead of the next available one",
   }).argv
 
 module.exports = async (callback) => {
@@ -143,9 +152,9 @@ module.exports = async (callback) => {
         callback("Error: Existing order verification failed.")
       }
     } else {
+      assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
-      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
@@ -177,13 +186,22 @@ module.exports = async (callback) => {
     console.log(
       "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
     )
-    const nonce = (await masterSafe.nonce()).toNumber()
-    await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
+    let nonce = argv.nonce
+    if (nonce === undefined) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
     console.log(
       "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
     )
-    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
+
+    if (!argv.verify) {
+      console.log(
+        `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
+      )
+    }
 
     callback()
   } catch (error) {
