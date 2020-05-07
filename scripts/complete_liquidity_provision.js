@@ -87,7 +87,7 @@ module.exports = async (callback) => {
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
-    if (argv.brackets.length > 0) {
+    if (argv.brackets) {
       assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
     }
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
