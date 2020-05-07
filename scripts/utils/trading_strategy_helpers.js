@@ -209,7 +209,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     if (dry_run) {
-      return await fleetFactory.contract.methods.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address).call()
+      return fleetFactory.contract.methods.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address).call()
     } else {
       const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
       return transcript.logs[0].args.fleet
