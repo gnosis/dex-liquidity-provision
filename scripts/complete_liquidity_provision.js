@@ -7,6 +7,7 @@ const {
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
+  isOnlySafeOwner,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
@@ -24,6 +25,13 @@ const argv = require("./utils/default_yargs")
     type: "int",
     default: 20,
     describe: "Even number of brackets to be deployed",
+  })
+  .option("brackets", {
+    type: "string",
+    describe: "Trader account addresses to place orders on behalf of",
+    coerce: (str) => {
+      return str.split(",")
+    },
   })
   .option("targetToken", {
     type: "int",
@@ -79,9 +87,12 @@ module.exports = async (callback) => {
     const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
-    assert(argv.fleetSize % 2 == 0, "Fleet size must be a even number for easy deployment script")
+    if (argv.brackets) {
+      assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
+    }
+    assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
-    console.log("1. Sanity checks")
+    console.log("==> Performing safety checks")
     if (!(await checkSufficiencyOfBalance(targetToken, masterSafe.address, investmentTargetToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
     }
@@ -105,15 +116,28 @@ module.exports = async (callback) => {
       callback("Error: Choose a smaller fleetSize, otherwise your payload will be to big for Infura nodes")
     }
 
-    console.log(`2. Deploying ${argv.fleetSize} trading brackets`)
-    const bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-    console.log("List of bracket traders in one line:", bracketAddresses.join())
+    let bracketAddresses
+    if (argv.brackets) {
+      console.log("==> Skipping safe deployment and using brackets safeOwners")
+      bracketAddresses = argv.brackets
+      // Ensure that safes are all owned solely by masterSafe
+      await Promise.all(
+        bracketAddresses.map(async (safeAddr) => {
+          if (!(await isOnlySafeOwner(masterSafe.address, safeAddr))) {
+            callback(`Error: Bracket ${safeAddr} is not owned (or at least not solely) by master safe ${masterSafe.address}`)
+          }
+        })
+      )
+    } else {
+      console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
+      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      // Sleeping for 3 seconds to make sure Infura nodes have processed
+      // all newly deployed contracts so they can be awaited.
+      await sleep(3000)
+    }
 
-    // Sleeping for 1 seconds to make sure Infura nodes have processed all newly deployed contracts so that
-    // they can be awaited.
-    await sleep(1000)
-
-    console.log("3. Building orders and deposits")
+    console.log("==> Building orders and deposits")
     const orderTransaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
@@ -136,11 +160,11 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log("4. Sending the order placing transaction to gnosis-safe interface, please execute this transaction first")
+    console.log("==> Sending the order placing transaction to gnosis-safe interface, please execute this transaction first")
     const nonce = (await masterSafe.nonce()).toNumber()
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
 
-    console.log("5. Sending the funds transferring transaction, please execute this transaction second")
+    console.log("==> Sending the funds transferring transaction, please execute this transaction second")
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
 
     callback()

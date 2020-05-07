@@ -1,6 +1,4 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
-  const util = require("util")
-  const lightwallet = require("eth-lightwallet")
   const ethUtil = require("ethereumjs-util")
 
   const IProxy = artifacts.require("IProxy")
@@ -53,7 +51,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     await send("evm_mine", [], web3)
   }
 
-  const execTransaction = async function (safe, lightWallet, transaction) {
+  const execTransaction = async function (safe, privateKey, transaction) {
     const nonce = await safe.nonce()
     const transactionHash = await safe.getTransactionHash(
       transaction.to,
@@ -67,7 +65,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
-    const sigs = signTransaction(lightWallet, [lightWallet.accounts[0], lightWallet.accounts[1]], transactionHash)
+    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
@@ -82,32 +80,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
   }
 
-  async function createLightwallet() {
-    // Create lightwallet accounts
-    const createVault = util.promisify(lightwallet.keystore.createVault).bind(lightwallet.keystore)
-    const keystore = await createVault({
-      hdPathString: "m/44'/60'/0'/0",
-      seedPhrase: "myth like bonus scare over problem client lizard pioneer submit female collect",
-      password: "test",
-      salt: "testsalt",
-    })
-    const keyFromPassword = await util.promisify(keystore.keyFromPassword).bind(keystore)("test")
-    keystore.generateNewAddress(keyFromPassword, 20)
-    return {
-      keystore: keystore,
-      accounts: keystore.getAddresses(),
-      passwords: keyFromPassword,
-    }
-  }
-
-  function signTransaction(lw, signers, transactionHash) {
-    let signatureBytes = "0x"
-    signers.sort()
-    for (let i = 0; i < signers.length; i++) {
-      const sig = lightwallet.signing.signMsgHash(lw.keystore, lw.passwords, transactionHash, signers[i])
-      signatureBytes += sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
-    }
-    return signatureBytes
+  function signHashWithPrivateKey(hash, privateKey) {
+    const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
+    const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
+    return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
   }
 
   const encodeMultiSend = function (multiSend, txs) {
@@ -212,8 +188,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     getFallbackHandler,
     execTransaction,
     encodeMultiSend,
-    createLightwallet,
-    signTransaction,
+    signHashWithPrivateKey,
     buildBundledTransaction,
     buildExecTransaction,
     CALL,

@@ -1,6 +1,5 @@
 const BN = require("bn.js")
 const assertNodejs = require("assert")
-const utils = require("@gnosis.pm/safe-contracts/test/utils/general")
 const exchangeUtils = require("@gnosis.pm/dex-contracts")
 const Contract = require("@truffle/contract")
 const { checkNoOrdersPlaced } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
@@ -72,17 +71,17 @@ const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, 
   }
 }
 contract("GnosisSafe", function (accounts) {
-  let lw
   let gnosisSafeMasterCopy
   let proxyFactory
   let testToken
   let exchange
+  let safeOwner
 
   beforeEach(async function () {
-    // Create lightwallet
-    // TODO - can we just use accounts provided by ganache?
-    lw = await utils.createLightwallet()
-
+    safeOwner = {
+      account: "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1",
+      privateKey: "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d",
+    }
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
     testToken = await TestToken.new("TEST", 18)
@@ -137,9 +136,7 @@ contract("GnosisSafe", function (accounts) {
   })
   describe("Gnosis Safe deployments:", async function () {
     it("Deploys Fleet of Gnosis Safes", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const fleet = await deployFleetOfSafes(masterSafe.address, 10)
       assert.equal(fleet.length, 10)
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
@@ -147,9 +144,7 @@ contract("GnosisSafe", function (accounts) {
   })
   describe("transfer tests:", async function () {
     const testManualDeposits = async function (tokenDecimals, readableDepositAmount) {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(readableDepositAmount, tokenDecimals)
       const totalTokenNeeded = depositAmount.muln(bracketAddresses.length)
@@ -166,7 +161,7 @@ contract("GnosisSafe", function (accounts) {
 
       const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits)
 
-      await execTransaction(masterSafe, lw, batchTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, batchTransaction)
       // Close auction for deposits to be refelcted in exchange balance
       await waitForNSeconds(301)
 
@@ -215,9 +210,7 @@ contract("GnosisSafe", function (accounts) {
         "Malformed test case, sum of expected distribution should be equal to the fleet size"
       )
 
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
 
       //Create  stableToken and add it to the exchange
@@ -249,7 +242,7 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, orderTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, orderTransaction)
 
       // Make transfers
       const batchTransaction = await buildTransferApproveDepositFromOrders(
@@ -263,7 +256,7 @@ contract("GnosisSafe", function (accounts) {
         depositAmountStableToken,
         depositAmountTargetToken
       )
-      await execTransaction(masterSafe, lw, batchTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
 
@@ -493,9 +486,7 @@ contract("GnosisSafe", function (accounts) {
 
   describe("bracket order placement test:", async function () {
     it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -514,7 +505,7 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       // Correctness assertions
       for (const bracketAddress of bracketAddresses) {
@@ -535,9 +526,7 @@ contract("GnosisSafe", function (accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -555,7 +544,7 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
@@ -567,9 +556,7 @@ contract("GnosisSafe", function (accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -586,7 +573,7 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
@@ -599,9 +586,7 @@ contract("GnosisSafe", function (accounts) {
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       testToken = await TestToken.new("TEST6", 6)
       const testToken2 = await TestToken.new("TEST4", 4)
@@ -622,14 +607,12 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1, with different decimals than 18", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       testToken = await TestToken.new("TEST6", 6)
       const targetToken = 0 // ETH
@@ -647,14 +630,12 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -671,14 +652,12 @@ contract("GnosisSafe", function (accounts) {
         lowestLimit,
         highestLimit
       )
-      await execTransaction(masterSafe, lw, transaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
     })
     it("Failing when lowest limit is higher than highest limit", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       const targetToken = 0 // ETH
       const stableToken = 1 // DAI
@@ -729,7 +708,7 @@ contract("GnosisSafe", function (accounts) {
     const setupAndRequestWithdraw = async function (masterSafe, bracketAddresses, deposits, withdrawals) {
       const batchTransaction = await buildTransferApproveDepositFromList(masterSafe.address, deposits)
 
-      await execTransaction(masterSafe, lw, batchTransaction)
+      await execTransaction(masterSafe, safeOwner.privateKey, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
       await waitForNSeconds(301)
       const totalDepositedAmount = {}
@@ -760,7 +739,7 @@ contract("GnosisSafe", function (accounts) {
       }
 
       const requestWithdrawalTransaction = await buildRequestWithdraw(masterSafe.address, withdrawals)
-      await execTransaction(masterSafe, lw, requestWithdrawalTransaction, "request withdrawal for all brackets")
+      await execTransaction(masterSafe, safeOwner.privateKey, requestWithdrawalTransaction)
       await waitForNSeconds(301)
 
       const totalWithdrawnAmount = {}
@@ -794,9 +773,7 @@ contract("GnosisSafe", function (accounts) {
     }
 
     it("Withdraw full amount, three steps", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
@@ -827,7 +804,7 @@ contract("GnosisSafe", function (accounts) {
       })
       const withdrawalTransaction = await buildWithdraw(masterSafe.address, withdrawalsModified)
 
-      await execTransaction(masterSafe, lw, withdrawalTransaction, "withdraw for all brackets")
+      await execTransaction(masterSafe, safeOwner.privateKey, withdrawalTransaction, "withdraw for all brackets")
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
@@ -849,7 +826,7 @@ contract("GnosisSafe", function (accounts) {
       // tries to transfer more funds to master than available, script should be aware of it
       const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterSafe.address, withdrawalsModified, true)
 
-      await execTransaction(masterSafe, lw, transferFundsToMasterTransaction, "transfer funds to master for all brackets")
+      await execTransaction(masterSafe, safeOwner.privateKey, transferFundsToMasterTransaction)
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
@@ -870,9 +847,7 @@ contract("GnosisSafe", function (accounts) {
     })
 
     it("Withdraw full amount, two steps", async () => {
-      const masterSafe = await GnosisSafe.at(
-        await deploySafe(gnosisSafeMasterCopy, proxyFactory, [lw.accounts[0], lw.accounts[1]], 2)
-      )
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 2)
       const depositAmount = toErc20Units(200, 18)
       const fullTokenAmount = depositAmount * bracketAddresses.length
@@ -898,12 +873,7 @@ contract("GnosisSafe", function (accounts) {
         masterSafe.address,
         withdrawals
       )
-      await execTransaction(
-        masterSafe,
-        lw,
-        withdrawAndTransferFundsToMasterTransaction,
-        "withdraw and transfer back for all brackets"
-      )
+      await execTransaction(masterSafe, safeOwner.privateKey, withdrawAndTransferFundsToMasterTransaction)
 
       assert.equal(
         (await testToken.balanceOf(masterSafe.address)).toString(),
