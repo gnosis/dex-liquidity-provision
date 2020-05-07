@@ -24,7 +24,7 @@ The following scripts will use this account to propose transactions to the inter
 Setup the following env variables for the deployment process:
 
 ```
-export PK=<your private key for the proposer account>
+ export PK=<your private key for the proposer account>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
 export MASTER_SAFE=<master safe>
