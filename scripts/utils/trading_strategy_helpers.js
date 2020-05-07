@@ -111,14 +111,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Checks that a bracket has not yet made any orders
+   * @param {Address} bracketAddress for trader account
+   * @param {SmartContract} exchange Batch exchange for which we are checking for orders
+   * @return {bool} true if bracket has existing orders, otherwise false
    */
-  const checkNoOrdersPlaced = async function (bracket, exchange) {
+  const hasExistingOrders = async function (bracket, exchange) {
     const orders = await exchange.getEncodedUserOrders.call(bracket)
-    if (orders === null) {
-      return true
-    } else {
-      return false
-    }
+    // TODO if orders is not null, could return orders.length / 225 (which is numOrders)
+    return orders != null
   }
 
   const globalTokenPromisesFromAddress = {}
@@ -261,8 +261,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const buyAndSellOrderPromises = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
-        assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
-        assert(await checkNoOrdersPlaced(bracketAddress, exchange), "each bracket should be owned only by the master Safe")
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
@@ -661,7 +659,7 @@ withdrawal of the desired funds
     isOnlySafeOwner,
     getAllowances,
     assertNoAllowances,
-    checkNoOrdersPlaced,
+    hasExistingOrders,
     maxU32,
     maxUINT,
     ADDRESS_0,
