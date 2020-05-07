@@ -38,6 +38,9 @@ It will send one ethereum transaction and send two transactions request to the g
 The ethereum transaction will create the bracket-traders. For this transaction the provided private key will be used to pay for the gas.
 The first request of the script will generate orders on behalf of the bracket-traders.
 Please sign this transaction in the gnosis-safe interface and double check the order prices are as expected before signing the next - for example in [telegram-mainnet](https://t.me/gnosis_protocol) or [telegram-rinkeby](https://t.me/gnosis_protocol_dev) channels.
+
+Another party can also verify the transactions that are to be signed correspond to a valid configuration by running the script with the `--verify` parameter and the same arguments as the original strategy (the safe flee has to be provided via `--brackets`).
+
 The second request generates a transaction funding the bracket-traders' accounts on the exchange.
 Making the requests to the gnosis-interfaces does not cost any gas. However, signing and executing the transactions in the gnosis-safe interface will incur gas costs.
 
@@ -55,7 +58,7 @@ The token ids of the exchange contract can be read from Etherscan info in the 'C
 
 The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be sent via MetaMask - otherwise, it can happen that the payload is too high for Metamask.
 
-Please document the displayed bracket-trader addresses. They are required for future withdrawals. 
+Please document the displayed bracket-trader addresses. They are required for future withdrawals.
 They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
 
 Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
