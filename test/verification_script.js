@@ -127,12 +127,12 @@ contract("Verification checks", function (accounts) {
     await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
   describe("Owner is master safe", async () => {
-    it("throws if the masterSafe is not the only owner", async () => {
+    it.only("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
       await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address), {
-        message: `Error: Bracket ${notOwnedBracket.address} is not owned (or at least not solely) by master safe ${masterSafe.address}`,
+        message: `Error: Bracket ${notOwnedBracket} is not owned (or at least not solely) by master safe ${masterSafe.address}`,
       })
     })
   })
