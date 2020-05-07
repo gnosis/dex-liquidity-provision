@@ -7,7 +7,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { getLargeOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
 const { execTransaction, waitForNSeconds, ADDRESS_0 } = require("../scripts/utils/internals")(web3, artifacts)
 const {
@@ -290,8 +290,8 @@ contract("Verification checks", function (accounts) {
       const highestLimit = 120
 
       // create unlimited orders to sell low and buy high
-      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
-      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
+      const [upperSellAmount, upperBuyAmount] = getLargeOrderAmounts(highestLimit, 18, 18)
+      const [lowerBuyAmount, lowerSellAmount] = getLargeOrderAmounts(lowestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
       const buyTokens = [targetToken.id, targetToken.id]
@@ -328,8 +328,8 @@ contract("Verification checks", function (accounts) {
       const highestLimit = 120
 
       // create unlimited orders to sell low and buy high
-      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
-      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
+      const [upperSellAmount, upperBuyAmount] = getLargeOrderAmounts(lowestLimit, 18, 18)
+      const [lowerBuyAmount, lowerSellAmount] = getLargeOrderAmounts(highestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
       const buyTokens = [targetToken.id, stableToken.id]

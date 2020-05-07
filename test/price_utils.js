@@ -6,13 +6,13 @@ const { toErc20Units } = require("../scripts/utils/printing_tools")
 const { addCustomMintableTokenToExchange } = require("./test_utils")
 const {
   getOutputAmountFromPrice,
-  getUnlimitedOrderAmounts,
+  getLargeOrderAmounts,
   isPriceReasonable,
   checkNoProfitableOffer,
 } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { MAX_ORDER_AMOUNT } = require("../scripts/utils/constants.js")
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
-const max128 = new BN(2).pow(new BN(128)).subn(1)
 const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
 
 const assertEqualUpToFloatPrecision = function (value, expected) {
@@ -68,57 +68,59 @@ describe("getOutputAmountFromPrice", () => {
   })
 })
 
-describe("getUnlimitedOrderAmounts", () => {
+describe("getLargeOrderAmounts", () => {
   it("computes the amounts needed to set up an unlimited order", () => {
     const testCases = [
       {
         price: 160,
         stableTokenDecimals: 18,
         targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.divn(160),
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT,
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT.divn(160),
       },
       {
         price: 1 / 160,
         stableTokenDecimals: 18,
         targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128.divn(160),
-        expectedTargetTokenAmount: max128,
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT.divn(160),
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT,
       },
       {
         price: 1,
         stableTokenDecimals: 18,
         targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128,
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT,
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT,
       },
       {
         price: 1 + Number.EPSILON,
         stableTokenDecimals: 18,
         targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT,
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT.mul(floatTolerance.subn(1)).div(floatTolerance),
       },
       {
         price: 1 - Number.EPSILON,
         stableTokenDecimals: 18,
         targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
-        expectedTargetTokenAmount: max128,
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT.mul(floatTolerance.subn(1)).div(floatTolerance),
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT,
       },
       {
+        // parameter are set so that the difference between stable and target token amounts is close to MAX_ORDER_AMOUNT
         price: 100,
-        stableTokenDecimals: 165,
+        stableTokenDecimals: 173,
         targetTokenDecimals: 200,
-        expectedStableTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 - 2))),
-        expectedTargetTokenAmount: max128,
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT.div(new BN(10).pow(new BN(200 - 173 - 2))),
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT,
       },
       {
+        // parameter are set so that the difference between stable and target token amounts is close to MAX_ORDER_AMOUNT
         price: 100,
         stableTokenDecimals: 200,
-        targetTokenDecimals: 165,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 + 2))),
+        targetTokenDecimals: 173,
+        expectedStableTokenAmount: MAX_ORDER_AMOUNT,
+        expectedTargetTokenAmount: MAX_ORDER_AMOUNT.div(new BN(10).pow(new BN(200 - 173 + 2))),
       },
     ]
     for (const {
@@ -128,7 +130,7 @@ describe("getUnlimitedOrderAmounts", () => {
       expectedStableTokenAmount,
       expectedTargetTokenAmount,
     } of testCases) {
-      const [targetTokenAmount, stableTokenAmount] = getUnlimitedOrderAmounts(price, targetTokenDecimals, stableTokenDecimals)
+      const [targetTokenAmount, stableTokenAmount] = getLargeOrderAmounts(price, targetTokenDecimals, stableTokenDecimals)
       assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
       assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
     }

@@ -26,7 +26,8 @@ const {
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits, max128 } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { MAX_ORDER_AMOUNT } = require("../scripts/utils/constants.js")
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 
 const TEN = new BN(10)
@@ -379,7 +380,7 @@ contract("GnosisSafe", function (accounts) {
         {
           amountStableToken: "0.00000000000000000000001",
           amountTargetToken: "3.14159265",
-          stableTokenInfo: { decimals: 40, symbol: "manydecimals" }, // above 38 decimals one token unit does not fit a uint128
+          stableTokenInfo: { decimals: 31, symbol: "manydecimals" }, // above 29 decimals one token unit does not fit MAX_ORDER_AMOUNT
           targetTokenInfo: { decimals: 8, symbol: "WBTC" },
         },
       ]
@@ -550,8 +551,8 @@ contract("GnosisSafe", function (accounts) {
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceNumerator.eq(max128))
-        assert(sellOrder.priceDenominator.eq(max128))
+        assert(buyOrder.priceNumerator.eq(MAX_ORDER_AMOUNT))
+        assert(sellOrder.priceDenominator.eq(MAX_ORDER_AMOUNT))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
@@ -580,8 +581,8 @@ contract("GnosisSafe", function (accounts) {
         const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceDenominator.eq(max128))
-        assert(sellOrder.priceNumerator.eq(max128))
+        assert(buyOrder.priceDenominator.eq(MAX_ORDER_AMOUNT))
+        assert(sellOrder.priceNumerator.eq(MAX_ORDER_AMOUNT))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {
