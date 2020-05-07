@@ -137,7 +137,7 @@ module.exports = async (callback) => {
       )
       const dirtyBrackets = bracketAddresses.filter((_, i) => existingOrders[i] == true)
       if (
-        existingOrders.some((t) => t == true) &&
+        existingOrders.some((t) => t) &&
         !(await proceedAnyways(`The following brackets have existing orders:\n  ${dirtyBrackets.join()}\n`))
       ) {
         callback("Error: Existing order verification failed.")
