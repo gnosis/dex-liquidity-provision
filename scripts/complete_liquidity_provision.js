@@ -131,10 +131,15 @@ module.exports = async (callback) => {
       )
       // Detect if provided brackets have existing orders.
       const existingOrders = await Promise.all(
-        bracketAddresses.map(async (safeAddr) => { return await hasExistingOrders(safeAddr, exchange) })
+        bracketAddresses.map(async (safeAddr) => {
+          return await hasExistingOrders(safeAddr, exchange)
+        })
       )
       const dirtyBrackets = bracketAddresses.filter((_, i) => existingOrders[i] == true)
-      if (existingOrders.some(t => t == true) && !(await proceedAnyways(`The following brackets have existing orders:\n  ${dirtyBrackets.join()}\n`))) {
+      if (
+        existingOrders.some((t) => t == true) &&
+        !(await proceedAnyways(`The following brackets have existing orders:\n  ${dirtyBrackets.join()}\n`))
+      ) {
         callback("Error: Existing order verification failed.")
       }
     } else {
@@ -169,11 +174,15 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log("==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!")
+    console.log(
+      "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
+    )
     const nonce = (await masterSafe.nonce()).toNumber()
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
 
-    console.log("==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!")
+    console.log(
+      "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
+    )
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
 
     callback()
