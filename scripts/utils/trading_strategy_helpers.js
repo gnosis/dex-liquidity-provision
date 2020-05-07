@@ -253,8 +253,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const buyAndSellOrderPromises = await Promise.all(
       bracketAddresses.map(async (bracketAddress, bracketIndex) => {
-        assert(await isOnlySafeOwner(masterAddress, bracketAddress), "each bracket should be owned only by the master Safe")
-
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
