@@ -127,7 +127,7 @@ module.exports = async (callback) => {
           !(await isOnlySafeOwner(masterSafe.address, safeAddr))
         })
       )
-      const badSafes = masterNotOnlyOwner.filter((_, i) => masterNotOnlyOwner[i] == true)
+      const badSafes = masterNotOnlyOwner.filter((_, i) => masterNotOnlyOwner[i])
       if (badSafes.some((t) => t)) {
         callback(
           `Error: Brackets ${badSafes.join()} is/are not owned (or at least not solely) by master safe ${masterSafe.address}`
