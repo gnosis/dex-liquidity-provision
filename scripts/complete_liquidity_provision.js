@@ -124,7 +124,7 @@ module.exports = async (callback) => {
       // Ensure that safes are all owned solely by masterSafe
       const masterNotOnlyOwner = await Promise.all(
         bracketAddresses.map(async (safeAddr) => {
-          !(await isOnlySafeOwner(masterSafe.address, safeAddr))
+          return !(await isOnlySafeOwner(masterSafe.address, safeAddr))
         })
       )
       const badSafes = masterNotOnlyOwner.filter((_, i) => masterNotOnlyOwner[i])
