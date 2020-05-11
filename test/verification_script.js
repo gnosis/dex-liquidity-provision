@@ -127,7 +127,7 @@ contract("Verification checks", function (accounts) {
     await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
   describe("Owner is master safe", async () => {
-    it.only("throws if the masterSafe is not the only owner", async () => {
+    it("throws if the masterSafe is not the only owner", async () => {
       const notMasterSafeAddress = accounts[8]
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
