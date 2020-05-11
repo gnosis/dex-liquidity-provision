@@ -1,3 +1,5 @@
+const BN = require("bn.js")
+
 const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = require("./utils/trading_strategy_helpers")(
   web3,
   artifacts
@@ -5,6 +7,7 @@ const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = requir
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils.js")(web3, artifacts)
 const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")
+const { MAX_ORDER_AMOUNT } = require("./utils/constants.js")
 
 const argv = require("./utils/default_yargs")
   .option("targetToken", {
@@ -47,6 +50,15 @@ const argv = require("./utils/default_yargs")
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
+  })
+  .option("orderSizeLimit", {
+    type: "string",
+    default: MAX_ORDER_AMOUNT.toString(),
+    describe:
+      "Largest amount to use as buy amount and sell amount when creating orders. Used to avoid overflow errors in the solution to the exchange. Do not use unless familiar with the overflow issue when creating solutions for a batch",
+    coerce: (str) => {
+      return new BN(str)
+    },
   }).argv
 
 module.exports = async (callback) => {
@@ -73,6 +85,7 @@ module.exports = async (callback) => {
           argv.stableToken,
           argv.lowestLimit,
           argv.highestLimit,
+          argv.orderSizeLimit,
           true,
           argv.expiry
         )

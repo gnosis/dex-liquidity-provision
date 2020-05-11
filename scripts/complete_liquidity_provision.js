@@ -1,5 +1,6 @@
 const assert = require("assert")
 const Contract = require("@truffle/contract")
+const BN = require("bn.js")
 
 const {
   deployFleetOfSafes,
@@ -14,6 +15,7 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")(web3, artifacts)
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
+const { MAX_ORDER_AMOUNT } = require("./utils/constants.js")
 
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
@@ -65,6 +67,15 @@ const argv = require("./utils/default_yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
+  })
+  .option("orderSizeLimit", {
+    type: "string",
+    default: MAX_ORDER_AMOUNT.toString(),
+    describe:
+      "Largest amount to use as buy amount and sell amount when creating orders. Used to avoid overflow errors in the solution to the exchange. Do not use unless familiar with the overflow issue when creating solutions for a batch",
+    coerce: (str) => {
+      return new BN(str)
+    },
   }).argv
 
 module.exports = async (callback) => {
@@ -145,6 +156,7 @@ module.exports = async (callback) => {
       argv.stableToken,
       argv.lowestLimit,
       argv.highestLimit,
+      argv.orderSizeLimit,
       true
     )
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(

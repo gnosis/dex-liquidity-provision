@@ -8,6 +8,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getLargeOrderAmounts } = require("./price_utils")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
+  const { MAX_ORDER_AMOUNT } = require("./constants.js")
 
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
@@ -227,6 +228,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     stableTokenId,
     lowestLimit,
     highestLimit,
+    orderSizeLimit = MAX_ORDER_AMOUNT,
     debug = false,
     expiry = maxU32 - 1 // We did not choose maxU32, in order to distinguish orders from "non-expiring" orders of the web interface
   ) {
@@ -254,10 +256,20 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = getLargeOrderAmounts(upperLimit, targetToken.decimals, stableToken.decimals)
+        const [upperSellAmount, upperBuyAmount] = getLargeOrderAmounts(
+          upperLimit,
+          targetToken.decimals,
+          stableToken.decimals,
+          orderSizeLimit
+        )
         // While the first bracket-order trades standard_token against target_token, the second bracket-order trades
         // target_token against standard_token. Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerBuyAmount, lowerSellAmount] = getLargeOrderAmounts(lowerLimit, targetToken.decimals, stableToken.decimals)
+        const [lowerBuyAmount, lowerSellAmount] = getLargeOrderAmounts(
+          lowerLimit,
+          targetToken.decimals,
+          stableToken.decimals,
+          orderSizeLimit
+        )
 
         log(
           `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${targetToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${targetToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
