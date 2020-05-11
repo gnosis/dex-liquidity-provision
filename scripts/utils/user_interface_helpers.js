@@ -1,4 +1,4 @@
-module.exports = function (web3 = web3, artifacts = artifacts) {
+module.exports = function () {
   const readline = require("readline")
   const rl = readline.createInterface({
     input: process.stdin,
