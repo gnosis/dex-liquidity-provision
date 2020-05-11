@@ -135,6 +135,41 @@ describe("getLargeOrderAmounts", () => {
       assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
     }
   })
+  it("allows orderSizeLimit to change default order size", () => {
+    const orderSizeLimit = new BN(10).pow(new BN(21))
+    const testCases = [
+      {
+        price: 160,
+        stableTokenDecimals: 6,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: orderSizeLimit.muln(160).div(new BN(10).pow(new BN(18 - 6))),
+        expectedTargetTokenAmount: orderSizeLimit,
+      },
+      {
+        price: 1 / 160,
+        stableTokenDecimals: 6,
+        targetTokenDecimals: 18,
+        expectedStableTokenAmount: orderSizeLimit.divn(160).div(new BN(10).pow(new BN(18 - 6))),
+        expectedTargetTokenAmount: orderSizeLimit,
+      },
+    ]
+    for (const {
+      price,
+      stableTokenDecimals,
+      targetTokenDecimals,
+      expectedStableTokenAmount,
+      expectedTargetTokenAmount,
+    } of testCases) {
+      const [targetTokenAmount, stableTokenAmount] = getLargeOrderAmounts(
+        price,
+        targetTokenDecimals,
+        stableTokenDecimals,
+        orderSizeLimit
+      )
+      assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
+      assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
+    }
+  })
 })
 
 contract("PriceOracle", function (accounts) {
