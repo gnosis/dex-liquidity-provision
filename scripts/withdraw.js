@@ -3,7 +3,6 @@ const { getSafe } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
 const prepareWithdraw = require("./wrapper/withdraw")(web3, artifacts)
 
-
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
     type: "string",
