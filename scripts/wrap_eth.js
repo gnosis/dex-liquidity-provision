@@ -1,8 +1,9 @@
 const Contract = require("@truffle/contract")
 
-const { signAndSend, promptUser } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { CALL } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("./utils/printing_tools")
+const { promptUser } = require("./utils/user_interface_helpers")
 
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {

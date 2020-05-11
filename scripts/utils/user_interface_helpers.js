@@ -1,5 +1,13 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
-  const { promptUser } = require("./sign_and_send")(web3, artifacts)
+  const readline = require("readline")
+
+  const promptUser = function (message) {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+    return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
+  }
 
   const proceedAnyways = async (message) => {
     const answer = await promptUser(message + " Continue anyway? [yN] ")
@@ -10,5 +18,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
   return {
     proceedAnyways,
+    promptUser,
   }
 }
