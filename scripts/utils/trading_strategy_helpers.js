@@ -261,7 +261,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
           targetToken.decimals,
           stableToken.decimals
         )
-        // While the first bracket-order sells targetToken for stableToken, the second sells stableToken for targetToken.
+        // While the first bracket-order sells targetToken for stableToken, the second buys targetToken for stableToken at a lower price.
         // Hence the buyAmounts and sellAmounts are switched in the next line.
         const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(
           lowerLimit,
