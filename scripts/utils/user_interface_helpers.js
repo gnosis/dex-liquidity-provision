@@ -5,10 +5,12 @@ const promptUser = function (message) {
     input: process.stdin,
     output: process.stdout,
   })
-  return new Promise((resolve) => rl.question(message, (answer) => {
-    rl.close()
-    resolve(answer)
-  }))
+  return new Promise((resolve) =>
+    rl.question(message, (answer) => {
+      rl.close()
+      resolve(answer)
+    })
+  )
 }
 
 const proceedAnyways = async function (message) {
