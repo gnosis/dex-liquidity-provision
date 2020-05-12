@@ -41,7 +41,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
     const safeTxGas = await estimateGas(masterSafe, transaction)
     const baseGas = 0
-    console.log("Aquiring Transaction Hash")
+    console.log("Acquiring Transaction Hash")
     const transactionHash = await masterSafe.getTransactionHash(
       transaction.to,
       transaction.value,
