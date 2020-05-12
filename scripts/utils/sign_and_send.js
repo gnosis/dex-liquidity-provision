@@ -1,15 +1,9 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const axios = require("axios")
-  const readline = require("readline")
 
   const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
   const { signHashWithPrivateKey } = require("../utils/internals")(web3, artifacts)
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
@@ -17,10 +11,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   const withHexPrefix = (string) => (string.startsWith("0x") ? string : `0x${string}`)
-
-  const promptUser = function (message) {
-    return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
-  }
 
   const estimateGas = async function (masterSafe, transaction) {
     const estimateCall = masterSafe.contract.methods
@@ -101,6 +91,5 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   return {
     signAndSend,
-    promptUser,
   }
 }
