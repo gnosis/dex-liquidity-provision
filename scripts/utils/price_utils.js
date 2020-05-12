@@ -71,8 +71,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // For the middle bracket the funding can go in either bracket
     // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
     return (
-      (bracketExchangeBalanceQuoteToken === "0" &&
-        bracketExchangeBalanceBaseToken === depositBaseTokenPerBracket.toString()) ||
+      (bracketExchangeBalanceQuoteToken === "0" && bracketExchangeBalanceBaseToken === depositBaseTokenPerBracket.toString()) ||
       (bracketExchangeBalanceBaseToken === "0" && bracketExchangeBalanceQuoteToken === depositQuoteTokenPerBracket.toString())
     )
   }
