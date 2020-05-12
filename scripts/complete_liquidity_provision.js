@@ -162,8 +162,8 @@ module.exports = async (callback) => {
     const orderTransaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
-      argv.baseToken,
-      argv.quoteToken,
+      argv.baseTokenId,
+      argv.quoteTokenId,
       argv.lowestLimit,
       argv.highestLimit,
       true
