@@ -34,14 +34,14 @@ const argv = require("./utils/default_yargs")
       return str.split(",")
     },
   })
-  .option("targetToken", {
+  .option("baseToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
   })
-  .option("investmentTargetToken", {
+  .option("investmentBaseToken", {
     type: "string",
-    describe: "Amount to be invested into the targetToken",
+    describe: "Amount to be invested into the baseToken",
     demandOption: true,
   })
   .option("stableToken", {
@@ -86,15 +86,15 @@ module.exports = async (callback) => {
     BatchExchange.setProvider(web3.currentProvider)
     const exchange = await BatchExchange.deployed()
 
-    const targetTokenId = argv.targetToken
+    const baseTokenId = argv.baseToken
     const stableTokenId = argv.stableToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const targetTokenData = await tokenInfoPromises[targetTokenId]
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, stableTokenId])
+    const baseTokenData = await tokenInfoPromises[baseTokenId]
     const stableTokenData = await tokenInfoPromises[stableTokenId]
-    const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
+    const { instance: baseToken, decimals: baseTokenDecimals } = baseTokenData
     const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
 
-    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
+    const investmentBaseToken = toErc20Units(argv.investmentBaseToken, baseTokenDecimals)
     const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
 
     if (argv.brackets) {
@@ -103,14 +103,14 @@ module.exports = async (callback) => {
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("==> Performing safety checks")
-    if (!(await checkSufficiencyOfBalance(targetToken, masterSafe.address, investmentTargetToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
+    if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, investmentBaseToken))) {
+      callback(`Error: MasterSafe has insufficient balance for the token ${baseToken.address}.`)
     }
     if (!(await checkSufficiencyOfBalance(stableToken, masterSafe.address, investmentStableToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
     }
     // check price against dex.ag's API
-    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
+    const priceCheck = await isPriceReasonable(baseTokenData, stableTokenData, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
@@ -164,7 +164,7 @@ module.exports = async (callback) => {
     const orderTransaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
-      argv.targetToken,
+      argv.baseToken,
       argv.stableToken,
       argv.lowestLimit,
       argv.highestLimit,
@@ -173,13 +173,13 @@ module.exports = async (callback) => {
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
-      targetToken.address,
+      baseToken.address,
       stableToken.address,
       argv.lowestLimit,
       argv.highestLimit,
       argv.currentPrice,
       investmentStableToken,
-      investmentTargetToken,
+      investmentBaseToken,
       true
     )
 

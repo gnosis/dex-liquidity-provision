@@ -107,7 +107,7 @@ contract("Verification checks", function (accounts) {
   let exchange
   let gnosisSafeMasterCopy
   let proxyFactory
-  let targetToken
+  let baseToken
   let stableToken
   let safeOwner
   beforeEach(async function () {
@@ -122,9 +122,9 @@ contract("Verification checks", function (accounts) {
     exchange = await BatchExchange.deployed()
 
     // TODO: this is needed as fetching the orderbook on an empty orderbook throws. This can be fixed in the future
-    targetToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
+    baseToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
     stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
-    await exchange.placeOrder(targetToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
+    await exchange.placeOrder(baseToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
   describe("Owner is master safe", async () => {
     it("throws if the masterSafe is not the only owner", async () => {
@@ -262,7 +262,7 @@ contract("Verification checks", function (accounts) {
     it("throws if orders do not buy and sell the same tokens in a loop", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
-      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
       const lowestLimit = 90
       const highestLimit = 120
@@ -272,7 +272,7 @@ contract("Verification checks", function (accounts) {
       const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
-      const buyTokens = [targetToken.id, targetToken.id]
+      const buyTokens = [baseToken.id, baseToken.id]
       const sellTokens = [stableToken.id, stableToken.id]
       const validFroms = [validFrom, validFrom]
       const validTos = [maxU32, maxU32]
@@ -300,7 +300,7 @@ contract("Verification checks", function (accounts) {
     it("throws if orders of one bracket are not profitable", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
-      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
       const lowestLimit = 90
       const highestLimit = 120
@@ -310,8 +310,8 @@ contract("Verification checks", function (accounts) {
       const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
-      const buyTokens = [targetToken.id, stableToken.id]
-      const sellTokens = [stableToken.id, targetToken.id]
+      const buyTokens = [baseToken.id, stableToken.id]
+      const sellTokens = [stableToken.id, baseToken.id]
       const validFroms = [validFrom, validFrom]
       const validTos = [maxU32, maxU32]
       const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
@@ -338,13 +338,13 @@ contract("Verification checks", function (accounts) {
     it("throws if there are profitable orders", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 3)
-      const targetToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
 
       const investmentStableToken = new BN("1000000000000000000000000")
-      const investmentTargetToken = new BN("1000000000000000000000000")
+      const investmentBaseToken = new BN("1000000000000000000000000")
       await stableToken.token.mint(masterSafe.address, investmentStableToken, { from: accounts[0] })
-      await targetToken.token.mint(masterSafe.address, investmentTargetToken, { from: accounts[0] })
+      await baseToken.token.mint(masterSafe.address, investmentBaseToken, { from: accounts[0] })
       const lowestLimit = 90
       const highestLimit = 120
       const currentPrice = 100
@@ -352,7 +352,7 @@ contract("Verification checks", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketAddresses,
-        targetToken.id,
+        baseToken.id,
         stableToken.id,
         lowestLimit,
         highestLimit
@@ -362,13 +362,13 @@ contract("Verification checks", function (accounts) {
       const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
         masterSafe.address,
         bracketAddresses,
-        targetToken.token.address,
+        baseToken.token.address,
         stableToken.token.address,
         lowestLimit,
         highestLimit,
         currentPrice,
         investmentStableToken,
-        investmentTargetToken,
+        investmentBaseToken,
         true
       )
       await execTransaction(masterSafe, safeOwner.privateKey, bundledFundingTransaction)

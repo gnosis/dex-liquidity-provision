@@ -7,7 +7,7 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
 
 const argv = require("./utils/default_yargs")
-  .option("targetToken", {
+  .option("baseToken", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
@@ -55,12 +55,12 @@ module.exports = async (callback) => {
     const exchange = await getExchange(web3)
 
     // check price against dex.ag's API
-    const targetTokenId = argv.targetToken
+    const baseTokenId = argv.baseToken
     const stableTokenId = argv.stableToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const targetTokenData = await tokenInfoPromises[targetTokenId]
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, stableTokenId])
+    const baseTokenData = await tokenInfoPromises[baseTokenId]
     const stableTokenData = await tokenInfoPromises[stableTokenId]
-    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
+    const priceCheck = await isPriceReasonable(baseTokenData, stableTokenData, argv.currentPrice)
     const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
@@ -69,7 +69,7 @@ module.exports = async (callback) => {
         const transaction = await buildOrders(
           argv.masterSafe,
           argv.brackets,
-          argv.targetToken,
+          argv.baseToken,
           argv.stableToken,
           argv.lowestLimit,
           argv.highestLimit,
@@ -78,7 +78,7 @@ module.exports = async (callback) => {
         )
 
         const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
-        if (answer == "y" || answer.toLowerCase() == "yes") {
+        if (answer === "y" || answer.toLowerCase() === "yes") {
           await signAndSend(await masterSafePromise(), transaction, argv.network)
         }
       }

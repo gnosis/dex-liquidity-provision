@@ -196,15 +196,15 @@ contract("GnosisSafe", function (accounts) {
         highestLimit,
         currentPrice,
         amountStableToken,
-        amountTargetToken,
+        amountbaseToken,
         stableTokenInfo,
-        targetTokenInfo,
+        baseTokenInfo,
       } = tradeInfo
       const { decimals: stableTokenDecimals, symbol: stableTokenSymbol } = stableTokenInfo
-      const { decimals: targetTokenDecimals, symbol: targetTokenSymbol } = targetTokenInfo
-      const { bracketsWithStableTokenDeposit, bracketsWithTargetTokenDeposit } = expectedDistribution
+      const { decimals: baseTokenDecimals, symbol: baseTokenSymbol } = baseTokenInfo
+      const { bracketsWithStableTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
       assert.equal(
-        bracketsWithStableTokenDeposit + bracketsWithTargetTokenDeposit,
+        bracketsWithStableTokenDeposit + bracketsWithbaseTokenDeposit,
         fleetSize,
         "Malformed test case, sum of expected distribution should be equal to the fleet size"
       )
@@ -222,21 +222,21 @@ contract("GnosisSafe", function (accounts) {
       const depositAmountStableToken = toErc20Units(amountStableToken, stableTokenDecimals)
       await stableToken.mint(masterSafe.address, depositAmountStableToken, { from: accounts[0] })
 
-      //Create  targetToken and add it to the exchange
-      const { id: targetTokenId, token: targetToken } = await addCustomMintableTokenToExchange(
+      //Create  baseToken and add it to the exchange
+      const { id: baseTokenId, token: baseToken } = await addCustomMintableTokenToExchange(
         exchange,
-        targetTokenSymbol,
-        targetTokenDecimals,
+        baseTokenSymbol,
+        baseTokenDecimals,
         accounts[0]
       )
-      const depositAmountTargetToken = toErc20Units(amountTargetToken, targetTokenDecimals)
-      await targetToken.mint(masterSafe.address, depositAmountTargetToken, { from: accounts[0] })
+      const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
+      await baseToken.mint(masterSafe.address, depositAmountbaseToken, { from: accounts[0] })
 
       // Build orders
       const orderTransaction = await buildOrders(
         masterSafe.address,
         bracketAddresses,
-        targetTokenId,
+        baseTokenId,
         stableTokenId,
         lowestLimit,
         highestLimit
@@ -247,13 +247,13 @@ contract("GnosisSafe", function (accounts) {
       const batchTransaction = await buildTransferApproveDepositFromOrders(
         masterSafe.address,
         bracketAddresses,
-        targetToken.address,
+        baseToken.address,
         stableToken.address,
         lowestLimit,
         highestLimit,
         currentPrice,
         depositAmountStableToken,
-        depositAmountTargetToken
+        depositAmountbaseToken
       )
       await execTransaction(masterSafe, safeOwner.privateKey, batchTransaction)
       // Close auction for deposits to be reflected in exchange balance
@@ -265,9 +265,9 @@ contract("GnosisSafe", function (accounts) {
           bracketAddress,
           exchange,
           stableToken,
-          targetToken,
+          baseToken,
           bracketsWithStableTokenDeposit == 0 ? 0 : depositAmountStableToken.div(new BN(bracketsWithStableTokenDeposit)),
-          bracketsWithTargetTokenDeposit == 0 ? 0 : depositAmountTargetToken.div(new BN(bracketsWithTargetTokenDeposit))
+          bracketsWithbaseTokenDeposit == 0 ? 0 : depositAmountbaseToken.div(new BN(bracketsWithbaseTokenDeposit))
         )
       }
     }
@@ -278,13 +278,13 @@ contract("GnosisSafe", function (accounts) {
         highestLimit: 121,
         currentPrice: 110,
         amountStableToken: "0.000000000000001",
-        amountTargetToken: "0.000000000000002",
+        amountbaseToken: "0.000000000000002",
         stableTokenInfo: { decimals: 18, symbol: "DAI" },
-        targetTokenInfo: { decimals: 18, symbol: "WETH" },
+        baseTokenInfo: { decimals: 18, symbol: "WETH" },
       }
       const expectedDistribution = {
         bracketsWithStableTokenDeposit: 2,
-        bracketsWithTargetTokenDeposit: 2,
+        bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
@@ -295,13 +295,13 @@ contract("GnosisSafe", function (accounts) {
         highestLimit: 400,
         currentPrice: 100,
         amountStableToken: "1",
-        amountTargetToken: "2",
+        amountbaseToken: "2",
         stableTokenInfo: { decimals: 18, symbol: "DAI" },
-        targetTokenInfo: { decimals: 18, symbol: "WETH" },
+        baseTokenInfo: { decimals: 18, symbol: "WETH" },
       }
       const expectedDistribution = {
         bracketsWithStableTokenDeposit: 2,
-        bracketsWithTargetTokenDeposit: 2,
+        bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
@@ -312,13 +312,13 @@ contract("GnosisSafe", function (accounts) {
         highestLimit: 0.12,
         currentPrice: 0.105,
         amountStableToken: "0.000000000000001",
-        amountTargetToken: "0.000000000000002",
+        amountbaseToken: "0.000000000000002",
         stableTokenInfo: { decimals: 18, symbol: "WETH" },
-        targetTokenInfo: { decimals: 18, symbol: "DAI" },
+        baseTokenInfo: { decimals: 18, symbol: "DAI" },
       }
       const expectedDistribution = {
         bracketsWithStableTokenDeposit: 2,
-        bracketsWithTargetTokenDeposit: 2,
+        bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
@@ -329,13 +329,13 @@ contract("GnosisSafe", function (accounts) {
         highestLimit: 1.2,
         currentPrice: 0.9,
         amountStableToken: "0.000000000000001",
-        amountTargetToken: "0.000000000000002",
+        amountbaseToken: "0.000000000000002",
         stableTokenInfo: { decimals: 18, symbol: "DAI" },
-        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+        baseTokenInfo: { decimals: 18, symbol: "sUSD" },
       }
       const expectedDistribution = {
         bracketsWithStableTokenDeposit: 1,
-        bracketsWithTargetTokenDeposit: 3,
+        bracketsWithbaseTokenDeposit: 3,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
@@ -346,13 +346,13 @@ contract("GnosisSafe", function (accounts) {
         highestLimit: 1.2,
         currentPrice: 0.7,
         amountStableToken: "0.000000000000001",
-        amountTargetToken: "0.000000000000002",
+        amountbaseToken: "0.000000000000002",
         stableTokenInfo: { decimals: 18, symbol: "DAI" },
-        targetTokenInfo: { decimals: 18, symbol: "sUSD" },
+        baseTokenInfo: { decimals: 18, symbol: "sUSD" },
       }
       const expectedDistribution = {
         bracketsWithStableTokenDeposit: 0,
-        bracketsWithTargetTokenDeposit: 4,
+        bracketsWithbaseTokenDeposit: 4,
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
@@ -360,27 +360,27 @@ contract("GnosisSafe", function (accounts) {
       const tokenSetups = [
         {
           amountStableToken: "10000",
-          amountTargetToken: "100",
+          amountbaseToken: "100",
           stableTokenInfo: { decimals: 6, symbol: "USDC" },
-          targetTokenInfo: { decimals: 18, symbol: "WETH" },
+          baseTokenInfo: { decimals: 18, symbol: "WETH" },
         },
         {
           amountStableToken: "100",
-          amountTargetToken: "10000",
+          amountbaseToken: "10000",
           stableTokenInfo: { decimals: 18, symbol: "WETH" },
-          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+          baseTokenInfo: { decimals: 6, symbol: "USDC" },
         },
         {
           amountStableToken: "3333",
-          amountTargetToken: "100.000001",
+          amountbaseToken: "100.000001",
           stableTokenInfo: { decimals: 0, symbol: "nodecimals" },
-          targetTokenInfo: { decimals: 6, symbol: "USDC" },
+          baseTokenInfo: { decimals: 6, symbol: "USDC" },
         },
         {
           amountStableToken: "0.00000000000000000000001",
-          amountTargetToken: "3.14159265",
+          amountbaseToken: "3.14159265",
           stableTokenInfo: { decimals: 40, symbol: "manydecimals" }, // above 38 decimals one token unit does not fit a uint128
-          targetTokenInfo: { decimals: 8, symbol: "WBTC" },
+          baseTokenInfo: { decimals: 8, symbol: "WBTC" },
         },
       ]
       it("when p is in the middle of the brackets", async () => {
@@ -392,7 +392,7 @@ contract("GnosisSafe", function (accounts) {
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 2,
-          bracketsWithTargetTokenDeposit: 2,
+          bracketsWithbaseTokenDeposit: 2,
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
@@ -408,7 +408,7 @@ contract("GnosisSafe", function (accounts) {
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 2,
-          bracketsWithTargetTokenDeposit: 2,
+          bracketsWithbaseTokenDeposit: 2,
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
@@ -424,7 +424,7 @@ contract("GnosisSafe", function (accounts) {
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 3,
-          bracketsWithTargetTokenDeposit: 5,
+          bracketsWithbaseTokenDeposit: 5,
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
@@ -440,14 +440,14 @@ contract("GnosisSafe", function (accounts) {
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 4,
-          bracketsWithTargetTokenDeposit: 0,
+          bracketsWithbaseTokenDeposit: 0,
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
           await testAutomaticDeposits(tradeInfo, expectedDistribution)
         }
       })
-      it("when p is outside the brackets and only target token is deposited", async () => {
+      it("when p is outside the brackets and only base token is deposited", async () => {
         const tradeInfoWithoutTokens = {
           fleetSize: 4,
           lowestLimit: 100,
@@ -456,7 +456,7 @@ contract("GnosisSafe", function (accounts) {
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 0,
-          bracketsWithTargetTokenDeposit: 4,
+          bracketsWithbaseTokenDeposit: 4,
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
@@ -470,13 +470,13 @@ contract("GnosisSafe", function (accounts) {
           highestLimit: 20e194,
           currentPrice: 10e194,
           amountStableToken: "10",
-          amountTargetToken: fromErc20Units(new BN("5000000"), 200),
+          amountbaseToken: fromErc20Units(new BN("5000000"), 200),
           stableTokenInfo: { decimals: 3, symbol: "fewdecimals" },
-          targetTokenInfo: { decimals: 200, symbol: "manydecimals" },
+          baseTokenInfo: { decimals: 200, symbol: "manydecimals" },
         }
         const expectedDistribution = {
           bracketsWithStableTokenDeposit: 2,
-          bracketsWithTargetTokenDeposit: 2,
+          bracketsWithbaseTokenDeposit: 2,
         }
         await testAutomaticDeposits(tradeInfo, expectedDistribution)
       })
@@ -487,7 +487,7 @@ contract("GnosisSafe", function (accounts) {
     it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // DAI
       const lowestLimit = 90
       const highestLimit = 120
@@ -499,7 +499,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketAddresses,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -527,7 +527,7 @@ contract("GnosisSafe", function (accounts) {
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // DAI
       const lowestLimit = 0.09
       const highestLimit = 0.12
@@ -538,7 +538,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketSafes,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -557,7 +557,7 @@ contract("GnosisSafe", function (accounts) {
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // DAI
       const lowestLimit = 80
       const highestLimit = 110
@@ -567,7 +567,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketSafes,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -589,7 +589,7 @@ contract("GnosisSafe", function (accounts) {
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       testToken = await TestToken.new("TEST6", 6)
       const testToken2 = await TestToken.new("TEST4", 4)
-      const targetToken = 2 // "TEST4"
+      const baseToken = 2 // "TEST4"
       const stableToken = 1 // "TEST6"
       const lowestLimit = 0.8
       const highestLimit = 1.1
@@ -601,7 +601,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketSafes,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -614,7 +614,7 @@ contract("GnosisSafe", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
       testToken = await TestToken.new("TEST6", 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // "TEST6"
       const lowestLimit = 80
       const highestLimit = 110
@@ -624,7 +624,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketSafes,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -636,7 +636,7 @@ contract("GnosisSafe", function (accounts) {
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1 && p<1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // DAI
       const lowestLimit = 0.8
       const highestLimit = 1.1
@@ -646,7 +646,7 @@ contract("GnosisSafe", function (accounts) {
       const transaction = await buildOrders(
         masterSafe.address,
         bracketSafes,
-        targetToken,
+        baseToken,
         stableToken,
         lowestLimit,
         highestLimit
@@ -658,7 +658,7 @@ contract("GnosisSafe", function (accounts) {
     it("Failing when lowest limit is higher than highest limit", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
-      const targetToken = 0 // ETH
+      const baseToken = 0 // ETH
       const stableToken = 1 // DAI
       const lowestLimit = 120
       const highestLimit = 90
@@ -666,7 +666,7 @@ contract("GnosisSafe", function (accounts) {
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
       await assertNodejs.rejects(
-        buildOrders(masterSafe.address, bracketSafes, targetToken, stableToken, lowestLimit, highestLimit),
+        buildOrders(masterSafe.address, bracketSafes, baseToken, stableToken, lowestLimit, highestLimit),
         {
           name: "AssertionError [ERR_ASSERTION]",
           message: "Lowest limit must be lower than highest limit",
