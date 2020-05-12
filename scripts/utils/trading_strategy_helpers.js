@@ -217,7 +217,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
    * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
    * @param {integer} baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
-   * @param {integer} stableTokenId ID of "Stable Token" for which trade with base token (i.e. DAI)
+   * @param {integer} quoteTokenId ID of "Quote Token" for which trade with base token (i.e. DAI)
    * @param {number} currentPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
    * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
    * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
@@ -228,7 +228,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     masterAddress,
     bracketAddresses,
     baseTokenId,
-    stableTokenId,
+    quoteTokenId,
     lowestLimit,
     highestLimit,
     debug = false,
@@ -241,14 +241,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const exchange = await exchangePromise
     log("Batch Exchange", exchange.address)
 
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, stableTokenId])
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, quoteTokenId])
 
     const baseToken = await tokenInfoPromises[baseTokenId]
-    const stableToken = await tokenInfoPromises[stableTokenId]
+    const quoteToken = await tokenInfoPromises[quoteTokenId]
 
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     log(
-      `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${stableToken.symbol} per ${baseToken.symbol}`
+      `Constructing bracket trading strategy order data between the limits ${lowestLimit}-${highestLimit} ${quoteToken.symbol} per ${baseToken.symbol}`
     )
 
     const buyAndSellOrderPromises = await Promise.all(
@@ -259,25 +259,25 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(
           upperLimit,
           baseToken.decimals,
-          stableToken.decimals
+          quoteToken.decimals
         )
-        // While the first bracket-order sells baseToken for stableToken, the second buys baseToken for stableToken at a lower price.
+        // While the first bracket-order sells baseToken for quoteToken, the second buys baseToken for quoteToken at a lower price.
         // Hence the buyAmounts and sellAmounts are switched in the next line.
         const [lowerSellAmount, lowerBuyAmount] = getUnlimitedOrderAmounts(
           1 / lowerLimit,
-          stableToken.decimals,
+          quoteToken.decimals,
           baseToken.decimals
         )
 
         log(
-          `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${baseToken.symbol} with ${stableToken.symbol} at ${lowerLimit}\n  Sell ${baseToken.symbol} for  ${stableToken.symbol} at ${upperLimit}`
+          `Safe ${bracketIndex} - ${bracketAddress}:\n  Buy  ${baseToken.symbol} with ${quoteToken.symbol} at ${lowerLimit}\n  Sell ${baseToken.symbol} for  ${quoteToken.symbol} at ${upperLimit}`
         )
 
         const orderDataSell = exchange.contract.methods
-          .placeOrder(baseTokenId, stableTokenId, expiry, lowerBuyAmount.toString(), lowerSellAmount.toString())
+          .placeOrder(baseTokenId, quoteTokenId, expiry, lowerBuyAmount.toString(), lowerSellAmount.toString())
           .encodeABI()
         const orderDataBuy = exchange.contract.methods
-          .placeOrder(stableTokenId, baseTokenId, expiry, upperBuyAmount.toString(), upperSellAmount.toString())
+          .placeOrder(quoteTokenId, baseTokenId, expiry, upperBuyAmount.toString(), upperSellAmount.toString())
           .encodeABI()
         const sellOrderTransaction = {
           operation: CALL,
@@ -429,10 +429,10 @@ withdrawal of or to withdraw the desired funds
    * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Address[]} bracketAddresses list of bracket addresses that need the deposit
-   * @param {Address} stableTokenAddress one token to be traded in bracket strategy
-   * @param {number} investmentStableToken Amount of stable tokens to be invested (in total)
+   * @param {Address} quoteTokenAddress one token to be traded in bracket strategy
+   * @param {number} investmentQuoteToken Amount of quote tokens to be invested (in total)
    * @param {Address} baseTokenAddress second token to be traded in bracket strategy
-   * @param {number} investmentStableToken Amount of base tokens to be invested (in total)
+   * @param {number} investmentQuoteToken Amount of base tokens to be invested (in total)
    * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
@@ -440,42 +440,42 @@ withdrawal of or to withdraw the desired funds
     masterAddress,
     bracketAddresses,
     baseTokenAddress,
-    stableTokenAddress,
+    quoteTokenAddress,
     lowestLimit,
     highestLimit,
     currentPrice,
-    investmentStableToken,
+    investmentQuoteToken,
     investmentBaseToken,
     storeDepositsAsFile = false
   ) {
     const fleetSize = bracketAddresses.length
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
-    // bracketIndexAtcurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
+    // bracketIndexAtCurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
     // in case the currentPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
     // second order will be funded.
-    let bracketIndexAtcurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
-    if (bracketIndexAtcurrentPrice > fleetSize) {
-      bracketIndexAtcurrentPrice = fleetSize
+    let bracketIndexAtCurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
+    if (bracketIndexAtCurrentPrice > fleetSize) {
+      bracketIndexAtCurrentPrice = fleetSize
     }
-    if (bracketIndexAtcurrentPrice < 0) {
-      bracketIndexAtcurrentPrice = 0
+    if (bracketIndexAtCurrentPrice < 0) {
+      bracketIndexAtCurrentPrice = 0
     }
 
     const deposits = []
 
-    for (const i of Array(bracketIndexAtcurrentPrice).keys()) {
+    for (const i of Array(bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: investmentStableToken.div(new BN(bracketIndexAtcurrentPrice)).toString(),
-        tokenAddress: stableTokenAddress,
+        amount: investmentQuoteToken.div(new BN(bracketIndexAtCurrentPrice)).toString(),
+        tokenAddress: quoteTokenAddress,
         bracketAddress: bracketAddresses[i],
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSize - bracketIndexAtcurrentPrice).keys()) {
+    for (const i of Array(fleetSize - bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: investmentBaseToken.div(new BN(fleetSize - bracketIndexAtcurrentPrice)).toString(),
+        amount: investmentBaseToken.div(new BN(fleetSize - bracketIndexAtCurrentPrice)).toString(),
         tokenAddress: baseTokenAddress,
-        bracketAddress: bracketAddresses[bracketIndexAtcurrentPrice + i],
+        bracketAddress: bracketAddresses[bracketIndexAtCurrentPrice + i],
       }
       deposits.push(deposit)
     }

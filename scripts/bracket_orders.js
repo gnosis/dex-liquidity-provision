@@ -12,9 +12,9 @@ const argv = require("./utils/default_yargs")
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
   })
-  .option("stableToken", {
+  .option("quoteToken", {
     type: "int",
-    describe: "Stable Token for which to open orders (i.e. DAI)",
+    describe: "Quote Token for which to open orders (i.e. DAI)",
     demandOption: true,
   })
   .option("currentPrice", {
@@ -56,11 +56,11 @@ module.exports = async (callback) => {
 
     // check price against dex.ag's API
     const baseTokenId = argv.baseToken
-    const stableTokenId = argv.stableToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, stableTokenId])
+    const quoteTokenId = argv.quoteToken
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, quoteTokenId])
     const baseTokenData = await tokenInfoPromises[baseTokenId]
-    const stableTokenData = await tokenInfoPromises[stableTokenId]
-    const priceCheck = await isPriceReasonable(baseTokenData, stableTokenData, argv.currentPrice)
+    const quoteTokenData = await tokenInfoPromises[quoteTokenId]
+    const priceCheck = await isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
     const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
     if (priceCheck || (await proceedAnyways("Price check failed!"))) {
@@ -70,7 +70,7 @@ module.exports = async (callback) => {
           argv.masterSafe,
           argv.brackets,
           argv.baseToken,
-          argv.stableToken,
+          argv.quoteToken,
           argv.lowestLimit,
           argv.highestLimit,
           true,

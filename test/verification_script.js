@@ -108,7 +108,7 @@ contract("Verification checks", function (accounts) {
   let gnosisSafeMasterCopy
   let proxyFactory
   let baseToken
-  let stableToken
+  let quoteToken
   let safeOwner
   beforeEach(async function () {
     safeOwner = {
@@ -123,8 +123,8 @@ contract("Verification checks", function (accounts) {
 
     // TODO: this is needed as fetching the orderbook on an empty orderbook throws. This can be fixed in the future
     baseToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
-    stableToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
-    await exchange.placeOrder(baseToken, stableToken, 1234124, 11241234, 11234234, { from: accounts[0] })
+    quoteToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+    await exchange.placeOrder(baseToken, quoteToken, 1234124, 11241234, 11234234, { from: accounts[0] })
   })
   describe("Owner is master safe", async () => {
     it("throws if the masterSafe is not the only owner", async () => {
@@ -263,7 +263,7 @@ contract("Verification checks", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
-      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+      const quoteToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
       const lowestLimit = 90
       const highestLimit = 120
 
@@ -273,7 +273,7 @@ contract("Verification checks", function (accounts) {
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
       const buyTokens = [baseToken.id, baseToken.id]
-      const sellTokens = [stableToken.id, stableToken.id]
+      const sellTokens = [quoteToken.id, quoteToken.id]
       const validFroms = [validFrom, validFrom]
       const validTos = [maxU32, maxU32]
       const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
@@ -301,7 +301,7 @@ contract("Verification checks", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
       const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
-      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+      const quoteToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
       const lowestLimit = 90
       const highestLimit = 120
 
@@ -310,8 +310,8 @@ contract("Verification checks", function (accounts) {
       const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
-      const buyTokens = [baseToken.id, stableToken.id]
-      const sellTokens = [stableToken.id, baseToken.id]
+      const buyTokens = [baseToken.id, quoteToken.id]
+      const sellTokens = [quoteToken.id, baseToken.id]
       const validFroms = [validFrom, validFrom]
       const validTos = [maxU32, maxU32]
       const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
@@ -339,11 +339,11 @@ contract("Verification checks", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 3)
       const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
-      const stableToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
+      const quoteToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
 
-      const investmentStableToken = new BN("1000000000000000000000000")
+      const investmentQuoteToken = new BN("1000000000000000000000000")
       const investmentBaseToken = new BN("1000000000000000000000000")
-      await stableToken.token.mint(masterSafe.address, investmentStableToken, { from: accounts[0] })
+      await quoteToken.token.mint(masterSafe.address, investmentQuoteToken, { from: accounts[0] })
       await baseToken.token.mint(masterSafe.address, investmentBaseToken, { from: accounts[0] })
       const lowestLimit = 90
       const highestLimit = 120
@@ -353,7 +353,7 @@ contract("Verification checks", function (accounts) {
         masterSafe.address,
         bracketAddresses,
         baseToken.id,
-        stableToken.id,
+        quoteToken.id,
         lowestLimit,
         highestLimit
       )
@@ -363,11 +363,11 @@ contract("Verification checks", function (accounts) {
         masterSafe.address,
         bracketAddresses,
         baseToken.token.address,
-        stableToken.token.address,
+        quoteToken.token.address,
         lowestLimit,
         highestLimit,
         currentPrice,
-        investmentStableToken,
+        investmentQuoteToken,
         investmentBaseToken,
         true
       )

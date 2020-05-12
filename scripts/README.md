@@ -47,13 +47,13 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 Here is an example script invocation:
 
 ```js
-npx truffle exec scripts/complete_liquidity_provision.js --baseToken=1 --stableToken=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentBaseToken=10 --investmentStableToken=1000 --fleetSize=10 --network=$NETWORK_NAME
+npx truffle exec scripts/complete_liquidity_provision.js --baseToken=1 --quoteToken=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentBaseToken=10 --investmentQuoteToken=1000 --fleetSize=10 --network=$NETWORK_NAME
 ```
 
-The prices must be specified in terms of 1 base token = x stable tokens.
+The prices must be specified in terms of 1 base token = x quote tokens.
 
 This example deploys a liquidity strategy with 20 brackets between the prices 150-200 on the pair WETH-USDC.
-In this script the baseToken is 1, which happens to be WETH, and the stableToken is 4, which happens to be USDC.
+In this script the baseToken is 1, which happens to be WETH, and the quoteToken is 4, which happens to be USDC.
 The token ids of the exchange contract can be read from Etherscan info in the 'Contract/Read Contract' tab, e.g. [here for mainnet](https://etherscan.io/address/0x6f400810b62df8e13fded51be75ff5393eaa841f)
 
 The fleet size should be smaller than or equal to 20, in order to ensure that the transactions can be sent via MetaMask - otherwise, it can happen that the payload is too high for Metamask.
@@ -80,7 +80,7 @@ Requires that Master and bracket-traders are already deployed.
 An example of the usage would be:
 
 ```js
-truffle exec scripts/bracket_orders.js --baseToken=1 --stableToken=7 --currentPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
+truffle exec scripts/bracket_orders.js --baseToken=1 --quoteToken=7 --currentPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
 ```
 
 ### Transfer-Approve-Deposit
