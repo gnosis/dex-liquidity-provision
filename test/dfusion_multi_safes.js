@@ -535,14 +535,7 @@ contract("GnosisSafe", function (accounts) {
 
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        baseToken,
-        quoteToken,
-        lowestLimit,
-        highestLimit
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
@@ -564,14 +557,7 @@ contract("GnosisSafe", function (accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        baseToken,
-        quoteToken,
-        lowestLimit,
-        highestLimit
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
@@ -598,14 +584,7 @@ contract("GnosisSafe", function (accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken2.address, { from: accounts[0] })
       await exchange.tokenIdToAddressMap.call(2)
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        baseToken,
-        quoteToken,
-        lowestLimit,
-        highestLimit
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
@@ -621,14 +600,7 @@ contract("GnosisSafe", function (accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        baseToken,
-        quoteToken,
-        lowestLimit,
-        highestLimit
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
@@ -643,14 +615,7 @@ contract("GnosisSafe", function (accounts) {
       await prepareTokenRegistration(accounts[0], exchange)
       await exchange.addToken(testToken.address, { from: accounts[0] })
 
-      const transaction = await buildOrders(
-        masterSafe.address,
-        bracketSafes,
-        baseToken,
-        quoteToken,
-        lowestLimit,
-        highestLimit
-      )
+      const transaction = await buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)

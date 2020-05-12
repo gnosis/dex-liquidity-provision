@@ -256,11 +256,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(
-          upperLimit,
-          baseToken.decimals,
-          quoteToken.decimals
-        )
+        const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(upperLimit, baseToken.decimals, quoteToken.decimals)
         // While the first bracket-order sells baseToken for quoteToken, the second buys baseToken for quoteToken at a lower price.
         // Hence the buyAmounts and sellAmounts are switched in the next line.
         const [lowerSellAmount, lowerBuyAmount] = getUnlimitedOrderAmounts(

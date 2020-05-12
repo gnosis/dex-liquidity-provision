@@ -34,10 +34,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const buyBaseTokenOrder = buyBaseTokenOrders[0]
     assert.equal(buyBaseTokenOrder.sellToken, quoteTokenId)
     // price of order is in terms of base tokens per quote token, the inverse is needed
-    const priceBuyingBaseToken = new Fraction(
-      buyBaseTokenOrder.priceNumerator,
-      buyBaseTokenOrder.priceDenominator
-    ).inverted()
+    const priceBuyingBaseToken = new Fraction(buyBaseTokenOrder.priceNumerator, buyBaseTokenOrder.priceDenominator).inverted()
 
     const sellBaseTokenOrders = bracketOrders.filter((order) => order.sellToken == baseTokenId)
     assert.equal(sellBaseTokenOrders.length, 1)
@@ -76,8 +73,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return (
       (bracketExchangeBalanceQuoteToken === "0" &&
         bracketExchangeBalanceBaseToken === investmentBaseTokenPerBracket.toString()) ||
-      (bracketExchangeBalanceBaseToken === "0" &&
-        bracketExchangeBalanceQuoteToken === investmentQuoteTokenPerBracket.toString())
+      (bracketExchangeBalanceBaseToken === "0" && bracketExchangeBalanceQuoteToken === investmentQuoteTokenPerBracket.toString())
     )
   }
 
