@@ -102,10 +102,10 @@ module.exports = async (callback) => {
 
     console.log("==> Performing safety checks")
     if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${baseToken.address}.`)
+      callback(`Error: MasterSafe ${masterSafe.address} has insufficient balance for base token ${baseToken.address}`)
     }
     if (!(await checkSufficiencyOfBalance(quoteToken, masterSafe.address, depositQuoteToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${quoteToken.address}.`)
+      callback(`Error: MasterSafe ${masterSafe.address} has insufficient balance for quote token ${quoteToken.address}`)
     }
     // check price against dex.ag's API
     const priceCheck = await isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
