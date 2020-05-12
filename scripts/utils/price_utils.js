@@ -14,8 +14,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     exchange,
     quoteToken,
     baseToken,
-    investmentQuoteTokenPerBracket,
-    investmentBaseTokenPerBracket
+    depositQuoteTokenPerBracket,
+    depositBaseTokenPerBracket
   ) => {
     // all prices are of the form: 1 base token = "price" quote tokens
     const bracketExchangeBalanceQuoteToken = (await exchange.getBalance(bracketAddress, quoteToken.address)).toString()
@@ -46,17 +46,17 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     if (priceSellingBaseToken.lt(currentUnitPrice)) {
       assert.equal(bracketExchangeBalanceBaseToken, "0")
-      assert.equal(bracketExchangeBalanceQuoteToken, investmentQuoteTokenPerBracket.toString())
+      assert.equal(bracketExchangeBalanceQuoteToken, depositQuoteTokenPerBracket.toString())
     } else if (priceBuyingBaseToken.gt(currentUnitPrice)) {
-      assert.equal(bracketExchangeBalanceBaseToken, investmentBaseTokenPerBracket.toString())
+      assert.equal(bracketExchangeBalanceBaseToken, depositBaseTokenPerBracket.toString())
       assert.equal(bracketExchangeBalanceQuoteToken, "0")
     } else {
       assert(
         checkFundingInTheMiddleBracket(
           bracketExchangeBalanceQuoteToken,
           bracketExchangeBalanceBaseToken,
-          investmentQuoteTokenPerBracket,
-          investmentBaseTokenPerBracket
+          depositQuoteTokenPerBracket,
+          depositBaseTokenPerBracket
         )
       )
     }
@@ -65,15 +65,15 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const checkFundingInTheMiddleBracket = function (
     bracketExchangeBalanceQuoteToken,
     bracketExchangeBalanceBaseToken,
-    investmentQuoteTokenPerBracket,
-    investmentBaseTokenPerBracket
+    depositQuoteTokenPerBracket,
+    depositBaseTokenPerBracket
   ) {
     // For the middle bracket the funding can go in either bracket
     // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
     return (
       (bracketExchangeBalanceQuoteToken === "0" &&
-        bracketExchangeBalanceBaseToken === investmentBaseTokenPerBracket.toString()) ||
-      (bracketExchangeBalanceBaseToken === "0" && bracketExchangeBalanceQuoteToken === investmentQuoteTokenPerBracket.toString())
+        bracketExchangeBalanceBaseToken === depositBaseTokenPerBracket.toString()) ||
+      (bracketExchangeBalanceBaseToken === "0" && bracketExchangeBalanceQuoteToken === depositQuoteTokenPerBracket.toString())
     )
   }
 

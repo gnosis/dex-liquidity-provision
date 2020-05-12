@@ -39,7 +39,7 @@ const argv = require("./utils/default_yargs")
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
   })
-  .option("investmentBaseToken", {
+  .option("depositBaseToken", {
     type: "string",
     describe: "Amount to be invested into the baseToken",
     demandOption: true,
@@ -49,7 +49,7 @@ const argv = require("./utils/default_yargs")
     describe: "Trusted Quote Token for which to open orders (i.e. DAI)",
     demandOption: true,
   })
-  .option("investmentQuoteToken", {
+  .option("depositQuoteToken", {
     type: "string",
     describe: "Amount to be invested into the quoteToken",
     demandOption: true,
@@ -94,8 +94,8 @@ module.exports = async (callback) => {
     const { instance: baseToken, decimals: baseTokenDecimals } = baseTokenData
     const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
 
-    const investmentBaseToken = toErc20Units(argv.investmentBaseToken, baseTokenDecimals)
-    const investmentQuoteToken = toErc20Units(argv.investmentQuoteToken, quoteTokenDecimals)
+    const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
+    const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
 
     if (argv.brackets) {
       assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
@@ -103,10 +103,10 @@ module.exports = async (callback) => {
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("==> Performing safety checks")
-    if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, investmentBaseToken))) {
+    if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${baseToken.address}.`)
     }
-    if (!(await checkSufficiencyOfBalance(quoteToken, masterSafe.address, investmentQuoteToken))) {
+    if (!(await checkSufficiencyOfBalance(quoteToken, masterSafe.address, depositQuoteToken))) {
       callback(`Error: MasterSafe has insufficient balance for the token ${quoteToken.address}.`)
     }
     // check price against dex.ag's API
@@ -178,8 +178,8 @@ module.exports = async (callback) => {
       argv.lowestLimit,
       argv.highestLimit,
       argv.currentPrice,
-      investmentQuoteToken,
-      investmentBaseToken,
+      depositQuoteToken,
+      depositBaseToken,
       true
     )
 

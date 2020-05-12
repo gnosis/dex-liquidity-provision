@@ -47,7 +47,7 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 Here is an example script invocation:
 
 ```js
-npx truffle exec scripts/complete_liquidity_provision.js --baseToken=1 --quoteToken=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --investmentBaseToken=10 --investmentQuoteToken=1000 --fleetSize=10 --network=$NETWORK_NAME
+npx truffle exec scripts/complete_liquidity_provision.js --baseToken=1 --quoteToken=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --depositBaseToken=10 --depositQuoteToken=1000 --fleetSize=10 --network=$NETWORK_NAME
 ```
 
 The prices must be specified in terms of 1 base token = x quote tokens.

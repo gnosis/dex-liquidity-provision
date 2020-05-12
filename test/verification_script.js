@@ -341,10 +341,10 @@ contract("Verification checks", function (accounts) {
       const baseToken = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
       const quoteToken = await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])
 
-      const investmentQuoteToken = new BN("1000000000000000000000000")
-      const investmentBaseToken = new BN("1000000000000000000000000")
-      await quoteToken.token.mint(masterSafe.address, investmentQuoteToken, { from: accounts[0] })
-      await baseToken.token.mint(masterSafe.address, investmentBaseToken, { from: accounts[0] })
+      const depositQuoteToken = new BN("1000000000000000000000000")
+      const depositBaseToken = new BN("1000000000000000000000000")
+      await quoteToken.token.mint(masterSafe.address, depositQuoteToken, { from: accounts[0] })
+      await baseToken.token.mint(masterSafe.address, depositBaseToken, { from: accounts[0] })
       const lowestLimit = 90
       const highestLimit = 120
       const currentPrice = 100
@@ -367,8 +367,8 @@ contract("Verification checks", function (accounts) {
         lowestLimit,
         highestLimit,
         currentPrice,
-        investmentQuoteToken,
-        investmentBaseToken,
+        depositQuoteToken,
+        depositBaseToken,
         true
       )
       await execTransaction(masterSafe, safeOwner.privateKey, bundledFundingTransaction)

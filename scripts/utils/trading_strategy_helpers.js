@@ -426,9 +426,9 @@ withdrawal of or to withdraw the desired funds
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Address[]} bracketAddresses list of bracket addresses that need the deposit
    * @param {Address} quoteTokenAddress one token to be traded in bracket strategy
-   * @param {number} investmentQuoteToken Amount of quote tokens to be invested (in total)
+   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
    * @param {Address} baseTokenAddress second token to be traded in bracket strategy
-   * @param {number} investmentQuoteToken Amount of base tokens to be invested (in total)
+   * @param {number} depositQuoteToken Amount of base tokens to be invested (in total)
    * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
@@ -440,8 +440,8 @@ withdrawal of or to withdraw the desired funds
     lowestLimit,
     highestLimit,
     currentPrice,
-    investmentQuoteToken,
-    investmentBaseToken,
+    depositQuoteToken,
+    depositBaseToken,
     storeDepositsAsFile = false
   ) {
     const fleetSize = bracketAddresses.length
@@ -461,7 +461,7 @@ withdrawal of or to withdraw the desired funds
 
     for (const i of Array(bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: investmentQuoteToken.div(new BN(bracketIndexAtCurrentPrice)).toString(),
+        amount: depositQuoteToken.div(new BN(bracketIndexAtCurrentPrice)).toString(),
         tokenAddress: quoteTokenAddress,
         bracketAddress: bracketAddresses[i],
       }
@@ -469,7 +469,7 @@ withdrawal of or to withdraw the desired funds
     }
     for (const i of Array(fleetSize - bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: investmentBaseToken.div(new BN(fleetSize - bracketIndexAtCurrentPrice)).toString(),
+        amount: depositBaseToken.div(new BN(fleetSize - bracketIndexAtCurrentPrice)).toString(),
         tokenAddress: baseTokenAddress,
         bracketAddress: bracketAddresses[bracketIndexAtCurrentPrice + i],
       }
