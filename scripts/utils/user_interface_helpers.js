@@ -1,11 +1,14 @@
 const readline = require("readline")
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-})
 
 const promptUser = function (message) {
-  return new Promise((resolve) => rl.question(message, (answer) => resolve(answer)))
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+  return new Promise((resolve) => rl.question(message, (answer) => {
+    rl.close()
+    resolve(answer)
+  }))
 }
 
 const proceedAnyways = async function (message) {
