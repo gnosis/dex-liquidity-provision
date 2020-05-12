@@ -7,12 +7,12 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
 
 const argv = require("./utils/default_yargs")
-  .option("baseToken", {
+  .option("baseTokenId", {
     type: "int",
-    describe: "Token whose target price is to be specified (i.e. ETH)",
+    describe: "Base Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
   })
-  .option("quoteToken", {
+  .option("quoteTokenId", {
     type: "int",
     describe: "Quote Token for which to open orders (i.e. DAI)",
     demandOption: true,
@@ -55,11 +55,9 @@ module.exports = async (callback) => {
     const exchange = await getExchange(web3)
 
     // check price against dex.ag's API
-    const baseTokenId = argv.baseToken
-    const quoteTokenId = argv.quoteToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, quoteTokenId])
-    const baseTokenData = await tokenInfoPromises[baseTokenId]
-    const quoteTokenData = await tokenInfoPromises[quoteTokenId]
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
+    const baseTokenData = await tokenInfoPromises[argv.baseTokenId]
+    const quoteTokenData = await tokenInfoPromises[argv.quoteTokenId]
     const priceCheck = await isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
     const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
 
@@ -69,8 +67,8 @@ module.exports = async (callback) => {
         const transaction = await buildOrders(
           argv.masterSafe,
           argv.brackets,
-          argv.baseToken,
-          argv.quoteToken,
+          argv.baseTokenId,
+          argv.quoteTokenId,
           argv.lowestLimit,
           argv.highestLimit,
           true,

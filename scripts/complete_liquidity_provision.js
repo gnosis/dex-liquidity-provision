@@ -34,7 +34,7 @@ const argv = require("./utils/default_yargs")
       return str.split(",")
     },
   })
-  .option("baseToken", {
+  .option("baseTokenId", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
@@ -44,7 +44,7 @@ const argv = require("./utils/default_yargs")
     describe: "Amount to be invested into the baseToken",
     demandOption: true,
   })
-  .option("quoteToken", {
+  .option("quoteTokenId", {
     type: "int",
     describe: "Trusted Quote Token for which to open orders (i.e. DAI)",
     demandOption: true,
@@ -86,11 +86,9 @@ module.exports = async (callback) => {
     BatchExchange.setProvider(web3.currentProvider)
     const exchange = await BatchExchange.deployed()
 
-    const baseTokenId = argv.baseToken
-    const quoteTokenId = argv.quoteToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [baseTokenId, quoteTokenId])
-    const baseTokenData = await tokenInfoPromises[baseTokenId]
-    const quoteTokenData = await tokenInfoPromises[quoteTokenId]
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
+    const baseTokenData = await tokenInfoPromises[argv.baseTokenId]
+    const quoteTokenData = await tokenInfoPromises[argv.quoteTokenId]
     const { instance: baseToken, decimals: baseTokenDecimals } = baseTokenData
     const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
 
