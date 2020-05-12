@@ -11,7 +11,7 @@ const {
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
-const { proceedAnyways } = require("./utils/user_interface_helpers")(web3, artifacts)
+const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
@@ -34,24 +34,24 @@ const argv = require("./utils/default_yargs")
       return str.split(",")
     },
   })
-  .option("targetToken", {
+  .option("baseTokenId", {
     type: "int",
     describe: "Token whose target price is to be specified (i.e. ETH)",
     demandOption: true,
   })
-  .option("investmentTargetToken", {
+  .option("depositBaseToken", {
     type: "string",
-    describe: "Amount to be invested into the targetToken",
+    describe: "Amount to be invested into the baseToken",
     demandOption: true,
   })
-  .option("stableToken", {
+  .option("quoteTokenId", {
     type: "int",
-    describe: "Trusted Stable Token for which to open orders (i.e. DAI)",
+    describe: "Trusted Quote Token for which to open orders (i.e. DAI)",
     demandOption: true,
   })
-  .option("investmentStableToken", {
+  .option("depositQuoteToken", {
     type: "string",
-    describe: "Amount to be invested into the stableToken",
+    describe: "Amount to be invested into the quoteToken",
     demandOption: true,
   })
   .option("currentPrice", {
@@ -66,6 +66,15 @@ const argv = require("./utils/default_yargs")
   .option("highestLimit", {
     type: "float",
     describe: "Price for the bracket selling at the highest price",
+  })
+  .option("verify", {
+    type: "boolean",
+    default: false,
+    describe: "Do not actually send transactions, just simulate their submission",
+  })
+  .option("nonce", {
+    type: "int",
+    describe: "Use this specific nonce instead of the next available one",
   }).argv
 
 module.exports = async (callback) => {
@@ -77,16 +86,14 @@ module.exports = async (callback) => {
     BatchExchange.setProvider(web3.currentProvider)
     const exchange = await BatchExchange.deployed()
 
-    const targetTokenId = argv.targetToken
-    const stableTokenId = argv.stableToken
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [targetTokenId, stableTokenId])
-    const targetTokenData = await tokenInfoPromises[targetTokenId]
-    const stableTokenData = await tokenInfoPromises[stableTokenId]
-    const { instance: targetToken, decimals: targetTokenDecimals } = targetTokenData
-    const { instance: stableToken, decimals: stableTokenDecimals } = stableTokenData
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
+    const baseTokenData = await tokenInfoPromises[argv.baseTokenId]
+    const quoteTokenData = await tokenInfoPromises[argv.quoteTokenId]
+    const { instance: baseToken, decimals: baseTokenDecimals } = baseTokenData
+    const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
 
-    const investmentTargetToken = toErc20Units(argv.investmentTargetToken, targetTokenDecimals)
-    const investmentStableToken = toErc20Units(argv.investmentStableToken, stableTokenDecimals)
+    const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
+    const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
 
     if (argv.brackets) {
       assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
@@ -94,14 +101,14 @@ module.exports = async (callback) => {
     assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("==> Performing safety checks")
-    if (!(await checkSufficiencyOfBalance(targetToken, masterSafe.address, investmentTargetToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${targetToken.address}.`)
+    if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
+      callback(`Error: MasterSafe has insufficient balance for the token ${baseToken.address}.`)
     }
-    if (!(await checkSufficiencyOfBalance(stableToken, masterSafe.address, investmentStableToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${stableToken.address}.`)
+    if (!(await checkSufficiencyOfBalance(quoteToken, masterSafe.address, depositQuoteToken))) {
+      callback(`Error: MasterSafe has insufficient balance for the token ${quoteToken.address}.`)
     }
     // check price against dex.ag's API
-    const priceCheck = await isPriceReasonable(targetTokenData, stableTokenData, argv.currentPrice)
+    const priceCheck = await isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
     if (!priceCheck) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
@@ -136,9 +143,9 @@ module.exports = async (callback) => {
         callback("Error: Existing order verification failed.")
       }
     } else {
+      assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
-      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize, true)
-      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
@@ -148,8 +155,8 @@ module.exports = async (callback) => {
     const orderTransaction = await buildOrders(
       masterSafe.address,
       bracketAddresses,
-      argv.targetToken,
-      argv.stableToken,
+      argv.baseToken,
+      argv.quoteToken,
       argv.lowestLimit,
       argv.highestLimit,
       true
@@ -157,26 +164,35 @@ module.exports = async (callback) => {
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       masterSafe.address,
       bracketAddresses,
-      targetToken.address,
-      stableToken.address,
+      baseToken.address,
+      quoteToken.address,
       argv.lowestLimit,
       argv.highestLimit,
       argv.currentPrice,
-      investmentStableToken,
-      investmentTargetToken,
+      depositQuoteToken,
+      depositBaseToken,
       true
     )
 
     console.log(
       "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
     )
-    const nonce = (await masterSafe.nonce()).toNumber()
-    await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
+    let nonce = argv.nonce
+    if (nonce === undefined) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
     console.log(
       "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
     )
-    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
+
+    if (!argv.verify) {
+      console.log(
+        `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
+      )
+    }
 
     callback()
   } catch (error) {

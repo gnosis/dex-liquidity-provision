@@ -6,6 +6,7 @@ const Contract = require("@truffle/contract")
 
 const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
 const ERC20 = artifacts.require("ERC20Detailed")
+const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
@@ -17,6 +18,8 @@ const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
+
+const bnMaxUint256 = new BN(2).pow(new BN(256)).subn(1)
 
 contract("Withdraw script", function (accounts) {
   let gnosisSafeMasterCopy
@@ -262,10 +265,10 @@ contract("Withdraw script", function (accounts) {
       const transaction = await prepareWithdraw(argv)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
-      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+      for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
         assert.notEqual(requestedWithdrawal, "0", "Withdrawal was not requested")
-        assert.equal(requestedWithdrawal, amount, "Bad amount requested to withdraw")
+        assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
     it("requests withdrawals with token Ids", async () => {
@@ -291,10 +294,10 @@ contract("Withdraw script", function (accounts) {
       const transaction = await prepareWithdraw(argv)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
-      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+      for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
         assert.notEqual(requestedWithdrawal, "0", "Withdrawal was not requested")
-        assert.equal(requestedWithdrawal, amount, "Bad amount requested to withdraw")
+        assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
     it("withdraws", async () => {
@@ -432,6 +435,25 @@ contract("Withdraw script", function (accounts) {
       const wethMasterBalance = (await wethToken.balanceOf(masterSafe.address)).toString()
       assert.equal(usdcMasterBalance, toErc20Units("10000", 6).toString(), "Master safe did not receive USDC")
       assert.equal(wethMasterBalance, toErc20Units("50", 18).toString(), "Master safe did not receive WETH")
+    })
+    it("combines withdraw and transfer ignoring bracket token balance", async () => {
+      const amounts = [{ tokenData: { decimals: 18, symbol: "WETH" }, amount: "0" }]
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
+      const wethToken = await MintableToken.at(tokenInfo[0].address)
+      await wethToken.mint(bracketAddresses[0], toErc20Units("10", 18))
+
+      // no withdraw requested
+      const argv = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+        tokens: [tokenInfo[0].address],
+        withdraw: true,
+        transferFundsToMaster: true,
+      }
+      const transaction = await prepareWithdraw(argv)
+      // if the built transaction used the token balance of the bracket instead of zero, then
+      // the following transaction would fail.
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
     })
   })
   it("fails on bad input", async () => {

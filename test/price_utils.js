@@ -73,64 +73,64 @@ describe("getUnlimitedOrderAmounts", () => {
     const testCases = [
       {
         price: 160,
-        stableTokenDecimals: 18,
-        targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.divn(160),
+        quoteTokenDecimals: 18,
+        baseTokenDecimals: 18,
+        expectedQuoteTokenAmount: max128,
+        expectedbaseTokenAmount: max128.divn(160),
       },
       {
         price: 1 / 160,
-        stableTokenDecimals: 18,
-        targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128.divn(160),
-        expectedTargetTokenAmount: max128,
+        quoteTokenDecimals: 18,
+        baseTokenDecimals: 18,
+        expectedQuoteTokenAmount: max128.divn(160),
+        expectedbaseTokenAmount: max128,
       },
       {
         price: 1,
-        stableTokenDecimals: 18,
-        targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128,
+        quoteTokenDecimals: 18,
+        baseTokenDecimals: 18,
+        expectedQuoteTokenAmount: max128,
+        expectedbaseTokenAmount: max128,
       },
       {
         price: 1 + Number.EPSILON,
-        stableTokenDecimals: 18,
-        targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+        quoteTokenDecimals: 18,
+        baseTokenDecimals: 18,
+        expectedQuoteTokenAmount: max128,
+        expectedbaseTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
       },
       {
         price: 1 - Number.EPSILON,
-        stableTokenDecimals: 18,
-        targetTokenDecimals: 18,
-        expectedStableTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
-        expectedTargetTokenAmount: max128,
+        quoteTokenDecimals: 18,
+        baseTokenDecimals: 18,
+        expectedQuoteTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+        expectedbaseTokenAmount: max128,
       },
       {
         price: 100,
-        stableTokenDecimals: 165,
-        targetTokenDecimals: 200,
-        expectedStableTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 - 2))),
-        expectedTargetTokenAmount: max128,
+        quoteTokenDecimals: 165,
+        baseTokenDecimals: 200,
+        expectedQuoteTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 - 2))),
+        expectedbaseTokenAmount: max128,
       },
       {
         price: 100,
-        stableTokenDecimals: 200,
-        targetTokenDecimals: 165,
-        expectedStableTokenAmount: max128,
-        expectedTargetTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 + 2))),
+        quoteTokenDecimals: 200,
+        baseTokenDecimals: 165,
+        expectedQuoteTokenAmount: max128,
+        expectedbaseTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 + 2))),
       },
     ]
     for (const {
       price,
-      stableTokenDecimals,
-      targetTokenDecimals,
-      expectedStableTokenAmount,
-      expectedTargetTokenAmount,
+      quoteTokenDecimals,
+      baseTokenDecimals,
+      expectedQuoteTokenAmount,
+      expectedbaseTokenAmount,
     } of testCases) {
-      const [targetTokenAmount, stableTokenAmount] = getUnlimitedOrderAmounts(price, targetTokenDecimals, stableTokenDecimals)
-      assertEqualUpToFloatPrecision(stableTokenAmount, expectedStableTokenAmount)
-      assertEqualUpToFloatPrecision(targetTokenAmount, expectedTargetTokenAmount)
+      const [baseTokenAmount, quoteTokenAmount] = getUnlimitedOrderAmounts(price, baseTokenDecimals, quoteTokenDecimals)
+      assertEqualUpToFloatPrecision(quoteTokenAmount, expectedQuoteTokenAmount)
+      assertEqualUpToFloatPrecision(baseTokenAmount, expectedbaseTokenAmount)
     }
   })
 })
@@ -148,9 +148,9 @@ contract("PriceOracle", function (accounts) {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const targetTokenData = { symbol: "WETH" }
-      const stableTokenData = { symbol: "DAI" }
-      assert(await isPriceReasonable(targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage))
+      const baseTokenData = { symbol: "WETH" }
+      const quoteTokenData = { symbol: "DAI" }
+      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id

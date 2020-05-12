@@ -12,72 +12,67 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     currentPrice,
     bracketAddress,
     exchange,
-    stableToken,
-    targetToken,
-    investmentStableTokenPerBracket,
-    investmentTargetTokenPerBracket
+    quoteToken,
+    baseToken,
+    depositQuoteTokenPerBracket,
+    depositBaseTokenPerBracket
   ) => {
-    // all prices are of the form: 1 target token = "price" stable tokens
-    const bracketExchangeBalanceStableToken = (await exchange.getBalance(bracketAddress, stableToken.address)).toString()
-    const bracketExchangeBalanceTargetToken = (await exchange.getBalance(bracketAddress, targetToken.address)).toString()
-    const targetTokenId = await exchange.tokenAddressToIdMap.call(targetToken.address)
-    const stableTokenId = await exchange.tokenAddressToIdMap.call(stableToken.address)
+    // all prices are of the form: 1 base token = "price" quote tokens
+    const bracketExchangeBalanceQuoteToken = (await exchange.getBalance(bracketAddress, quoteToken.address)).toString()
+    const bracketExchangeBalanceBaseToken = (await exchange.getBalance(bracketAddress, baseToken.address)).toString()
+    const baseTokenId = await exchange.tokenAddressToIdMap.call(baseToken.address)
+    const quoteTokenId = await exchange.tokenAddressToIdMap.call(quoteToken.address)
 
     const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
     const bracketOrders = auctionElements.filter((order) => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 
-    const currentUnitPrice = getUnitPrice(currentPrice, await targetToken.decimals(), await stableToken.decimals())
+    const currentUnitPrice = getUnitPrice(currentPrice, await baseToken.decimals(), await quoteToken.decimals())
 
-    const buyTargetTokenOrders = bracketOrders.filter((order) => order.buyToken == targetTokenId)
-    assert.equal(buyTargetTokenOrders.length, 1)
-    const buyTargetTokenOrder = buyTargetTokenOrders[0]
-    assert.equal(buyTargetTokenOrder.sellToken, stableTokenId)
-    // price of order is in terms of target tokens per stable token, the inverse is needed
-    const priceBuyingTargetToken = new Fraction(
-      buyTargetTokenOrder.priceNumerator,
-      buyTargetTokenOrder.priceDenominator
-    ).inverted()
+    const buyBaseTokenOrders = bracketOrders.filter((order) => order.buyToken == baseTokenId)
+    assert.equal(buyBaseTokenOrders.length, 1)
+    const buyBaseTokenOrder = buyBaseTokenOrders[0]
+    assert.equal(buyBaseTokenOrder.sellToken, quoteTokenId)
+    // price of order is in terms of base tokens per quote token, the inverse is needed
+    const priceBuyingBaseToken = new Fraction(buyBaseTokenOrder.priceNumerator, buyBaseTokenOrder.priceDenominator).inverted()
 
-    const sellTargetTokenOrders = bracketOrders.filter((order) => order.sellToken == targetTokenId)
-    assert.equal(sellTargetTokenOrders.length, 1)
-    const sellTargetTokenOrder = sellTargetTokenOrders[0]
-    assert.equal(sellTargetTokenOrder.buyToken, stableTokenId)
-    const priceSellingTargetToken = new Fraction(sellTargetTokenOrder.priceNumerator, sellTargetTokenOrder.priceDenominator)
+    const sellBaseTokenOrders = bracketOrders.filter((order) => order.sellToken == baseTokenId)
+    assert.equal(sellBaseTokenOrders.length, 1)
+    const sellBaseTokenOrder = sellBaseTokenOrders[0]
+    assert.equal(sellBaseTokenOrder.buyToken, quoteTokenId)
+    const priceSellingBaseToken = new Fraction(sellBaseTokenOrder.priceNumerator, sellBaseTokenOrder.priceDenominator)
 
-    assert(priceBuyingTargetToken.lt(priceSellingTargetToken))
+    assert(priceBuyingBaseToken.lt(priceSellingBaseToken))
 
-    if (priceSellingTargetToken.lt(currentUnitPrice)) {
-      assert.equal(bracketExchangeBalanceTargetToken, "0")
-      assert.equal(bracketExchangeBalanceStableToken, investmentStableTokenPerBracket.toString())
-    } else if (priceBuyingTargetToken.gt(currentUnitPrice)) {
-      assert.equal(bracketExchangeBalanceTargetToken, investmentTargetTokenPerBracket.toString())
-      assert.equal(bracketExchangeBalanceStableToken, "0")
+    if (priceSellingBaseToken.lt(currentUnitPrice)) {
+      assert.equal(bracketExchangeBalanceBaseToken, "0")
+      assert.equal(bracketExchangeBalanceQuoteToken, depositQuoteTokenPerBracket.toString())
+    } else if (priceBuyingBaseToken.gt(currentUnitPrice)) {
+      assert.equal(bracketExchangeBalanceBaseToken, depositBaseTokenPerBracket.toString())
+      assert.equal(bracketExchangeBalanceQuoteToken, "0")
     } else {
       assert(
         checkFundingInTheMiddleBracket(
-          bracketExchangeBalanceStableToken,
-          bracketExchangeBalanceTargetToken,
-          investmentStableTokenPerBracket,
-          investmentTargetTokenPerBracket
+          bracketExchangeBalanceQuoteToken,
+          bracketExchangeBalanceBaseToken,
+          depositQuoteTokenPerBracket,
+          depositBaseTokenPerBracket
         )
       )
     }
   }
 
   const checkFundingInTheMiddleBracket = function (
-    bracketExchangeBalanceStableToken,
-    bracketExchangeBalanceTargetToken,
-    investmentStableTokenPerBracket,
-    investmentTargetTokenPerBracket
+    bracketExchangeBalanceQuoteToken,
+    bracketExchangeBalanceBaseToken,
+    depositQuoteTokenPerBracket,
+    depositBaseTokenPerBracket
   ) {
     // For the middle bracket the funding can go in either bracket
     // it depends on closer distance from the currentPrice to the limit prices fo the bracket-traders
     return (
-      (bracketExchangeBalanceStableToken === "0" &&
-        bracketExchangeBalanceTargetToken === investmentTargetTokenPerBracket.toString()) ||
-      (bracketExchangeBalanceTargetToken === "0" &&
-        bracketExchangeBalanceStableToken === investmentStableTokenPerBracket.toString())
+      (bracketExchangeBalanceQuoteToken === "0" && bracketExchangeBalanceBaseToken === depositBaseTokenPerBracket.toString()) ||
+      (bracketExchangeBalanceBaseToken === "0" && bracketExchangeBalanceQuoteToken === depositQuoteTokenPerBracket.toString())
     )
   }
 
@@ -126,8 +121,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return price
   }
 
-  const isPriceReasonable = async (targetTokenData, stableTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-    const dexagPrice = await getDexagPrice(stableTokenData.symbol, targetTokenData.symbol)
+  const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
+    const dexagPrice = await getDexagPrice(quoteTokenData.symbol, baseTokenData.symbol)
     if (dexagPrice === undefined) {
       console.log("Warning: could not perform price check against dex.ag.")
       return false
@@ -137,8 +132,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         acceptedPriceDeviationInPercentage,
         "percent from the price found on dex.ag."
       )
-      console.log("         chosen price:", price, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
-      console.log("         dex.ag price:", dexagPrice, stableTokenData.symbol, "bought for 1", targetTokenData.symbol)
+      console.log("         chosen price:", price, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
+      console.log("         dex.ag price:", dexagPrice, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
       return false
     }
     return true
@@ -146,48 +141,48 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Modifies the price to work with ERC20 units
-   * @param {number} price amount of stable token in exchange for one target token
-   * @param {integer} targetTokenDecimals number of decimals of the target token
-   * @param {integer} stableTokenDecimals number of decimals of the stable token
-   * @return {Fraction} fraction representing the amount of units of stable tokens in exchange for one unit of target token
+   * @param {number} price amount of quote token in exchange for one base token
+   * @param {integer} baseTokenDecimals number of decimals of the base token
+   * @param {integer} quoteTokenDecimals number of decimals of the quote token
+   * @return {Fraction} fraction representing the amount of units of quote tokens in exchange for one unit of base token
    */
-  const getUnitPrice = function (price, targetTokenDecimals, stableTokenDecimals) {
+  const getUnitPrice = function (price, baseTokenDecimals, quoteTokenDecimals) {
     return Fraction.fromNumber(price).mul(
-      new Fraction(new BN(10).pow(new BN(stableTokenDecimals)), new BN(10).pow(new BN(targetTokenDecimals)))
+      new Fraction(new BN(10).pow(new BN(quoteTokenDecimals)), new BN(10).pow(new BN(baseTokenDecimals)))
     )
   }
 
   /**
    * Computes the amount of output token units from their price and the amount of input token units
    * Note that the price is expressed in terms of tokens, while the amounts are in terms of token units
-   * @param {number} price amount of stable token in exchange for one target token
-   * @param {BN} targetTokenAmount amount of target token units that are exchanged at price
-   * @param {integer} targetTokenDecimals number of decimals of the target token
-   * @param {integer} stableTokenDecimals number of decimals of the stable token
+   * @param {number} price amount of quote token in exchange for one base token
+   * @param {BN} baseTokenAmount amount of base token units that are exchanged at price
+   * @param {integer} baseTokenDecimals number of decimals of the base token
+   * @param {integer} quoteTokenDecimals number of decimals of the quote token
    * @return {BN} amount of output token units obtained
    */
-  const getOutputAmountFromPrice = function (price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals) {
-    const unitPriceFraction = getUnitPrice(price, targetTokenDecimals, stableTokenDecimals)
-    const stableTokenAmountFraction = unitPriceFraction.mul(new Fraction(targetTokenAmount, 1))
-    return stableTokenAmountFraction.toBN()
+  const getOutputAmountFromPrice = function (price, baseTokenAmount, baseTokenDecimals, quoteTokenDecimals) {
+    const unitPriceFraction = getUnitPrice(price, baseTokenDecimals, quoteTokenDecimals)
+    const quoteTokenAmountFraction = unitPriceFraction.mul(new Fraction(baseTokenAmount, 1))
+    return quoteTokenAmountFraction.toBN()
   }
 
   /**
-   * Computes the stable and target token amounts needed to set up an unlimited order in the exchange
-   * @param {number} price amount of stable tokens in exchange for one target token
-   * @param {integer} targetTokenDecimals number of decimals of the target token
-   * @param {integer} stableTokenDecimals number of decimals of the stable token
-   * @return {BN[2]} amounts of stable token and target token for an unlimited order at the input price
+   * Computes the quote and base token amounts needed to set up an unlimited order in the exchange
+   * @param {number} price amount of quote tokens in exchange for one base token
+   * @param {integer} baseTokenDecimals number of decimals of the base token
+   * @param {integer} quoteTokenDecimals number of decimals of the quote token
+   * @return {BN[2]} amounts of quote token and base token for an unlimited order at the input price
    */
-  const getUnlimitedOrderAmounts = function (price, targetTokenDecimals, stableTokenDecimals) {
-    let targetTokenAmount = max128.clone()
-    let stableTokenAmount = getOutputAmountFromPrice(price, targetTokenAmount, targetTokenDecimals, stableTokenDecimals)
-    if (stableTokenAmount.gt(targetTokenAmount)) {
-      stableTokenAmount = max128.clone()
-      targetTokenAmount = getOutputAmountFromPrice(1 / price, stableTokenAmount, stableTokenDecimals, targetTokenDecimals)
-      assert(stableTokenAmount.gte(targetTokenAmount), "Error: unable to create unlimited order")
+  const getUnlimitedOrderAmounts = function (price, baseTokenDecimals, quoteTokenDecimals) {
+    let baseTokenAmount = max128.clone()
+    let quoteTokenAmount = getOutputAmountFromPrice(price, baseTokenAmount, baseTokenDecimals, quoteTokenDecimals)
+    if (quoteTokenAmount.gt(baseTokenAmount)) {
+      quoteTokenAmount = max128.clone()
+      baseTokenAmount = getOutputAmountFromPrice(1 / price, quoteTokenAmount, quoteTokenDecimals, baseTokenDecimals)
+      assert(quoteTokenAmount.gte(baseTokenAmount), "Error: unable to create unlimited order")
     }
-    return [targetTokenAmount, stableTokenAmount]
+    return [baseTokenAmount, quoteTokenAmount]
   }
 
   const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
