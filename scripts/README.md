@@ -117,7 +117,7 @@ This is achieved by adding the flag `--allTokens` to the withraw command. This i
 Withdrawing is a two-step process: first, withdrawals must be requested on the exchange; then the withdrawals can be executed, and at the same time the funds can be sent back to the master Safe.
 
 ```js
-npx truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --withdrawals="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ```js
