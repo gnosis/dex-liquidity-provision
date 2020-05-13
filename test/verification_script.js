@@ -4,12 +4,12 @@ const Contract = require("@truffle/contract")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
+// const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
 const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
-const { execTransaction, waitForNSeconds, ADDRESS_0 } = require("../scripts/utils/internals")(web3, artifacts)
+const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
   getAllowances,
   assertNoAllowances,
