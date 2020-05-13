@@ -12,7 +12,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
-  const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
+  // const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
 
   const pageSize = 50
@@ -46,7 +46,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         "Master owners are different than expected"
       )
     }
-    // TODO - enable this verification according to discussion in 
+    // TODO - enable this verification according to discussion in
     // https://github.com/gnosis/dex-liquidity-provision/issues/217
     // log("- Verify proxy bytecode")
     // await Promise.all(
