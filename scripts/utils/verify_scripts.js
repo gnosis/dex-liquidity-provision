@@ -1,8 +1,8 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const Contract = require("@truffle/contract")
-  const { getOrdersPaginated } = require("@gnosis.pm/dex-contracts/src/onchain_reading")
   const { Fraction } = require("@gnosis.pm/dex-contracts/src")
+  const exchangeUtils = require("@gnosis.pm/dex-contracts")
 
   const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances, getSafe } = require("./trading_strategy_helpers")(
     web3,
@@ -14,8 +14,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
-
-  const pageSize = 50
 
   const verifyBracketsWellFormed = async function (
     masterAddress,
@@ -107,18 +105,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   ) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
-    const BatchExchangeArtifact = require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange")
-    const networkId = await web3.eth.net.getId()
-    const BatchExchange = new web3.eth.Contract(BatchExchangeArtifact.abi, BatchExchangeArtifact.networks[networkId].address)
-
-    const auctionElementsDecoded = await getOrdersPaginated(BatchExchange, pageSize)
     const bracketTraderAddresses = brackets.map((address) => address.toLowerCase())
-
-    // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
-    const relevantOrders = auctionElementsDecoded.filter((order) => bracketTraderAddresses.includes(order.user.toLowerCase()))
     const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
     BatchExchangeContract.setProvider(web3.currentProvider)
     const exchange = await BatchExchangeContract.deployed()
+
+    // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
+    const ordersObjects = await Promise.all(
+      bracketTraderAddresses.map(async (bracketAddress) =>
+        exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+      )
+    )
+    const relevantOrders = [].concat(...ordersObjects)
 
     const tradedTokenIds = new Set()
     for (const order of relevantOrders) {
