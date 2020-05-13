@@ -121,7 +121,7 @@ npx truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE
 ```
 
 ```js
-npx truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawals="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 The latter instruction can be split into two independent units, if needed: withdrawing from the exchange to the bracket and transferring funds from the bracket to the master Safe.
