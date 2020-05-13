@@ -6,13 +6,12 @@ Use at your own risk!
 
 ### Prerequisites
 
-The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node with version 10](https://nodejs.org/en/blog/release/v10.18.0/).
+The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node](https://nodejs.org/en/).
 
 The Gnosis Protocol contracts must be compiled and the deployment addresses must be injected into built contract-artifacts.
 To do so, run:
 
 ```
-yarn global add npx
 yarn compile
 yarn run networks-inject
 ```
