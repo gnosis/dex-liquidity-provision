@@ -12,7 +12,7 @@ const {
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
-const { proceedAnyways } = require("./utils/user_interface_helpers")
+const { proceedAnyways, checkNoDuplicatedBracket } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
 
@@ -75,7 +75,8 @@ const argv = require("./utils/default_yargs")
   .option("nonce", {
     type: "int",
     describe: "Use this specific nonce instead of the next available one",
-  }).argv
+  })
+  .check(checkNoDuplicatedBracket).argv
 
 module.exports = async (callback) => {
   try {

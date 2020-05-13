@@ -12,7 +12,7 @@
  * is not required to reveal all owners approved here:
  * https://github.com/gnosis/safe-contracts/blob/development/contracts/base/OwnerManager.sol#L15
  */
-
+const { checkNoDuplicatedBracket } = require("./utils/user_interface_helpers")
 const { verifyCorrectSetup } = require("./utils/verify_scripts")(web3, artifacts)
 
 const argv = require("./utils/default_yargs")
@@ -54,7 +54,7 @@ const argv = require("./utils/default_yargs")
   .check(function (argv) {
     if ((!argv.masterOwners && argv.masterThreshold) || (argv.masterOwners && !argv.masterThreshold))
       throw new Error("Master owners and master threshold must be either both absent or both specified")
-    return true
+    return checkNoDuplicatedBracket(argv)
   }).argv
 
 module.exports = async (callback) => {
