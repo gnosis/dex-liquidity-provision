@@ -146,7 +146,7 @@ module.exports = async (callback) => {
       assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
-      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      console.log("List of deployed brackets:", bracketAddresses.join())
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
