@@ -182,18 +182,26 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log(
-      "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
-    )
+    if (!argv.verify) {
+      console.log(
+        "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
+      )
+    } else {
+      console.log("==> Order placing transaction")
+    }
     let nonce = argv.nonce
     if (nonce === undefined) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
-    console.log(
-      "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
-    )
+    if (!argv.verify) {
+      console.log(
+        "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
+      )
+    } else {
+      console.log("==> Funds transferring transaction")
+    }
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
 
     if (!argv.verify) {
