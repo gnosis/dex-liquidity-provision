@@ -46,6 +46,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         "Master owners are different than expected"
       )
     }
+    // TODO - enable this verification according to discussion in 
+    // https://github.com/gnosis/dex-liquidity-provision/issues/217
+    // log("- Verify proxy bytecode")
+    // await Promise.all(
+    //   bracketAddresses.map(async (bracketAddress) => {
+    //     assert.equal(
+    //       await web3.eth.getCode(bracketAddress),
+    //       GnosisSafeProxy.deployedBytecode,
+    //       `Bytecode at bracket ${bracketAddress} does not agree with that GnosisSafeProxy v1.1.1`
+    //     )
+    //   })
+    // )
 
     log("- Verify that brackets are owned solely by masterSafe")
     await Promise.all(
@@ -64,17 +76,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
           (await getMasterCopy(addr)).toString().toLowerCase(),
           gnosisSafe.address.toString().toLowerCase(),
           "MasterCopy not set correctly"
-        )
-      })
-    )
-
-    log("- Verify proxy bytecode")
-    await Promise.all(
-      bracketAddresses.map(async (bracketAddress) => {
-        assert.equal(
-          await web3.eth.getCode(bracketAddress),
-          GnosisSafeProxy.deployedBytecode,
-          "Bad bytecode for bracket " + bracketAddress
         )
       })
     )
