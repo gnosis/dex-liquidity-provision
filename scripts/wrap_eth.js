@@ -33,7 +33,7 @@ module.exports = async (callback) => {
     const transactionData = await weth.contract.methods.deposit().encodeABI()
     const transaction = {
       to: weth.address,
-      value: amountInWei,
+      value: amountInWei.toString(),
       operation: CALL,
       data: transactionData,
     }
