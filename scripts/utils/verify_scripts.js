@@ -12,7 +12,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
-  const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
+  // const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
 
   const verifyBracketsWellFormed = async function (
@@ -44,32 +44,36 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         "Master owners are different than expected"
       )
     }
+    // TODO - enable this verification according to discussion in
+    // https://github.com/gnosis/dex-liquidity-provision/issues/217
+    // log("- Verify proxy bytecode")
+    // await Promise.all(
+    //   bracketAddresses.map(async (bracketAddress) => {
+    //     assert.equal(
+    //       await web3.eth.getCode(bracketAddress),
+    //       GnosisSafeProxy.deployedBytecode,
+    //       `Bytecode at bracket ${bracketAddress} does not agree with that GnosisSafeProxy v1.1.1`
+    //     )
+    //   })
+    // )
 
-    log("- Verify that the owner of the brackets is the masterSafe")
+    log("- Verify that brackets are owned solely by masterSafe")
     await Promise.all(
       brackets.map(async (bracketTrader) => {
-        assert(await isOnlySafeOwner(masterAddress, bracketTrader), "Owners are not set correctly")
+        assert(
+          await isOnlySafeOwner(masterAddress, bracketTrader),
+          `Error: Bracket ${bracketTrader.address} is not owned (or at least not solely) by master safe ${masterAddress}`
+        )
       })
     )
 
     log("- Verify that masterCopy of brackets is the known masterCopy")
     await Promise.all(
-      bracketAddresses.map(async (bracketAddress) => {
+      bracketAddresses.map(async (addr) => {
         assert.equal(
-          (await getMasterCopy(bracketAddress)).toString().toLowerCase(),
+          (await getMasterCopy(addr)).toString().toLowerCase(),
           gnosisSafe.address.toString().toLowerCase(),
           "MasterCopy not set correctly"
-        )
-      })
-    )
-
-    log("- Verify proxy bytecode")
-    await Promise.all(
-      bracketAddresses.map(async (bracketAddress) => {
-        assert.equal(
-          await web3.eth.getCode(bracketAddress),
-          GnosisSafeProxy.deployedBytecode,
-          "Bad bytecode for bracket " + bracketAddress
         )
       })
     )
@@ -171,5 +175,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   return {
     verifyCorrectSetup,
+    verifyBracketsWellFormed,
   }
 }

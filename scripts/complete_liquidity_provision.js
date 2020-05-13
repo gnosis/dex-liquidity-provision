@@ -7,7 +7,6 @@ const {
   buildTransferApproveDepositFromOrders,
   buildOrders,
   checkSufficiencyOfBalance,
-  isOnlySafeOwner,
   hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
@@ -15,6 +14,7 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
+const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 
 const argv = require("./utils/default_yargs")
   .option("masterSafe", {
@@ -102,10 +102,10 @@ module.exports = async (callback) => {
 
     console.log("==> Performing safety checks")
     if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${baseToken.address}.`)
+      callback(`Error: MasterSafe ${masterSafe.address} has insufficient balance for base token ${baseToken.address}`)
     }
     if (!(await checkSufficiencyOfBalance(quoteToken, masterSafe.address, depositQuoteToken))) {
-      callback(`Error: MasterSafe has insufficient balance for the token ${quoteToken.address}.`)
+      callback(`Error: MasterSafe ${masterSafe.address} has insufficient balance for quote token ${quoteToken.address}`)
     }
     // check price against dex.ag's API
     const priceCheck = await isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
@@ -128,14 +128,7 @@ module.exports = async (callback) => {
     if (argv.brackets) {
       console.log("==> Skipping safe deployment and using brackets safeOwners")
       bracketAddresses = argv.brackets
-      // Ensure that safes are all owned solely by masterSafe
-      await Promise.all(
-        bracketAddresses.map(async (safeAddr) => {
-          if (!(await isOnlySafeOwner(masterSafe.address, safeAddr))) {
-            callback(`Error: Bracket ${safeAddr} is not owned (or at least not solely) by master safe ${masterSafe.address}`)
-          }
-        })
-      )
+      await verifyBracketsWellFormed(masterSafe.address, bracketAddresses, null, null, true)
       // Detect if provided brackets have existing orders.
       const existingOrders = await Promise.all(
         bracketAddresses.map(async (safeAddr) => {
@@ -153,7 +146,7 @@ module.exports = async (callback) => {
       assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
       console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
       bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
-      console.log("List of bracket traders in one line:", bracketAddresses.join())
+      console.log("List of deployed brackets:", bracketAddresses.join())
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.
       await sleep(3000)
