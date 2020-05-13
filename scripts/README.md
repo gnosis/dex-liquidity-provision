@@ -83,7 +83,7 @@ Requires that Master and bracket-traders are already deployed.
 An example of the usage would be:
 
 ```js
-npx truffle exec scripts/bracket_orders.js --baseTokenId=1 --quoteTokenID=7 --currentPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
+npx truffle exec scripts/bracket_orders.js --baseTokenId=1 --quoteTokenID=7 --currentPrice=270 --lowestLimit=240 --highestLimit=300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
 ```
 
 ### Transfer-Approve-Deposit
