@@ -88,7 +88,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     log("- Verify unchanged fallback handler")
     const defaultFallbackHandler = getFallbackHandler(GnosisSafe.address)
     await Promise.all(
-      bracketAddresses.concat(masterAddress).map(async (safeAddress) => {
+      //Todo: additionally the fallback handler of the masterAddress could be checked .concat(masterAddress)
+      bracketAddresses.map(async (safeAddress) => {
         assert.strictEqual(
           await getFallbackHandler(safeAddress),
           await defaultFallbackHandler,
