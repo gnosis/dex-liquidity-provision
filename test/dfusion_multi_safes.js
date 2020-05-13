@@ -524,6 +524,39 @@ contract("GnosisSafe", function (accounts) {
         assert.equal(buyOrder.validFrom, currentBatch)
       }
     })
+    it("Places bracket orders and checks explicitly the expiry", async () => {
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 6)
+      const baseToken = 0 // ETH
+      const quoteToken = 1 // DAI
+      const lowestLimit = 90
+      const highestLimit = 120
+      await prepareTokenRegistration(accounts[0], exchange)
+
+      await exchange.addToken(testToken.address, { from: accounts[0] })
+
+      const customExpiry = (await exchange.getCurrentBatchId.call()).toNumber() + 50
+      const transaction = await buildOrders(
+        masterSafe.address,
+        bracketAddresses,
+        baseToken,
+        quoteToken,
+        lowestLimit,
+        highestLimit,
+        false,
+        customExpiry
+      )
+      await execTransaction(masterSafe, safeOwner.privateKey, transaction)
+
+      // Correctness assertions
+      for (const bracketAddress of bracketAddresses) {
+        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        assert.equal(auctionElements.length, 2)
+        const [buyOrder, sellOrder] = auctionElements
+        assert.equal(buyOrder.validUntil, customExpiry, `Got ${buyOrder}`)
+        assert.equal(sellOrder.validUntil, customExpiry, `Got ${sellOrder}`)
+      }
+    })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketSafes = await deployFleetOfSafes(masterSafe.address, 6)
