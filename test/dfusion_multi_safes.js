@@ -554,8 +554,8 @@ contract("GnosisSafe", function (accounts) {
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
 
-        assert.equal(buyOrder.validUntil, customExpiry, `Got ${sellOrder}`)
-        assert.equal(sellOrder.validUntil, customExpiry, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil.toNumber(), customExpiry, `Got ${buyOrder}`)
+        assert.equal(sellOrder.validUntil.toNumber(), customExpiry, `Got ${sellOrder}`)
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks price for p< 1", async () => {
