@@ -4,12 +4,12 @@ const Contract = require("@truffle/contract")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
+// const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
 const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
-const { execTransaction, waitForNSeconds, ADDRESS_0 } = require("../scripts/utils/internals")(web3, artifacts)
+const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
   getAllowances,
   assertNoAllowances,
@@ -132,7 +132,7 @@ contract("Verification checks", function (accounts) {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const notOwnedBracket = await deployFleetOfSafes(notMasterSafeAddress, 1)
       await assert.rejects(verifyCorrectSetup(notOwnedBracket, masterSafe.address), {
-        message: "Owners are not set correctly",
+        message: `Error: Bracket ${notOwnedBracket} is not owned (or at least not solely) by master safe ${masterSafe.address}`,
       })
     })
   })
@@ -166,17 +166,18 @@ contract("Verification checks", function (accounts) {
       })
     })
   })
-  describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy", async () => {
-    it("throws if bytecode differs", async () => {
-      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
-      const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
-      const evilSafe = await GnosisSafe.at(evilProxy.address)
-      await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
-      await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
-        message: "Bad bytecode for bracket " + evilProxy.address,
-      })
-    })
-  })
+  // describe("Brackets' deployed bytecode coincides with that of a Gnosis Safe proxy", async () => {
+  //   it("throws if bytecode differs", async () => {
+  //     const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
+  //     const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
+  //     const evilSafe = await GnosisSafe.at(evilProxy.address)
+  //     await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
+  //     await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
+  //       message: `Bytecode at bracket ${evilProxy.address} does not agree with that GnosisSafeProxy v1.1.1`
+  //     })
+  //     // TODO - this test only checks against bad proxy, but not agains bad safe.
+  //   })
+  // })
   describe("No modules are installed", async () => {
     it("throws if module is present in master", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
