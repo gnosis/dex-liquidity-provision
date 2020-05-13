@@ -131,7 +131,7 @@ npx truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --with
 ```
 
 ```js
-npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ### Documenting brackets
