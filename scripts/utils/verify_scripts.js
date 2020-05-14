@@ -117,7 +117,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const ordersObjects = await Promise.all(
       bracketTraderAddresses.map(async (bracketAddress) =>
-        exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+        exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
       )
     )
     const relevantOrders = [].concat(...ordersObjects)
