@@ -1,4 +1,4 @@
-const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
+const migrateBatchExchange = require("@gnosis.pm/dex-contracts/migration/PoC_dfusion")
 const GnosisSafe = artifacts.require("./GnosisSafe.sol")
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
