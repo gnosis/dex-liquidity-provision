@@ -4,8 +4,8 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { CALL } = require("./utils/internals")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("./utils/printing_tools")
 const { promptUser } = require("./utils/user_interface_helpers")
-
-const argv = require("./utils/default_yargs")
+const { default_yargs } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("masterSafe", {
     type: "string",
     describe: "Address of the Gnosis Safe that holds the ETH to be wrapped",

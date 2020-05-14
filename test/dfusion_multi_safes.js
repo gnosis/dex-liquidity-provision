@@ -582,7 +582,7 @@ contract("GnosisSafe", function (accounts) {
 
       // Correctness assertions
       for (const bracketAddress of bracketAddresses) {
-        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
 
@@ -592,7 +592,7 @@ contract("GnosisSafe", function (accounts) {
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${buyOrder}`)
         assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
         assert.equal(buyOrder.validFrom, currentBatch)
         assert.equal(buyOrder.validFrom, currentBatch)

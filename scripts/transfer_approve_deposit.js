@@ -3,8 +3,8 @@ const fs = require("fs").promises
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { buildTransferApproveDepositFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
-
-const argv = require("./utils/default_yargs")
+const { default_yargs } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning the brackets",

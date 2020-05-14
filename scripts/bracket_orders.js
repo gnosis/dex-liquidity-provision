@@ -6,7 +6,8 @@ const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils.
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
 
-const argv = require("./utils/default_yargs")
+const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("baseTokenId", {
     type: "int",
     describe: "Base Token whose target price is to be specified (i.e. ETH)",
@@ -47,7 +48,8 @@ const argv = require("./utils/default_yargs")
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
     default: 2 ** 32 - 1,
-  }).argv
+  })
+  .check(checkBracketsForDuplicate).argv
 
 module.exports = async (callback) => {
   try {

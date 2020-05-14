@@ -1,6 +1,7 @@
 const { deployFleetOfSafes } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("./utils/default_yargs")
+const { default_yargs } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("masterSafe", {
     type: "int",
     describe: "Address of Gnosis Safe that is going to own the new fleet",
