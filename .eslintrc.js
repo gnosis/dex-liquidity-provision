@@ -7,19 +7,16 @@ module.exports = {
   },
   extends: "eslint:recommended",
   parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 2018,
+    ecmaVersion: 2020,
   },
   plugins: ["react"],
   rules: {
     indent: ["error", 2, { SwitchCase: 1 }],
     "linebreak-style": ["error", "unix"],
+    "no-var": ["error"],
+    "prefer-const": ["error"],
     quotes: ["error", "double", { avoidEscape: true }],
     semi: ["error", "never"],
-    "prefer-const": ["error"],
-    "no-var": ["error"],
   },
   globals: {
     artifacts: false,
