@@ -9,3 +9,6 @@ automaticallyGeneratedDeposits.json
 package-lock.json
 
 bracket-addresses.csv
+
+# Do not track local env vars (PK, MASTER_SAFE, etc...)
+*.env
