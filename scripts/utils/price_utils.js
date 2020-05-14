@@ -23,7 +23,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const baseTokenId = await exchange.tokenAddressToIdMap.call(baseToken.address)
     const quoteTokenId = await exchange.tokenAddressToIdMap.call(quoteToken.address)
 
-    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+    const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
     const bracketOrders = auctionElements.filter((order) => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 
