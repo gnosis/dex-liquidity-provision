@@ -121,7 +121,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
       )
     )
-    const relevantOrders = [].concat(...ordersObjects)
+    const relevantOrders = [].concat(...ordersObjects).filter(x => !!x)
 
     const tradedTokenIds = new Set()
     for (const order of relevantOrders) {
