@@ -37,7 +37,7 @@ const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, 
 
   // Correctness assertions
   for (const [index, bracketAddress] of bracketSafes.entries()) {
-    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+    const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
     assert.equal(auctionElements.length, 2)
     const [buyOrder, sellOrder] = auctionElements
     const decimalsOfSellToken = await (await ERC20.at(await exchange.tokenIdToAddressMap.call(buyOrder.sellToken))).decimals()
@@ -508,7 +508,7 @@ contract("GnosisSafe", function (accounts) {
 
       // Correctness assertions
       for (const bracketAddress of bracketAddresses) {
-        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
 
@@ -550,7 +550,7 @@ contract("GnosisSafe", function (accounts) {
 
       // Correctness assertions
       for (const bracketAddress of bracketAddresses) {
-        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
         assert.equal(buyOrder.validUntil, customExpiry, `Got ${buyOrder}`)
@@ -574,7 +574,7 @@ contract("GnosisSafe", function (accounts) {
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
-        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         const [buyOrder, sellOrder] = auctionElements
         assert(buyOrder.priceNumerator.eq(max128))
         assert(sellOrder.priceDenominator.eq(max128))
@@ -596,7 +596,7 @@ contract("GnosisSafe", function (accounts) {
       await checkPricesOfBracketStrategy(lowestLimit, highestLimit, bracketSafes, exchange)
       // Check that unlimited orders are being used
       for (const bracketAddress of bracketSafes) {
-        const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders(bracketAddress))
+        const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
         assert(buyOrder.priceDenominator.eq(max128))

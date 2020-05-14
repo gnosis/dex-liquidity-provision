@@ -1,6 +1,6 @@
 module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
-  const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts/src")
+  const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
 
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
