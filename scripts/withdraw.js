@@ -2,8 +2,8 @@ const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { getSafe } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const prepareWithdraw = require("./wrapper/withdraw")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
-
-const argv = require("./utils/default_yargs")
+const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("masterSafe", {
     type: "string",
     describe: "address of Gnosis Safe owning bracketSafes",
@@ -49,7 +49,8 @@ const argv = require("./utils/default_yargs")
     type: "boolean",
     default: false,
     describe: "transfer back funds from brackets to master. Funds must be present in the bracket wallets",
-  }).argv
+  })
+  .check(checkBracketsForDuplicate).argv
 
 module.exports = async (callback) => {
   try {

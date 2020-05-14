@@ -1,4 +1,4 @@
-module.exports = require("yargs")
+const default_yargs = require("yargs")
   .version(false)
   .strict()
   .help("help")
@@ -10,3 +10,18 @@ module.exports = require("yargs")
     describe: "network where the script is executed",
     choices: ["rinkeby", "mainnet"],
   })
+
+const checkNoDuplicate = function (array) {
+  return new Set(array).size !== array.length
+}
+
+function checkBracketsForDuplicate(argv) {
+  if (argv.brackets && checkNoDuplicate(argv.brackets))
+    throw new Error("the parameter --brackets is not supposed to have duplicated entries")
+  return true
+}
+
+module.exports = {
+  default_yargs,
+  checkBracketsForDuplicate,
+}

@@ -4,8 +4,8 @@ const { fetchTokenInfoFromExchange, getExchange, getDeployedBrackets } = require
   web3,
   artifacts
 )
-
-const argv = require("./utils/default_yargs")
+const { default_yargs } = require("./utils/default_yargs")
+const argv = default_yargs
   .option("masterSafe", {
     type: "string",
     describe: "Address of Gnosis Safe owning every bracket",
