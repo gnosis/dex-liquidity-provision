@@ -17,6 +17,7 @@ module.exports = async (callback) => {
   try {
     console.log("Master Safe:", argv.masterSafe)
     console.log(`Deploying a fleet of Safes of size ${argv.fleetSize}`)
+    console.log("Using account:", (await web3.eth.getAccounts())[0])
     const fleet = await deployFleetOfSafes(argv.masterSafe, argv.fleetSize)
     console.log(" Addresses", fleet.join())
     callback()

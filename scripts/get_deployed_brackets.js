@@ -36,7 +36,7 @@ module.exports = async (callback) => {
     const exchange = await getExchange(web3)
     const records = await Promise.all(
       bracketAddresses.map(async (bracketAddress) => {
-        const orders = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+        const orders = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
         let tradingPair
         if (orders.length > 0) {
           const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [orders[0].buyToken, orders[0].sellToken])

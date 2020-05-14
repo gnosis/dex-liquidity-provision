@@ -6,11 +6,13 @@ Use at your own risk!
 
 ### Prerequisites
 
-Contracts must be compiled and, if working on any non-local network, deployment addresses must be injected into built contracts.
+The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node](https://nodejs.org/en/).
+
+The Gnosis Protocol contracts must be compiled and the deployment addresses must be injected into built contract-artifacts.
 To do so, run:
 
 ```
-npx truffle compile
+yarn compile
 yarn run networks-inject
 ```
 
@@ -70,7 +72,7 @@ Requires that Master Safe has already been deployed.
 An example of the usage would be:
 
 ```js
-truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --fleetSize=20 --network=$NETWORK_NAME
+npx truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --fleetSize=20 --network=$NETWORK_NAME
 ```
 
 ### Place Orders
@@ -80,7 +82,7 @@ Requires that Master and bracket-traders are already deployed.
 An example of the usage would be:
 
 ```js
-truffle exec scripts/bracket_orders.js --baseTokenId=1 --quoteTokenID=7 --currentPrice 270 --lowestLimit 240 --highestLimit 300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
+npx truffle exec scripts/bracket_orders.js --baseTokenId=1 --quoteTokenID=7 --currentPrice=270 --lowestLimit=240 --highestLimit=300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
 ```
 
 ### Transfer-Approve-Deposit
@@ -90,7 +92,7 @@ For this script, a deposit file like the one available in `./examples/exampleDep
 Then the script can be used like that:
 
 ```js
-truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE --depositFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE --depositFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ### Withdrawing
@@ -114,28 +116,28 @@ This is achieved by adding the flag `--allTokens` to the withraw command. This i
 Withdrawing is a two-step process: first, withdrawals must be requested on the exchange; then the withdrawals can be executed, and at the same time the funds can be sent back to the master Safe.
 
 ```js
-truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ```js
-truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawals="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 The latter instruction can be split into two independent units, if needed: withdrawing from the exchange to the bracket and transferring funds from the bracket to the master Safe.
 
 ```js
-truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ```js
-truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalsFromDepositFile="./data/depositList.json" --network=$NETWORK_NAME
+npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
 ### Documenting brackets
 
 In order to document the brackets deployed form a specific MASTER_SAFE, one can run the following script:
 
-```
+```js
 npx truffle exec scripts/get_deployed_brackets.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
 ```
 
