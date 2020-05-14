@@ -25,7 +25,7 @@ const argv = require("./utils/default_yargs")
   .option("fleetSize", {
     type: "int",
     default: 20,
-    describe: "Even number of brackets to be deployed",
+    describe: "Number of brackets to be deployed",
   })
   .option("brackets", {
     type: "string",
@@ -98,7 +98,6 @@ module.exports = async (callback) => {
     if (argv.brackets) {
       assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
     }
-    assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("==> Performing safety checks")
     if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
