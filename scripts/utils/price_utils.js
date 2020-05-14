@@ -4,7 +4,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
 
   const exchangeUtils = require("@gnosis.pm/dex-contracts")
-  const { Fraction } = require("@gnosis.pm/dex-contracts/src")
+  const { Fraction } = require("@gnosis.pm/dex-contracts")
 
   const max128 = new BN(2).pow(new BN(128)).subn(1)
 
@@ -23,7 +23,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const baseTokenId = await exchange.tokenAddressToIdMap.call(baseToken.address)
     const quoteTokenId = await exchange.tokenAddressToIdMap.call(quoteToken.address)
 
-    const auctionElements = exchangeUtils.decodeOrdersBN(await exchange.getEncodedUserOrders.call(bracketAddress))
+    const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
     const bracketOrders = auctionElements.filter((order) => order.user.toLowerCase() === bracketAddress.toLowerCase())
     assert.equal(bracketOrders.length, 2)
 

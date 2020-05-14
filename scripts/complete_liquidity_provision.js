@@ -25,7 +25,7 @@ const argv = require("./utils/default_yargs")
   .option("fleetSize", {
     type: "int",
     default: 20,
-    describe: "Even number of brackets to be deployed",
+    describe: "Number of brackets to be deployed",
   })
   .option("brackets", {
     type: "string",
@@ -98,7 +98,6 @@ module.exports = async (callback) => {
     if (argv.brackets) {
       assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
     }
-    assert(argv.fleetSize % 2 === 0, "Fleet size must be a even number for easy deployment script")
 
     console.log("==> Performing safety checks")
     if (!(await checkSufficiencyOfBalance(baseToken, masterSafe.address, depositBaseToken))) {
@@ -175,18 +174,26 @@ module.exports = async (callback) => {
       true
     )
 
-    console.log(
-      "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
-    )
+    if (!argv.verify) {
+      console.log(
+        "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
+      )
+    } else {
+      console.log("==> Order placing transaction")
+    }
     let nonce = argv.nonce
     if (nonce === undefined) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
     await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
-    console.log(
-      "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
-    )
+    if (!argv.verify) {
+      console.log(
+        "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
+      )
+    } else {
+      console.log("==> Funds transferring transaction")
+    }
     await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
 
     if (!argv.verify) {
