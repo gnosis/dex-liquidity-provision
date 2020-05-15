@@ -80,11 +80,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
   }
 
-  function signHashWithPrivateKey(hash, privateKey) {
-    const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
-    const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
-    return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
-  }
+  // function signHashWithPrivateKey(hash, privateKey) {
+  //   const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
+  //   const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
+  //   return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
+  // }
 
   const encodeMultiSend = function (multiSend, txs) {
     return multiSend.contract.methods
@@ -188,7 +188,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     getFallbackHandler,
     execTransaction,
     encodeMultiSend,
-    signHashWithPrivateKey,
+    // signHashWithPrivateKey,
     buildBundledTransaction,
     buildExecTransaction,
     CALL,

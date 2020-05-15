@@ -1,16 +1,11 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
-  const assert = require("assert")
   const axios = require("axios")
-
   const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
-  const { signHashWithPrivateKey } = require("../utils/internals")(web3, artifacts)
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
     mainnet: "",
   }
-
-  const withHexPrefix = (string) => (string.startsWith("0x") ? string : `0x${string}`)
 
   const estimateGas = async function (masterSafe, transaction) {
     const estimateCall = masterSafe.contract.methods
@@ -59,11 +54,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       return
     }
 
-    assert(process.env.PK != null, "This script requires a private key be explicitly provided. Please export PK")
-    const privateKey = withHexPrefix(process.env.PK)
-    const account = web3.eth.accounts.privateKeyToAccount(privateKey)
-    console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${account.address}`)
-    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
+    const account = web3.eth.getAccounts()[0]
+    console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${account}`)
+    const sigs = web3.eth.sign(transactionHash, account)
 
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
     const postData = {
