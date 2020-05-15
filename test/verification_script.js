@@ -19,6 +19,7 @@ const {
   maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { buildExecTransaction, CALL } = require("../scripts/utils/internals")(web3, artifacts)
+const { ZERO_ADDRESS } = require("../scripts/utils/constants")
 
 contract("verification checks - for allowances", async (accounts) => {
   describe("allowances", async () => {
@@ -171,7 +172,7 @@ contract("Verification checks", function (accounts) {
   //     const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
   //     const evilProxy = await EvilGnosisSafeProxy.new(GnosisSafe.address)
   //     const evilSafe = await GnosisSafe.at(evilProxy.address)
-  //     await evilSafe.setup([masterSafe.address], "1", ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, "0", ADDRESS_0)
+  //     await evilSafe.setup([masterSafe.address], "1", ZERO_ADDRESS, "0x", ZERO_ADDRESS, ZERO_ADDRESS, "0", ZERO_ADDRESS)
   //     await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
   //       message: `Bytecode at bracket ${evilProxy.address} does not agree with that GnosisSafeProxy v1.1.1`
   //     })
