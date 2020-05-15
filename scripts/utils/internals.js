@@ -65,7 +65,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
-    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
+    const account = await web3.eth.getAccounts()[0]
+    const sigs = await web3.eth.sign(transactionHash, account)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
@@ -79,13 +80,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       sigs
     )
   }
-
-  // function signHashWithPrivateKey(hash, privateKey) {
-  //   const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
-  //   const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
-  //   return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
-  // }
-
+  
   const encodeMultiSend = function (multiSend, txs) {
     return multiSend.contract.methods
       .multiSend(
@@ -188,7 +183,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     getFallbackHandler,
     execTransaction,
     encodeMultiSend,
-    // signHashWithPrivateKey,
     buildBundledTransaction,
     buildExecTransaction,
     CALL,
