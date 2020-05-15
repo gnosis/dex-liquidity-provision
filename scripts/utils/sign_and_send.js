@@ -71,7 +71,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       refundReceiver: ADDRESS_0,
       nonce: nonce,
       contractTransactionHash: transactionHash,
-      sender: web3.utils.toChecksumAddress(account.address),
+      sender: web3.utils.toChecksumAddress(signer.address),
       signature: sigs,
     }
     await axios.post(endpoint, postData).catch(function (error) {

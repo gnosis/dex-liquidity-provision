@@ -76,7 +76,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       0,
       ADDRESS_0,
       ADDRESS_0,
-      sigs
+      [sigs]
     )
   }
 
