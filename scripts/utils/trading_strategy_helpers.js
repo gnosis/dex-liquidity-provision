@@ -8,7 +8,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
-  const { ZERO_ADDRESS } = require("./constants")
 
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
