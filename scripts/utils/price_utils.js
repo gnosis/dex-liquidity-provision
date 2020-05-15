@@ -192,6 +192,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       globalPriceStorage
     )
 
+    if (isNaN(currentMarketPrice)) {
+      return true
+    }
+
     // checks whether the order amount is negligible
     if ((await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)).lt(new BN("1"))) {
       return true
