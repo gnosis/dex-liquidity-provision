@@ -80,7 +80,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       sigs
     )
   }
-  
+
   const encodeMultiSend = function (multiSend, txs) {
     return multiSend.contract.methods
       .multiSend(
