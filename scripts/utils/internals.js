@@ -51,7 +51,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     await send("evm_mine", [], web3)
   }
 
-  const execTransaction = async function (safe, privateKey, transaction) {
+  const execTransaction = async function (safe, signer, transaction) {
     const nonce = await safe.nonce()
     const transactionHash = await safe.getTransactionHash(
       transaction.to,
@@ -65,8 +65,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ADDRESS_0,
       nonce
     )
-    const account = await web3.eth.getAccounts()[0]
-    const sigs = await web3.eth.sign(transactionHash, account)
+    const sigs = await web3.eth.sign(transactionHash, signer)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
