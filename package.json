@@ -33,7 +33,7 @@
     "eslint-plugin-react": "^7.20.0",
     "ganache-cli": "6.9.1",
     "prettier": "^2.0.5",
-    "sol-merger": "^2.0.1",
+    "sol-merger": "^3.0.1",
     "tmp-promise": "^3.0.2",
     "truffle-plugin-verify": "^0.3.10"
   },
