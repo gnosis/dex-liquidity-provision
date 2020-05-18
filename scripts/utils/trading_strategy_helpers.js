@@ -18,7 +18,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
 
-  const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
   const maxU32 = 2 ** 32 - 1
   const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
@@ -665,6 +664,5 @@ withdrawal of the desired funds
     hasExistingOrders,
     maxU32,
     maxUINT,
-    ADDRESS_0,
   }
 }

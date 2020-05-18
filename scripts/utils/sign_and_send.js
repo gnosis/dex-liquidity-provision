@@ -2,8 +2,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const axios = require("axios")
 
-  const { ADDRESS_0 } = require("./trading_strategy_helpers")(web3, artifacts)
   const { signHashWithPrivateKey } = require("../utils/internals")(web3, artifacts)
+  const { ZERO_ADDRESS } = require("./constants")
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
@@ -49,8 +49,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       safeTxGas,
       baseGas,
       0,
-      ADDRESS_0,
-      ADDRESS_0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
       nonce
     )
 
@@ -74,8 +74,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       safeTxGas: safeTxGas,
       baseGas: baseGas,
       gasPrice: 0, // important that this is zero
-      gasToken: ADDRESS_0,
-      refundReceiver: ADDRESS_0,
+      gasToken: ZERO_ADDRESS,
+      refundReceiver: ZERO_ADDRESS,
       nonce: nonce,
       contractTransactionHash: transactionHash,
       sender: web3.utils.toChecksumAddress(account.address),
