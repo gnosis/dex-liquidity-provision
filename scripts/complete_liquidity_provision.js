@@ -23,7 +23,7 @@ const argv = default_yargs
     describe: "Address of Gnosis Safe owning every bracket",
     demandOption: true,
   })
-  .option("fleetSize", {
+  .option("numBrackets", {
     type: "int",
     default: 20,
     describe: "Number of brackets to be deployed",
@@ -98,7 +98,7 @@ module.exports = async (callback) => {
     const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
 
     if (argv.brackets) {
-      assert(argv.fleetSize === argv.brackets.length, "Please ensure fleetSize equals number of brackets")
+      assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
     }
 
     console.log("==> Performing safety checks")
@@ -121,8 +121,8 @@ module.exports = async (callback) => {
         callback("Error: Bound checks did not pass")
       }
     }
-    if (argv.fleetSize > 23) {
-      callback("Error: Choose a smaller fleetSize, otherwise your payload will be to big for Infura nodes")
+    if (argv.numBrackets > 23) {
+      callback("Error: Choose a smaller numBrackets, otherwise your payload will be to big for Infura nodes")
     }
 
     let bracketAddresses
@@ -145,8 +145,8 @@ module.exports = async (callback) => {
       }
     } else {
       assert(!argv.verify, "Trading Brackets need to be provided via --brackets when verifying a transaction")
-      console.log(`==> Deploying ${argv.fleetSize} trading brackets`)
-      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.fleetSize)
+      console.log(`==> Deploying ${argv.numBrackets} trading brackets`)
+      bracketAddresses = await deployFleetOfSafes(masterSafe.address, argv.numBrackets)
       console.log("List of deployed brackets:", bracketAddresses.join())
       // Sleeping for 3 seconds to make sure Infura nodes have processed
       // all newly deployed contracts so they can be awaited.

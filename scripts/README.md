@@ -49,7 +49,7 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 Here is an example script invocation:
 
 ```js
-npx truffle exec scripts/complete_liquidity_provision.js --baseTokenId=1 --quoteTokenId=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --depositBaseToken=0.1 --depositQuoteToken=10 --fleetSize=10 --network=$NETWORK_NAME
+npx truffle exec scripts/complete_liquidity_provision.js --baseTokenId=1 --quoteTokenId=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --depositBaseToken=0.1 --depositQuoteToken=10 --numBrackets=10 --network=$NETWORK_NAME
 ```
 
 The prices must be specified in terms of 1 base token = x quote tokens.
@@ -72,7 +72,7 @@ Requires that Master Safe has already been deployed.
 An example of the usage would be:
 
 ```js
-npx truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --fleetSize=20 --network=$NETWORK_NAME
+npx truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --numSafes=20 --network=$NETWORK_NAME
 ```
 
 ### Place Orders

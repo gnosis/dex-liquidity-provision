@@ -191,7 +191,7 @@ contract("GnosisSafe", function (accounts) {
     })
     const testAutomaticDeposits = async function (tradeInfo, expectedDistribution) {
       const {
-        fleetSize,
+        numBrackets,
         lowestLimit,
         highestLimit,
         currentPrice,
@@ -205,12 +205,12 @@ contract("GnosisSafe", function (accounts) {
       const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
       assert.equal(
         bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
-        fleetSize,
+        numBrackets,
         "Malformed test case, sum of expected distribution should be equal to the fleet size"
       )
 
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
-      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, numBrackets)
 
       //Create  quoteToken and add it to the exchange
       const { id: quoteTokenId, token: quoteToken } = await addCustomMintableTokenToExchange(
@@ -273,7 +273,7 @@ contract("GnosisSafe", function (accounts) {
     }
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 110,
@@ -288,9 +288,9 @@ contract("GnosisSafe", function (accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, fleetSize = 1", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 1", async () => {
       const tradeInfo = {
-        fleetSize: 1,
+        numBrackets: 1,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 110,
@@ -305,9 +305,9 @@ contract("GnosisSafe", function (accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, fleetSize = 19", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 19", async () => {
       const tradeInfo = {
-        fleetSize: 19,
+        numBrackets: 19,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 120,
@@ -324,7 +324,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1 and wide brackets", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 25,
         highestLimit: 400,
         currentPrice: 100,
@@ -341,7 +341,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.09,
         highestLimit: 0.12,
         currentPrice: 0.105,
@@ -358,7 +358,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
         currentPrice: 0.9,
@@ -375,7 +375,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
         currentPrice: 0.7,
@@ -419,7 +419,7 @@ contract("GnosisSafe", function (accounts) {
       ]
       it("when p is in the middle of the brackets", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 121,
           currentPrice: 110,
@@ -435,7 +435,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is in the middle of the brackets and the steps are wide", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 25,
           highestLimit: 400,
           currentPrice: 100,
@@ -451,7 +451,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is not in the middle but still inside the brackets", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 8,
+          numBrackets: 8,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 110,
@@ -467,7 +467,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is outside the brackets and only quote token is deposited", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 150,
@@ -483,7 +483,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is outside the brackets and only base token is deposited", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 80,
@@ -499,7 +499,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("with extreme prices and decimals", async () => {
         const tradeInfo = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 5e194,
           highestLimit: 20e194,
           currentPrice: 10e194,
@@ -558,7 +558,7 @@ contract("GnosisSafe", function (accounts) {
         assert.equal(buyOrder.validFrom, currentBatch)
       }
     })
-    it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity, fleetSize = 1", async () => {
+    it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity, numBrackets = 1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 1)
       const baseToken = 0 // ETH
