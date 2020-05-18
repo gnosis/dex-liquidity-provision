@@ -443,14 +443,14 @@ withdrawal of or to withdraw the desired funds
     depositBaseToken,
     storeDepositsAsFile = false
   ) {
-    const fleetSize = bracketAddresses.length
+    const numBrackets = bracketAddresses.length
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     // bracketIndexAtCurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
     // in case the currentPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
     // second order will be funded.
     let bracketIndexAtCurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
-    if (bracketIndexAtCurrentPrice > fleetSize) {
-      bracketIndexAtCurrentPrice = fleetSize
+    if (bracketIndexAtCurrentPrice > numBrackets) {
+      bracketIndexAtCurrentPrice = numBrackets
     }
     if (bracketIndexAtCurrentPrice < 0) {
       bracketIndexAtCurrentPrice = 0
@@ -466,9 +466,9 @@ withdrawal of or to withdraw the desired funds
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSize - bracketIndexAtCurrentPrice).keys()) {
+    for (const i of Array(numBrackets - bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: depositBaseToken.div(new BN(fleetSize - bracketIndexAtCurrentPrice)).toString(),
+        amount: depositBaseToken.div(new BN(numBrackets - bracketIndexAtCurrentPrice)).toString(),
         tokenAddress: baseTokenAddress,
         bracketAddress: bracketAddresses[bracketIndexAtCurrentPrice + i],
       }
