@@ -5,7 +5,7 @@ const ZERO_ADDRESS = "0x" + "0".repeat(40)
 // We chose the maximum admissible value (2**32-1) minus one in order to distinguish orders from "non-expiring" orders of the web interface
 const DEFAULT_ORDER_EXPIRY = 2 ** 32 - 2
 
-const DEFAULT_NUMBER_OF_SAFES = 20
+const DEFAULT_NUM_SAFES = 20
 
 // numbers identifying which operation is to be executed by a Gnosis Safe when calling execTransaction
 const CALL = 0
@@ -26,7 +26,7 @@ const FLOAT_TOLERANCE = TWO.pow(new BN(52))
 module.exports = {
   ZERO_ADDRESS,
   DEFAULT_ORDER_EXPIRY,
-  DEFAULT_NUMBER_OF_SAFES,
+  DEFAULT_NUM_SAFES,
   CALL,
   DELEGATECALL,
   ZERO,
