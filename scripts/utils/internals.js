@@ -1,7 +1,7 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const ethUtil = require("ethereumjs-util")
 
-  const { ZERO_ADDRESS } = require("./constants")
+  const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
 
   const IProxy = artifacts.require("IProxy")
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
@@ -9,9 +9,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
-
-  const CALL = 0
-  const DELEGATECALL = 1
 
   /**
    * @typedef Transaction
