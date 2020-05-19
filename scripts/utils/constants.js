@@ -2,7 +2,7 @@ const BN = require("bn.js")
 
 const ZERO_ADDRESS = "0x" + "0".repeat(40)
 
-// We chose the maximum admissible value minus one in order to distinguish orders from "non-expiring" orders of the web interface
+// We chose the maximum admissible value (2**32-1) minus one in order to distinguish orders from "non-expiring" orders of the web interface
 const DEFAULT_ORDER_EXPIRY = 2 ** 32 - 2
 
 const DEFAULT_NUMBER_OF_SAFES = 20
