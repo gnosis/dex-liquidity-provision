@@ -15,6 +15,12 @@ const checkNoDuplicate = function (array) {
   return new Set(array).size !== array.length
 }
 
+/**
+ * Ensure brackets (as an array) contains only unique elements.
+ *
+ * @param {any[]} argv script arguments.
+ * @returns {boolean} true always.
+ */
 function checkBracketsForDuplicate(argv) {
   if (argv.brackets && checkNoDuplicate(argv.brackets))
     throw new Error("the parameter --brackets is not supposed to have duplicated entries")

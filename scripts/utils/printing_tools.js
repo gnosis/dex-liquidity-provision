@@ -5,9 +5,10 @@ const { ZERO, BN256, MAXUINT256, TEN } = require("./constants")
 /**
  * A generalized version of "toWei" for tokens with an arbitrary amount of decimals.
  * If the decimal representation has more decimals than the maximum amount possible, then the extra decimals are truncated.
+ *
  * @param {string} amount User-friendly representation for the amount of some ERC20 token
  * @param {(number|string|BN)} decimals Maximum number of decimals of the token
- * @return {BN} number of token units corresponding to the input amount
+ * @returns {BN} number of token units corresponding to the input amount
  */
 const toErc20Units = function (amount, decimals) {
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion
@@ -28,9 +29,10 @@ const toErc20Units = function (amount, decimals) {
 
 /**
  * A generalized version of "fromWei" for tokens with an arbitrary amount of decimals.
+ *
  * @param {(string|BN)} amount Decimal representation of the (integer) number of token units
  * @param {(number|string|BN)} decimals Maximum number of decimals of the token
- * @return {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
+ * @returns {string} Dot-separated decimal representation of the amount of token corresponding to the input unit amount
  */
 const fromErc20Units = function (amount, decimals) {
   amount = new BN(amount) // in case amount were a string, it converts it to BN, otherwise no effects
@@ -50,8 +52,9 @@ const fromErc20Units = function (amount, decimals) {
 
 /**
  * Prints a shortened version of an address.
+ *
  * @param {Address} address Ethereum address to shorten (e.g. 0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1)
- * @return {string} shortened address (e.g. 0x90F8...C1)
+ * @returns {string} shortened address (e.g. 0x90F8...C1)
  */
 const shortenedAddress = function (address) {
   return address.slice(0, 6) + "..." + address.slice(-2)

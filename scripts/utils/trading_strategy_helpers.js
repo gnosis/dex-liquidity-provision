@@ -22,6 +22,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
    * concatenated with the rightmost 20 bytes of the Keccak-256 hash (big endian) of the ECDSA public key
    * (cf. https://en.wikipedia.org/wiki/Ethereum#Addresses)
+   *
    * @typedef Address
    */
 
@@ -30,6 +31,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * to EVM bytecode and deployed to the Ethereum blockchain for execution.
    * This particular type is that of a JS object representing the Smart contract ABI.
    * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
+   *
    * @typedef SmartContract
    */
 
@@ -40,9 +42,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *   tokenAddress: 0x0000000000000000000000000000000000000000,
    *   bracketAddress: 0x0000000000000000000000000000000000000001
    * }
+   *
    * @typedef Deposit
    * @type {object}
-   * @property {integer} amount integer denoting amount to be deposited
+   * @property {number} amount integer denoting amount to be deposited
    * @property {Address} tokenAddress {@link Address} of token to be deposited
    * @property {Address} bracketAddress address of bracket into which to deposit
    */
@@ -56,7 +59,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *   tokenAddress: "0x0000000000000000000000000000000000000000",
    * }
    * @type {object}
-   * @property {integer} amount Integer denoting amount to be deposited
+   * @property {number} amount Integer denoting amount to be deposited
    * @property {Address} bracketAddress Ethereum address of the bracket from which to withdraw
    * @property {Address} tokenAddresses List of tokens that the traded wishes to withdraw
    */
@@ -79,6 +82,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Returns an instance of the exchange contract
+   *
+   * @param {object} web3 an instance of Web3
+   * @returns {SmartContract} An instance of BatchExchange
    */
   const getExchange = function (web3) {
     BatchExchange.setProvider(web3.currentProvider)
@@ -87,7 +93,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Returns an instance of the safe contract at the given address
+   *
    * @param {Address} safeAddress address of the safe of which to create an instance
+   * @returns {SmartContract} Gnosis Safe Contract
    */
   const getSafe = function (safeAddress) {
     return GnosisSafe.at(safeAddress)
@@ -95,9 +103,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Checks that the address used as the first argument is the only owner of the Safe included as the second argument
+   *
    * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
    * @param {SmartContract|Address} owned Safe that might be owned by master
-   * @return {bool} whether owned is indeed owned only by master
+   * @returns {boolean} whether owned is indeed owned only by master
    */
   const isOnlySafeOwner = async function (masterAddress, owned) {
     const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
@@ -107,9 +116,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Checks that a bracket has not yet made any orders
-   * @param {Address} bracketAddress for trader account
+   *
+   * @param {Address} bracket for trader account
    * @param {SmartContract} exchange Batch exchange for which we are checking for orders
-   * @return {bool} true if bracket has existing orders, otherwise false
+   * @returns {boolean} true if bracket has existing orders, otherwise false
    */
   const hasExistingOrders = async function (bracket, exchange) {
     const orders = await exchange.getEncodedUserOrders.call(bracket)
@@ -119,10 +129,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const globalTokenPromisesFromAddress = {}
   /**
-   * Queries EVM for ERC20 token details by address
-   * and returns a list of promises of detailed token information.
+   * Queries EVM for ERC20 token details by address and returns a list of promises of detailed token information.
+   *
    * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
-   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
@@ -154,11 +165,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const globalTokenPromisesFromId = {}
   /**
-   * Queries EVM for ERC20 token details by token id
-   * and returns a list of detailed token information.
+   * Queries EVM for ERC20 token details by token id and returns a list of detailed token information.
+   *
    * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
-   * @param {integer[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
-   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @param {number[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
@@ -185,8 +197,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Retrieves token information foll all tokens involved in the deposits.
+   *
    * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
-   * @return {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
    */
   const fetchTokenInfoForFlux = function (flux, debug = false) {
     const tokensInvolved = allElementsOnlyOnce(flux.map((entry) => entry.tokenAddress))
@@ -195,9 +209,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Deploys specified number singler-owner Gnosis Safes having specified ownership
+   *
    * @param {Address} masterAddress address of Gnosis Safe (Multi-Sig) owning the newly created Safes
-   * @param {integer} fleetSize number of safes to be created with masterAddress as owner
-   * @return {Address[]} list of Ethereum Addresses for the brackets that were deployed
+   * @param {number} fleetSize number of safes to be created with masterAddress as owner
+   * @returns {Address[]} list of Ethereum Addresses for the brackets that were deployed
    */
   const deployFleetOfSafes = async function (masterAddress, fleetSize) {
     const fleetFactory = await fleetFactoryPromise
@@ -210,15 +225,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   /**
    * Batches together a collection of order placements on BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
+   *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
    * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
-   * @param {integer} baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
-   * @param {integer} quoteTokenId ID of "Quote Token" for which trade with base token (i.e. DAI)
-   * @param {number} currentPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
-   * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
-   * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
-   * @param {integer} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
-   * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @param {number} baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
+   * @param {number} quoteTokenId ID of "Quote Token" for which trade with base token (i.e. DAI)
+   * @param {number} lowestLimit lower price bound
+   * @param {number} highestLimit upper price bound
+   * @param {boolean} [debug=false] prints log statements when true
+   * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
+   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
   const buildOrders = async function (
     masterAddress,
@@ -305,15 +321,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
- * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
- * on behalf of a fleet of brackets owned by a single "Master Safe"
- * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
- * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
- * @return {Transaction} Multisend transaction that has to be sent from the master address to either request
-withdrawal of or to withdraw the desired funds
-*/
+   * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
+   * on behalf of a fleet of brackets owned by a single "Master Safe"
+   *
+   * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+   * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
+   * @returns {Transaction} Multisend transaction to be sent from masterAddress for withdraw requests or claims
+   */
   const buildGenericFundMovement = async function (masterAddress, withdrawals, functionName) {
+    // TODO: the name of this function is misleading considering it is only for request and claim of withdraws.
     const exchange = await exchangePromise
 
     // it's not necessary to avoid overlapping withdraws, since the full amount is withdrawn for each entry
@@ -352,12 +369,14 @@ withdrawal of or to withdraw the desired funds
   }
 
   /**
-   * Batches together a collection of transfer-related transaction information.
-   * Particularily, the resulting transaction is that of transfering all sufficient funds from master
-   * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
+   * Batches together a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
-   * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
   const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
@@ -405,8 +424,10 @@ withdrawal of or to withdraw the desired funds
     return result
   }
   /**
-   * Fetches the brackets deployed by a given masterSafe from the blockchain
-   * via events
+   * Fetches the brackets deployed by a given masterSafe from the blockchain via events
+   *
+   * @param {Address} masterSafe Fund account for the brackets being queried.
+   * @returns {Address[]} List of bracket (Safe) addresses
    **/
   const getDeployedBrackets = async function (masterSafe) {
     const FleetFactory = artifacts.require("FleetFactory")
@@ -423,14 +444,18 @@ withdrawal of or to withdraw the desired funds
    * Batches together a collection of transfer-related transaction information.
    * Particularly, the resulting transaction is that of transfering all sufficient funds from master
    * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
+   *
    * @param {Address} masterAddress Address of the master safe owning the brackets
    * @param {Address[]} bracketAddresses list of bracket addresses that need the deposit
-   * @param {Address} quoteTokenAddress one token to be traded in bracket strategy
-   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
    * @param {Address} baseTokenAddress second token to be traded in bracket strategy
-   * @param {number} depositQuoteToken Amount of base tokens to be invested (in total)
-   * @param {bool} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
-   * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @param {Address} quoteTokenAddress one token to be traded in bracket strategy
+   * @param {number} lowestLimit lower price bound
+   * @param {number} highestLimit upper price bound
+   * @param {number} currentPrice current quote price
+   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
+   * @param {number} depositBaseToken Amount of base tokens to be invested (in total)
+   * @param {boolean} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
+   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
   const buildTransferApproveDepositFromOrders = async function (
     masterAddress,
@@ -489,11 +514,12 @@ withdrawal of or to withdraw the desired funds
 
   /**
    * Batches together a collection of transfers from each bracket safe to master
+   *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Address} tokenAddress for the funds to be deposited
    * @param {Address} bracketAddress The address of the bracket owning the funds in the Exchange
    * @param {BN} amount Amount to be deposited
-   * @return {Transaction} Information describing the multisend transaction that has to be sent from the master address to transfer back all funds
+   * @returns {Transaction} Information describing the multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildBracketTransactionForTransferApproveDeposit = async (masterAddress, tokenAddress, bracketAddress, amount) => {
     const exchange = await exchangePromise
@@ -524,14 +550,15 @@ withdrawal of or to withdraw the desired funds
     transactions.push(execTransaction)
     return transactions
   }
+
   /**
- * Batches together a collection of "requestWithdraw" calls on BatchExchange
- * on behalf of a fleet of brackets owned by a single "Master Safe"
- * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
- * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
- * @return {Transaction} Multisend transaction that has to be sent from the master address to request
-withdrawal of the desired funds
-*/
+   * Batches together a collection of "requestWithdraw" calls on BatchExchange
+   * on behalf of a fleet of brackets owned by a single "Master Safe"
+   *
+   * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
+   * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+   * @returns {Transaction} Multisend transaction requesting withdraw that must sent from masterAddress
+   */
   const buildRequestWithdraw = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw")
   }
@@ -542,9 +569,10 @@ withdrawal of the desired funds
    * Warning: if any bundled transaction fails, then no funds are withdrawn from the exchange.
    *   Ensure 1. to have executed requestWithdraw for every input before executing
    *          2. no bracket orders have been executed on these tokens (a way to ensure this is to cancel the brackets' standing orders)
+   *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @return {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
+   * @returns {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
    */
   const buildWithdraw = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "withdraw")
@@ -552,9 +580,11 @@ withdrawal of the desired funds
 
   /**
    * Batches together a collection of transfers from each bracket to master
+   *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
+   * @param {boolean} limitToMaxWithdrawableAmount flag indicating max withdrawable amount should be limited to balance
+   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
   const buildTransferFundsToMaster = async function (masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
     const tokeinInfoPromises = fetchTokenInfoForFlux(withdrawals)
@@ -590,9 +620,10 @@ withdrawal of the desired funds
 
   /**
    * Batches together a collection of transfers from each bracket to master
+   *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @return {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
+   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
    */
   const buildWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
     const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals)

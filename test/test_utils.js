@@ -34,6 +34,13 @@ const deploySafe = async function (gnosisSafeMasterCopy, proxyFactory, owners, t
 }
 
 // Need some small adjustments to default implementation for web3js 1.x
+/**
+ * @param transaction
+ * @param eventName
+ * @param paramName
+ * @param contract
+ * @param subject
+ */
 async function getParamFromTxEvent(transaction, eventName, paramName, contract, subject) {
   if (subject != null) {
     logGasUsage(subject, transaction)
@@ -46,6 +53,10 @@ async function getParamFromTxEvent(transaction, eventName, paramName, contract, 
   return logs[0].args[paramName]
 }
 
+/**
+ * @param subject
+ * @param transactionOrReceipt
+ */
 function logGasUsage(subject, transactionOrReceipt) {
   const receipt = transactionOrReceipt.receipt || transactionOrReceipt
   console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
