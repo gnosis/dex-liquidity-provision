@@ -21,8 +21,6 @@ const BN256 = new BN(256)
 const MAXUINT128 = TWO.pow(BN128).sub(ONE)
 const MAXUINT256 = TWO.pow(BN256).sub(ONE)
 
-const FLOAT_TOLERANCE = TWO.pow(new BN(52))
-
 module.exports = {
   ZERO_ADDRESS,
   DEFAULT_ORDER_EXPIRY,
@@ -37,5 +35,4 @@ module.exports = {
   BN256,
   MAXUINT128,
   MAXUINT256,
-  FLOAT_TOLERANCE,
 }

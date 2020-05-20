@@ -1,8 +1,7 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const Contract = require("@truffle/contract")
-  const exchangeUtils = require("@gnosis.pm/dex-contracts")
-  const { Fraction } = require("@gnosis.pm/dex-contracts")
+  const { decodeOrders, Fraction } = require("@gnosis.pm/dex-contracts")
 
   const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances, getSafe } = require("./trading_strategy_helpers")(
     web3,
@@ -118,7 +117,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const ordersObjects = await Promise.all(
       bracketTraderAddresses.map(async (bracketAddress) =>
-        exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
+        decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
       )
     )
     const relevantOrders = [].concat(...ordersObjects)
