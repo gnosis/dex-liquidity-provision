@@ -16,10 +16,9 @@ const {
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromOrders,
-  maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-const { buildExecTransaction, CALL } = require("../scripts/utils/internals")(web3, artifacts)
-//const { ZERO_ADDRESS } = require("../scripts/utils/constants")
+const { buildExecTransaction } = require("../scripts/utils/internals")(web3, artifacts)
+const { DEFAULT_ORDER_EXPIRY, CALL /*, ZERO_ADDRESS*/ } = require("../scripts/utils/constants")
 
 contract("verification checks - for allowances", async (accounts) => {
   describe("allowances", async () => {
@@ -277,7 +276,7 @@ contract("Verification checks", function (accounts) {
       const buyTokens = [baseToken.id, baseToken.id]
       const sellTokens = [quoteToken.id, quoteToken.id]
       const validFroms = [validFrom, validFrom]
-      const validTos = [maxU32, maxU32]
+      const validTos = [DEFAULT_ORDER_EXPIRY, DEFAULT_ORDER_EXPIRY]
       const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
       const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
 
@@ -315,7 +314,7 @@ contract("Verification checks", function (accounts) {
       const buyTokens = [baseToken.id, quoteToken.id]
       const sellTokens = [quoteToken.id, baseToken.id]
       const validFroms = [validFrom, validFrom]
-      const validTos = [maxU32, maxU32]
+      const validTos = [DEFAULT_ORDER_EXPIRY, DEFAULT_ORDER_EXPIRY]
       const buyAmounts = [lowerBuyAmount.toString(), upperBuyAmount.toString()]
       const sellAmounts = [lowerSellAmount.toString(), upperSellAmount.toString()]
 

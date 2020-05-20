@@ -15,8 +15,9 @@ const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
-
+const { DEFAULT_NUM_SAFES } = require("./utils/constants")
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
+
 const argv = default_yargs
   .option("masterSafe", {
     type: "string",
@@ -25,7 +26,7 @@ const argv = default_yargs
   })
   .option("numBrackets", {
     type: "int",
-    default: 20,
+    default: DEFAULT_NUM_SAFES,
     describe: "Number of brackets to be deployed",
   })
   .option("brackets", {

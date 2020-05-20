@@ -11,13 +11,11 @@ const {
   checkNoProfitableOffer,
 } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
-
-const max128 = new BN(2).pow(new BN(128)).subn(1)
-const floatTolerance = new BN(2).pow(new BN(52)) // same tolerance as float precision
+const { MAXUINT128, FLOAT_TOLERANCE } = require("../scripts/utils/constants")
 
 const assertEqualUpToFloatPrecision = function (value, expected) {
   const differenceFromExpected = value.sub(expected).abs()
-  assert(differenceFromExpected.mul(floatTolerance).lt(expected))
+  assert(differenceFromExpected.mul(FLOAT_TOLERANCE).lt(expected))
 }
 
 describe("getOutputAmountFromPrice", () => {
@@ -75,50 +73,50 @@ describe("getUnlimitedOrderAmounts", () => {
         price: 160,
         quoteTokenDecimals: 18,
         baseTokenDecimals: 18,
-        expectedQuoteTokenAmount: max128,
-        expectedbaseTokenAmount: max128.divn(160),
+        expectedQuoteTokenAmount: MAXUINT128,
+        expectedbaseTokenAmount: MAXUINT128.divn(160),
       },
       {
         price: 1 / 160,
         quoteTokenDecimals: 18,
         baseTokenDecimals: 18,
-        expectedQuoteTokenAmount: max128.divn(160),
-        expectedbaseTokenAmount: max128,
+        expectedQuoteTokenAmount: MAXUINT128.divn(160),
+        expectedbaseTokenAmount: MAXUINT128,
       },
       {
         price: 1,
         quoteTokenDecimals: 18,
         baseTokenDecimals: 18,
-        expectedQuoteTokenAmount: max128,
-        expectedbaseTokenAmount: max128,
+        expectedQuoteTokenAmount: MAXUINT128,
+        expectedbaseTokenAmount: MAXUINT128,
       },
       {
         price: 1 + Number.EPSILON,
         quoteTokenDecimals: 18,
         baseTokenDecimals: 18,
-        expectedQuoteTokenAmount: max128,
-        expectedbaseTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
+        expectedQuoteTokenAmount: MAXUINT128,
+        expectedbaseTokenAmount: MAXUINT128.sub(new BN(2).pow(new BN(128 - 52))),
       },
       {
         price: 1 - Number.EPSILON,
         quoteTokenDecimals: 18,
         baseTokenDecimals: 18,
-        expectedQuoteTokenAmount: max128.sub(new BN(2).pow(new BN(128 - 52))),
-        expectedbaseTokenAmount: max128,
+        expectedQuoteTokenAmount: MAXUINT128.sub(new BN(2).pow(new BN(128 - 52))),
+        expectedbaseTokenAmount: MAXUINT128,
       },
       {
         price: 100,
         quoteTokenDecimals: 165,
         baseTokenDecimals: 200,
-        expectedQuoteTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 - 2))),
-        expectedbaseTokenAmount: max128,
+        expectedQuoteTokenAmount: MAXUINT128.div(new BN(10).pow(new BN(200 - 165 - 2))),
+        expectedbaseTokenAmount: MAXUINT128,
       },
       {
         price: 100,
         quoteTokenDecimals: 200,
         baseTokenDecimals: 165,
-        expectedQuoteTokenAmount: max128,
-        expectedbaseTokenAmount: max128.div(new BN(10).pow(new BN(200 - 165 + 2))),
+        expectedQuoteTokenAmount: MAXUINT128,
+        expectedbaseTokenAmount: MAXUINT128.div(new BN(10).pow(new BN(200 - 165 + 2))),
       },
     ]
     for (const {

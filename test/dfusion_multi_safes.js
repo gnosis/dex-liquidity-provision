@@ -23,13 +23,11 @@ const {
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   isOnlySafeOwner,
-  maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits, max128 } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
-
-const TEN = new BN(10)
+const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
 
 const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
@@ -552,8 +550,8 @@ contract("GnosisSafe", function (accounts) {
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
-        assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
+        assert.equal(sellOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
         assert.equal(buyOrder.validFrom, currentBatch)
         assert.equal(buyOrder.validFrom, currentBatch)
       }
@@ -592,8 +590,8 @@ contract("GnosisSafe", function (accounts) {
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${buyOrder}`)
-        assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${buyOrder}`)
+        assert.equal(sellOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
         assert.equal(buyOrder.validFrom, currentBatch)
         assert.equal(buyOrder.validFrom, currentBatch)
       }
@@ -649,8 +647,8 @@ contract("GnosisSafe", function (accounts) {
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceNumerator.eq(max128))
-        assert(sellOrder.priceDenominator.eq(max128))
+        assert(buyOrder.priceNumerator.eq(MAXUINT128))
+        assert(sellOrder.priceDenominator.eq(MAXUINT128))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
@@ -672,8 +670,8 @@ contract("GnosisSafe", function (accounts) {
         const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceDenominator.eq(max128))
-        assert(sellOrder.priceNumerator.eq(max128))
+        assert(buyOrder.priceDenominator.eq(MAXUINT128))
+        assert(sellOrder.priceNumerator.eq(MAXUINT128))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {
