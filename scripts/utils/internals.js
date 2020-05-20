@@ -79,12 +79,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
   }
 
-  /**
-   * @param hash
-   * @param privateKey
-   * @returns 
-   */
-  function signHashWithPrivateKey(hash, privateKey) {
+  const signHashWithPrivateKey = function(hash, privateKey) {
     const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
     const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
     return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)

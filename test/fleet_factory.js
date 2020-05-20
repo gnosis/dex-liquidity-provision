@@ -6,9 +6,9 @@ const { deploySafe } = require("./test_utils")
 
 /**
  * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
- * Returns the address of the newly created proxy.
  *
- * @param rawEvent
+ * @param {EthereumEvent} rawEvent bytes of an event emmited from GnosisSafeProxyFactory
+ * @returns {Address} the address of the newly created proxy.
  */
 const decodeCreateProxy = function (rawEvent) {
   const { data, topics } = rawEvent
