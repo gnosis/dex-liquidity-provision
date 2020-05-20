@@ -5,7 +5,8 @@
 const assert = require("assert")
 const BN = require("bn.js")
 
-const { toErc20Units, fromErc20Units, bnMaxUint, bnOne } = require("../scripts/utils/printing_tools")
+const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
+const { MAXUINT256, ONE } = require("../scripts/utils/constants")
 
 const goodTwoWayPairs = [
   {
@@ -39,18 +40,18 @@ const goodTwoWayPairs = [
     decimals: 18,
   },
   {
-    user: "0." + bnMaxUint.toString().padStart(255, "0"),
-    machine: bnMaxUint.toString(),
+    user: "0." + MAXUINT256.toString().padStart(255, "0"),
+    machine: MAXUINT256.toString(),
     decimals: 255,
   },
   {
-    user: bnMaxUint.toString(),
-    machine: bnMaxUint.toString(),
+    user: MAXUINT256.toString(),
+    machine: MAXUINT256.toString(),
     decimals: 0,
   },
   {
-    user: bnMaxUint.toString().slice(0, -18) + "." + bnMaxUint.toString().slice(-18),
-    machine: bnMaxUint.toString(),
+    user: MAXUINT256.toString().slice(0, -18) + "." + MAXUINT256.toString().slice(-18),
+    machine: MAXUINT256.toString(),
     decimals: 18,
   },
   {
@@ -294,17 +295,17 @@ describe("toErc20Units", () => {
         error: "tooManyDecimals",
       },
       {
-        user: bnMaxUint.add(bnOne).toString(),
+        user: MAXUINT256.add(ONE).toString(),
         decimals: 0,
         error: "tooLargeNumber",
       },
       {
-        user: "0." + bnMaxUint.add(bnOne).toString().padStart(255, "0"),
+        user: "0." + MAXUINT256.add(ONE).toString().padStart(255, "0"),
         decimals: 255,
         error: "tooLargeNumber",
       },
       {
-        user: bnMaxUint.add(bnOne).toString().slice(0, -18) + "." + bnMaxUint.add(bnOne).toString().slice(-18),
+        user: MAXUINT256.add(ONE).toString().slice(0, -18) + "." + MAXUINT256.add(ONE).toString().slice(-18),
         decimals: 18,
         error: "tooLargeNumber",
       },
@@ -426,17 +427,17 @@ describe("fromErc20Units", () => {
         error: "invalidDecimals",
       },
       {
-        machine: bnMaxUint.add(bnOne).toString(),
+        machine: MAXUINT256.add(ONE).toString(),
         decimals: 0,
         error: "tooLargeNumber",
       },
       {
-        machine: bnMaxUint.add(bnOne).toString(),
+        machine: MAXUINT256.add(ONE).toString(),
         decimals: 18,
         error: "tooLargeNumber",
       },
       {
-        machine: bnMaxUint.add(bnOne).toString(),
+        machine: MAXUINT256.add(ONE).toString(),
         decimals: 255,
         error: "tooLargeNumber",
       },

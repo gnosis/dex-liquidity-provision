@@ -2,8 +2,7 @@ const TokenOWL = artifacts.require("TokenOWL")
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const { toErc20Units } = require("../scripts/utils/printing_tools")
-
-const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
+const { ZERO_ADDRESS } = require("../scripts/utils/constants")
 
 const prepareTokenRegistration = async function (account, exchange) {
   const owlToken = await TokenOWL.at(await exchange.feeToken())
@@ -28,7 +27,7 @@ const addCustomMintableTokenToExchange = async function (exchange, symbol, decim
 
 const deploySafe = async function (gnosisSafeMasterCopy, proxyFactory, owners, threshold) {
   const initData = gnosisSafeMasterCopy.contract.methods
-    .setup(owners, threshold, ADDRESS_0, "0x", ADDRESS_0, ADDRESS_0, 0, ADDRESS_0)
+    .setup(owners, threshold, ZERO_ADDRESS, "0x", ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS)
     .encodeABI()
   const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
   return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, null)

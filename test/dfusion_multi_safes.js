@@ -23,13 +23,11 @@ const {
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   isOnlySafeOwner,
-  maxU32,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits, max128 } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
-
-const TEN = new BN(10)
+const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
 
 const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, bracketSafes, exchange) {
   const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketSafes.length)
@@ -191,7 +189,7 @@ contract("GnosisSafe", function (accounts) {
     })
     const testAutomaticDeposits = async function (tradeInfo, expectedDistribution) {
       const {
-        fleetSize,
+        numBrackets,
         lowestLimit,
         highestLimit,
         currentPrice,
@@ -205,12 +203,12 @@ contract("GnosisSafe", function (accounts) {
       const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
       assert.equal(
         bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
-        fleetSize,
+        numBrackets,
         "Malformed test case, sum of expected distribution should be equal to the fleet size"
       )
 
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
-      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, fleetSize)
+      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, numBrackets)
 
       //Create  quoteToken and add it to the exchange
       const { id: quoteTokenId, token: quoteToken } = await addCustomMintableTokenToExchange(
@@ -273,7 +271,7 @@ contract("GnosisSafe", function (accounts) {
     }
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 110,
@@ -288,9 +286,9 @@ contract("GnosisSafe", function (accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, fleetSize = 1", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 1", async () => {
       const tradeInfo = {
-        fleetSize: 1,
+        numBrackets: 1,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 110,
@@ -305,9 +303,9 @@ contract("GnosisSafe", function (accounts) {
       }
       await testAutomaticDeposits(tradeInfo, expectedDistribution)
     })
-    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, fleetSize = 19", async () => {
+    it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 19", async () => {
       const tradeInfo = {
-        fleetSize: 19,
+        numBrackets: 19,
         lowestLimit: 100,
         highestLimit: 121,
         currentPrice: 120,
@@ -324,7 +322,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1 and wide brackets", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 25,
         highestLimit: 400,
         currentPrice: 100,
@@ -341,7 +339,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.09,
         highestLimit: 0.12,
         currentPrice: 0.105,
@@ -358,7 +356,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
         currentPrice: 0.9,
@@ -375,7 +373,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
       const tradeInfo = {
-        fleetSize: 4,
+        numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
         currentPrice: 0.7,
@@ -419,7 +417,7 @@ contract("GnosisSafe", function (accounts) {
       ]
       it("when p is in the middle of the brackets", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 121,
           currentPrice: 110,
@@ -435,7 +433,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is in the middle of the brackets and the steps are wide", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 25,
           highestLimit: 400,
           currentPrice: 100,
@@ -451,7 +449,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is not in the middle but still inside the brackets", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 8,
+          numBrackets: 8,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 110,
@@ -467,7 +465,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is outside the brackets and only quote token is deposited", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 150,
@@ -483,7 +481,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("when p is outside the brackets and only base token is deposited", async () => {
         const tradeInfoWithoutTokens = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
           currentPrice: 80,
@@ -499,7 +497,7 @@ contract("GnosisSafe", function (accounts) {
       })
       it("with extreme prices and decimals", async () => {
         const tradeInfo = {
-          fleetSize: 4,
+          numBrackets: 4,
           lowestLimit: 5e194,
           highestLimit: 20e194,
           currentPrice: 10e194,
@@ -552,13 +550,13 @@ contract("GnosisSafe", function (accounts) {
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
-        assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
+        assert.equal(sellOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
         assert.equal(buyOrder.validFrom, currentBatch)
         assert.equal(buyOrder.validFrom, currentBatch)
       }
     })
-    it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity, fleetSize = 1", async () => {
+    it("Places bracket orders on behalf of a fleet of safes and checks for profitability and validity, numBrackets = 1", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 1)
       const baseToken = 0 // ETH
@@ -592,8 +590,8 @@ contract("GnosisSafe", function (accounts) {
         const amountAfterBuying = amountAfterSelling.mul(buyOrder.priceNumerator).div(buyOrder.priceDenominator)
         assert.equal(amountAfterBuying.gt(initialAmount), true, "Brackets are not profitable")
 
-        assert.equal(buyOrder.validUntil, maxU32 - 1, `Got ${buyOrder}`)
-        assert.equal(sellOrder.validUntil, maxU32 - 1, `Got ${sellOrder}`)
+        assert.equal(buyOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${buyOrder}`)
+        assert.equal(sellOrder.validUntil, DEFAULT_ORDER_EXPIRY, `Got ${sellOrder}`)
         assert.equal(buyOrder.validFrom, currentBatch)
         assert.equal(buyOrder.validFrom, currentBatch)
       }
@@ -649,8 +647,8 @@ contract("GnosisSafe", function (accounts) {
       for (const bracketAddress of bracketSafes) {
         const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceNumerator.eq(max128))
-        assert(sellOrder.priceDenominator.eq(max128))
+        assert(buyOrder.priceNumerator.eq(MAXUINT128))
+        assert(sellOrder.priceDenominator.eq(MAXUINT128))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p>1", async () => {
@@ -672,8 +670,8 @@ contract("GnosisSafe", function (accounts) {
         const auctionElements = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
         assert.equal(auctionElements.length, 2)
         const [buyOrder, sellOrder] = auctionElements
-        assert(buyOrder.priceDenominator.eq(max128))
-        assert(sellOrder.priceNumerator.eq(max128))
+        assert(buyOrder.priceDenominator.eq(MAXUINT128))
+        assert(sellOrder.priceNumerator.eq(MAXUINT128))
       }
     })
     it("Places bracket orders on behalf of a fleet of safes and checks prices for p<1, with different decimals than 18", async () => {

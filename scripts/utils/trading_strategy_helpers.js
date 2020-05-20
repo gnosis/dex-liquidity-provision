@@ -4,10 +4,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const fs = require("fs")
   const Contract = require("@truffle/contract")
 
-  const { buildBundledTransaction, buildExecTransaction, CALL } = require("./internals")(web3, artifacts)
+  const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
   const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
+  const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
@@ -17,10 +18,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
-
-  const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
-  const maxU32 = 2 ** 32 - 1
-  const maxUINT = new BN(2).pow(new BN(256)).sub(new BN(1))
 
   /**
    * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
@@ -221,7 +218,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} currentPrice Price at which the order brackets will be centered (e.g. current price of ETH in USD)
    * @param {number} [priceRangePercentage=20] Percentage above and below the target price for which orders are to be placed
    * @param {integer} [validFrom=3] Number of batches (from current) until orders become valid
-   * @param {integer} [expiry=maxU32] Maximum auction batch for which these orders are valid (e.g. maxU32)
+   * @param {integer} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
    * @return {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
   const buildOrders = async function (
@@ -232,7 +229,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     lowestLimit,
     highestLimit,
     debug = false,
-    expiry = maxU32 - 1 // We did not choose maxU32, in order to distinguish orders from "non-expiring" orders of the web interface
+    expiry = DEFAULT_ORDER_EXPIRY
   ) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
@@ -444,14 +441,14 @@ withdrawal of or to withdraw the desired funds
     depositBaseToken,
     storeDepositsAsFile = false
   ) {
-    const fleetSize = bracketAddresses.length
+    const numBrackets = bracketAddresses.length
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
     // bracketIndexAtCurrentPrice is calculated with: lowestLimit * stepSizeAsMultiplier ^ x = currentPrice and solved for x
     // in case the currentPrice is at the limit price of two bracket-trader, only the first bracket-trader - the one with the
     // second order will be funded.
     let bracketIndexAtCurrentPrice = Math.round(Math.log(currentPrice / lowestLimit) / Math.log(stepSizeAsMultiplier))
-    if (bracketIndexAtCurrentPrice > fleetSize) {
-      bracketIndexAtCurrentPrice = fleetSize
+    if (bracketIndexAtCurrentPrice > numBrackets) {
+      bracketIndexAtCurrentPrice = numBrackets
     }
     if (bracketIndexAtCurrentPrice < 0) {
       bracketIndexAtCurrentPrice = 0
@@ -467,9 +464,9 @@ withdrawal of or to withdraw the desired funds
       }
       deposits.push(deposit)
     }
-    for (const i of Array(fleetSize - bracketIndexAtCurrentPrice).keys()) {
+    for (const i of Array(numBrackets - bracketIndexAtCurrentPrice).keys()) {
       const deposit = {
-        amount: depositBaseToken.div(new BN(fleetSize - bracketIndexAtCurrentPrice)).toString(),
+        amount: depositBaseToken.div(new BN(numBrackets - bracketIndexAtCurrentPrice)).toString(),
         tokenAddress: baseTokenAddress,
         bracketAddress: bracketAddresses[bracketIndexAtCurrentPrice + i],
       }
@@ -663,8 +660,5 @@ withdrawal of the desired funds
     getAllowances,
     assertNoAllowances,
     hasExistingOrders,
-    maxU32,
-    maxUINT,
-    ADDRESS_0,
   }
 }

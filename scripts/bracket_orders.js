@@ -2,9 +2,10 @@ const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = requir
   web3,
   artifacts
 )
-const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils.js")(web3, artifacts)
+const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
+const { DEFAULT_ORDER_EXPIRY } = require("./utils/constants")
 
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
 const argv = default_yargs
@@ -47,7 +48,7 @@ const argv = default_yargs
   .option("expiry", {
     type: "int",
     describe: "Maximum auction batch for which these orders are valid",
-    default: 2 ** 32 - 1,
+    default: DEFAULT_ORDER_EXPIRY,
   })
   .check(checkBracketsForDuplicate).argv
 

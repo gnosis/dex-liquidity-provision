@@ -1,11 +1,6 @@
 const BN = require("bn.js")
 
-const bnZero = new BN(0)
-const bnOne = new BN(1)
-const bnTwo = new BN(2)
-const bnTen = new BN(10)
-const bn256 = new BN(256)
-const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
+const { ZERO, BN256, MAXUINT256, TEN } = require("./constants")
 
 /**
  * A generalized version of "toWei" for tokens with an arbitrary amount of decimals.
@@ -16,7 +11,7 @@ const bnMaxUint = bnTwo.pow(bn256).sub(bnOne)
  */
 const toErc20Units = function (amount, decimals) {
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion
-  if (bnDecimals.lt(bnZero) || bnDecimals.gte(bn256))
+  if (bnDecimals.lt(ZERO) || bnDecimals.gte(BN256))
     throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
   decimals = bnDecimals.toNumber() // safe conversion to num, since 0 <= decimals < 256  const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
   const re = /^(\d+)(\.(\d+))?$/ // a sequence of at least one digit (0-9), followed by optionally a dot and another sequence of at least one digit
@@ -26,8 +21,8 @@ const toErc20Units = function (amount, decimals) {
   if (decimalString.length != decimals) throw Error("Too many decimals for the token in input string")
   const integerPart = new BN(match[1])
   const decimalPart = new BN(decimalString)
-  const representation = integerPart.mul(bnTen.pow(new BN(decimals))).add(decimalPart)
-  if (representation.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
+  const representation = integerPart.mul(TEN.pow(new BN(decimals))).add(decimalPart)
+  if (representation.gt(MAXUINT256)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   return representation
 }
 
@@ -40,10 +35,10 @@ const toErc20Units = function (amount, decimals) {
 const fromErc20Units = function (amount, decimals) {
   amount = new BN(amount) // in case amount were a string, it converts it to BN, otherwise no effects
   const bnDecimals = new BN(decimals) // three different types are accepted for "decimals": integer, string and BN. The BN library takes care of the conversion
-  if (bnDecimals.lt(bnZero) || bnDecimals.gte(bn256))
+  if (bnDecimals.lt(ZERO) || bnDecimals.gte(BN256))
     throw Error("Invalid number of decimals for ERC20 token: " + decimals.toString()) // ERC20 decimals is stored in a uint8
   decimals = bnDecimals.toNumber() // safe conversion to num, since 0 <= decimals < 256
-  if (amount.gt(bnMaxUint)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
+  if (amount.gt(MAXUINT256)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   if (decimals == 0) return amount.toString()
   const paddedAmount = amount.toString().padStart(decimals + 1, "0")
   let decimalPart = paddedAmount.slice(-decimals) // rightmost "decimals" characters of the string
@@ -66,6 +61,4 @@ module.exports = {
   toErc20Units,
   fromErc20Units,
   shortenedAddress,
-  bnMaxUint,
-  bnOne,
 }

@@ -1,16 +1,14 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const ethUtil = require("ethereumjs-util")
 
+  const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
+
   const IProxy = artifacts.require("IProxy")
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const MultiSend = artifacts.require("MultiSend")
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
-
-  const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
-  const CALL = 0
-  const DELEGATECALL = 1
 
   /**
    * @typedef Transaction
@@ -61,8 +59,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       0,
       0,
       0,
-      ADDRESS_0,
-      ADDRESS_0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
       nonce
     )
     const sigs = await web3.eth.sign(transactionHash, signer)
@@ -74,8 +72,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       0,
       0,
       0,
-      ADDRESS_0,
-      ADDRESS_0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
       sigs
     )
   }
@@ -132,8 +130,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         0,
         0,
         0,
-        ADDRESS_0,
-        ADDRESS_0,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
         sigs
       )
       .encodeABI()
@@ -185,6 +183,5 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildBundledTransaction,
     buildExecTransaction,
     CALL,
-    ADDRESS_0,
   }
 }
