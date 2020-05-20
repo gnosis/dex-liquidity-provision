@@ -1,5 +1,5 @@
 const createCsvWriter = require("csv-writer").createObjectCsvWriter
-const exchangeUtils = require("@gnosis.pm/dex-contracts")
+const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const { fetchTokenInfoFromExchange, getExchange, getDeployedBrackets } = require("./utils/trading_strategy_helpers")(
   web3,
   artifacts
@@ -36,7 +36,7 @@ module.exports = async (callback) => {
     const exchange = await getExchange(web3)
     const records = await Promise.all(
       bracketAddresses.map(async (bracketAddress) => {
-        const orders = exchangeUtils.decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
+        const orders = decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
         let tradingPair
         if (orders.length > 0) {
           const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [orders[0].buyToken, orders[0].sellToken])

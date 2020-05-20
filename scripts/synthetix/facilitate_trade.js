@@ -1,9 +1,9 @@
 const { SynthetixJs } = require("synthetix-js")
 const ethers = require("ethers")
 const fetch = require("node-fetch")
+const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
-const { getUnlimitedOrderAmounts } = require("../utils/price_utils")(web3, artifacts)
 
 const argv = require("../utils/default_yargs")
   .option("gasPrice", {
@@ -80,12 +80,12 @@ module.exports = async (callback) => {
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
     // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const [buyETHAmount, sellSUSDAmount] = getUnlimitedOrderAmounts(
-      formatedRate * (1 - sUSDTosETHFee),
+    const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
+      1 / (formatedRate * (1 - sUSDTosETHFee)),
       sETH.decimals,
       sUSD.decimals
     )
-    const [sellETHAmount, buySUSDAmount] = getUnlimitedOrderAmounts(
+    const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
       formatedRate * (1 + sETHTosUSDFee),
       sUSD.decimals,
       sETH.decimals

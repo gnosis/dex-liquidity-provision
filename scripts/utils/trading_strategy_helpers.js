@@ -3,9 +3,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const BN = require("bn.js")
   const fs = require("fs")
   const Contract = require("@truffle/contract")
-
+  const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
-  const { getUnlimitedOrderAmounts } = require("./price_utils")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
   const { allElementsOnlyOnce } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
@@ -253,10 +252,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         const lowerLimit = lowestLimit * Math.pow(stepSizeAsMultiplier, bracketIndex)
         const upperLimit = lowerLimit * stepSizeAsMultiplier
 
-        const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(upperLimit, baseToken.decimals, quoteToken.decimals)
+        const { base: upperSellAmount, quote: upperBuyAmount } = getUnlimitedOrderAmounts(
+          upperLimit,
+          baseToken.decimals,
+          quoteToken.decimals
+        )
         // While the first bracket-order sells baseToken for quoteToken, the second buys baseToken for quoteToken at a lower price.
         // Hence the buyAmounts and sellAmounts are switched in the next line.
-        const [lowerSellAmount, lowerBuyAmount] = getUnlimitedOrderAmounts(
+        const { base: lowerSellAmount, quote: lowerBuyAmount } = getUnlimitedOrderAmounts(
           1 / lowerLimit,
           quoteToken.decimals,
           baseToken.decimals
