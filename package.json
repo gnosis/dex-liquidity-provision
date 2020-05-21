@@ -46,7 +46,7 @@
     "@truffle/contract": "4.2.5",
     "@openzeppelin/contracts": "=2.5.1",
     "axios": "^0.19.2",
-    "bn.js": "^5.1.1",
+    "bn.js": "^5.1.2",
     "canonical-weth": "^1.4.0",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.0.0",
