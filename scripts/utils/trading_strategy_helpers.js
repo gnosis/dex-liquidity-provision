@@ -80,7 +80,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address[]} tokenAddresses list of *unique* token addresses whose data is to be fetch from the EVM
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @returns {object} object mapping token addresses to a promise of relevant token information
    */
   const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
