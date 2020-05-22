@@ -64,6 +64,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       nonce
     )
     const sigs = await web3.eth.sign(transactionHash, signer)
+    // The following signature manipulation is according to
+    // signature standards for Gnosis Safe execTransaction
+    // https://docs.gnosis.io/safe/docs/contracts_signatures/
+    const modifiedSigs = sigs.slice(0, -2) + (sigs.slice(-2) === "00" ? "1f" : "20")
+
     await safe.execTransaction(
       transaction.to,
       transaction.value,
@@ -74,7 +79,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       0,
       ZERO_ADDRESS,
       ZERO_ADDRESS,
-      sigs
+      modifiedSigs
     )
   }
 

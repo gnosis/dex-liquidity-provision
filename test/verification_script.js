@@ -213,7 +213,7 @@ contract("Verification checks", function (accounts) {
   })
   describe("Fallback handler did not change", async () => {
     // it("throws if master's fallback handler changed", async () => {
-    //   const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner.account], 1))
+    //   const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
     //   const bracketAddress = (await deployFleetOfSafes(masterSafe.address, 1))[0]
     //   const bracket = await GnosisSafe.at(bracketAddress)
     //   const handlerAddress = "0x" + "2".padStart(40, "0")
@@ -224,7 +224,7 @@ contract("Verification checks", function (accounts) {
     //     operation: CALL,
     //   }
     //   // fallback address can only be added with a transaction from the contract to itself
-    //   await execTransaction(masterSafe, safeOwner.privateKey, addModuleTransaction)
+    //   await execTransaction(masterSafe, safeOwner, addModuleTransaction)
     //   await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
     //     message: "Fallback handler of Safe " + masterSafe.address + " changed",
     //   })
