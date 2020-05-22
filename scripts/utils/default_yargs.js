@@ -18,7 +18,7 @@ const checkNoDuplicate = function (array) {
 /**
  * Ensure brackets (as an array) contains only unique elements.
  *
- * @param {any[]} argv script arguments.
+ * @param {object} argv script arguments.
  * @returns {boolean} true always.
  */
 function checkBracketsForDuplicate(argv) {

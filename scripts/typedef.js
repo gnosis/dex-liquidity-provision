@@ -29,7 +29,7 @@
  *
  * @typedef Deposit
  * @type {object}
- * @property {number} amount integer denoting amount to be deposited
+ * @property {number|string|BN} amount integer denoting amount to be deposited
  * @property {Address} tokenAddress {@link Address} of token to be deposited
  * @property {Address} bracketAddress address of bracket into which to deposit
  */
@@ -43,7 +43,7 @@
  *   tokenAddress: "0x0000000000000000000000000000000000000000",
  * }
  * @type {object}
- * @property {number} amount Integer denoting amount to be deposited
+ * @property {number|string|BN} amount Integer denoting amount to be deposited
  * @property {Address} bracketAddress Ethereum address of the bracket from which to withdraw
  * @property {Address} tokenAddresses List of tokens that the traded wishes to withdraw
  */
