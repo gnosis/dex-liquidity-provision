@@ -168,7 +168,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @return {Address} Fallback contract of the input Gnosis Safe
    */
   const getFallbackHandler = async function (safeAddress) {
-    const fallbackHandlerStorageSlot = (await web3.utils.keccak256("fallback_manager.handler.address")).toString("hex")
+    const fallbackHandlerStorageSlot = web3.utils.keccak256("fallback_manager.handler.address")
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
