@@ -50,7 +50,7 @@
 
 /**
  * @typedef TokenObject
- *  * Example:
+ * Example:
  * {
  *   symbol: "WETH",
  *   decimals: 18,
