@@ -82,6 +82,7 @@ const argv = default_yargs
 
 module.exports = async (callback) => {
   try {
+    console.log("Using account:", (await web3.eth.getAccounts())[0])
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
