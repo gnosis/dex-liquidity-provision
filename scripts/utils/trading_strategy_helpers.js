@@ -117,7 +117,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {SmartContract} exchange BatchExchange, contract, or any contract implementing `tokenIdToAddressMap`
    * @param {number[]} tokenIds list of *unique* token ids whose data is to be fetch from EVM
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @returns {object} object mapping token ids to a promise of relevant token information
    */
   const fetchTokenInfoFromExchange = function (exchange, tokenIds, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
