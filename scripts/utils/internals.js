@@ -1,8 +1,5 @@
 /**
  * @typedef {import('../typedef.js').Address} Address
- */
-
-/**
  * @typedef {import('../typedef.js').Transaction} Transaction
  */
 
