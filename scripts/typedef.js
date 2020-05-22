@@ -36,7 +36,7 @@
 
 /**
  * @typedef Withdrawal
- *  * Example:
+ * Example:
  * {
  *   amount: "100",
  *   bracketAddress: "0x0000000000000000000000000000000000000000",
