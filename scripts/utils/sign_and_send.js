@@ -57,7 +57,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const signer = (await web3.eth.getAccounts())[0]
     console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${signer}`)
-    const sigs = getSafeCompatibleSignature(transactionHash, signer)
+    const sigs = await getSafeCompatibleSignature(transactionHash, signer)
 
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
     const postData = {

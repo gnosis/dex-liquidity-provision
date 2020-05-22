@@ -63,7 +63,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ZERO_ADDRESS,
       nonce
     )
-    const sigs = getSafeCompatibleSignature(transactionHash, signer)
+    const sigs = await getSafeCompatibleSignature(transactionHash, signer)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
