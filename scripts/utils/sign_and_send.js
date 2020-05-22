@@ -1,7 +1,8 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
+
+  const { getSafeCompatibleSignature } = require("./internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
-  const { getSafeCompatibleSignature } = require("./internals")
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
