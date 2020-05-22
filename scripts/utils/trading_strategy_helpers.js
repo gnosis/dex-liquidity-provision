@@ -147,7 +147,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Promise<TokenObject>[]} list of detailed/relevant token information
+   * @returns {object} object mapping token addresses to a promise of relevant token information
    */
   const fetchTokenInfoForFlux = function (flux, debug = false) {
     const tokensInvolved = allElementsOnlyOnce(flux.map((entry) => entry.tokenAddress))
