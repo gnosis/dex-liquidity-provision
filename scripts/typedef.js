@@ -66,7 +66,7 @@
 
 /**
  * @typedef Transaction
- *  * Example:
+ * Example:
  *  {
  *    operation: CALL,
  *    to: "0x0000..000",
