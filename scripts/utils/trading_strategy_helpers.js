@@ -31,10 +31,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   /**
    * Returns an instance of the exchange contract
    *
-   * @param {object} web3 an instance of Web3
    * @returns {SmartContract} An instance of BatchExchange
    */
-  const getExchange = function (web3) {
+  const getExchange = function () {
     BatchExchange.setProvider(web3.currentProvider)
     return BatchExchange.deployed()
   }
