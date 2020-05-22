@@ -1,3 +1,11 @@
+/**
+ * @typedef {import('../typedef.js').Address} Address
+ */
+
+/**
+ * @typedef {import('../typedef.js').Transaction} Transaction
+ */
+
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const axios = require("axios")

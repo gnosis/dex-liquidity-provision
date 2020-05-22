@@ -1,3 +1,7 @@
+/**
+ * @typedef {import('../scripts/typedef.js').Address} Address
+ */
+
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
@@ -7,7 +11,7 @@ const { deploySafe } = require("./test_utils")
 /**
  * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
  *
- * @param {EthereumEvent} rawEvent bytes of an event emmited from GnosisSafeProxyFactory
+ * @param {any} rawEvent bytes of an event emmited from GnosisSafeProxyFactory
  * @returns {Address} the address of the newly created proxy.
  */
 const decodeCreateProxy = function (rawEvent) {

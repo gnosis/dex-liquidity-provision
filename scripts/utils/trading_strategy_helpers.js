@@ -1,6 +1,16 @@
+const BN = require("bn.js")
+
+/**
+ * @typedef {import('../typedef.js').Address} Address
+ * @typedef {import('../typedef.js').Deposit} Deposit
+ * @typedef {import('../typedef.js').Withdrawal} Withdrawal
+ * @typedef {import('../typedef.js').SmartContract} SmartContract
+ * @typedef {import('../typedef.js').TokenObject} TokenObject
+ * @typedef {import('../typedef.js').Transaction} Transaction
+ */
+
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
-  const BN = require("bn.js")
   const fs = require("fs")
   const Contract = require("@truffle/contract")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
@@ -17,68 +27,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
-
-  /**
-   * Ethereum addresses are composed of the prefix "0x", a common identifier for hexadecimal,
-   * concatenated with the rightmost 20 bytes of the Keccak-256 hash (big endian) of the ECDSA public key
-   * (cf. https://en.wikipedia.org/wiki/Ethereum#Addresses)
-   *
-   * @typedef Address
-   */
-
-  /**
-   * Smart contracts are high-level programming abstractions that are compiled down
-   * to EVM bytecode and deployed to the Ethereum blockchain for execution.
-   * This particular type is that of a JS object representing the Smart contract ABI.
-   * (cf. https://en.wikipedia.org/wiki/Ethereum#Smart_contracts)
-   *
-   * @typedef SmartContract
-   */
-
-  /**
-   * Example:
-   * {
-   *   amount: 100,
-   *   tokenAddress: 0x0000000000000000000000000000000000000000,
-   *   bracketAddress: 0x0000000000000000000000000000000000000001
-   * }
-   *
-   * @typedef Deposit
-   * @type {object}
-   * @property {number} amount integer denoting amount to be deposited
-   * @property {Address} tokenAddress {@link Address} of token to be deposited
-   * @property {Address} bracketAddress address of bracket into which to deposit
-   */
-
-  /**
-   * @typedef Withdrawal
-   *  * Example:
-   * {
-   *   amount: "100",
-   *   bracketAddress: "0x0000000000000000000000000000000000000000",
-   *   tokenAddress: "0x0000000000000000000000000000000000000000",
-   * }
-   * @type {object}
-   * @property {number} amount Integer denoting amount to be deposited
-   * @property {Address} bracketAddress Ethereum address of the bracket from which to withdraw
-   * @property {Address} tokenAddresses List of tokens that the traded wishes to withdraw
-   */
-
-  /**
-   * @typedef TokenObject
-   *  * Example:
-   * {
-   *   symbol: "WETH",
-   *   decimals: 18,
-   *   tokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   *   instance: [object Object],
-   * }
-   * @type {object}
-   * @property {string} symbol symbol representing the token
-   * @property {(number|BN)} decimals number of decimals of the token
-   * @property {Address} address address of the token contract on the EVM
-   * @property {object} instance an instance of the token contract
-   */
 
   /**
    * Returns an instance of the exchange contract

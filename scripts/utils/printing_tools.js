@@ -3,6 +3,10 @@ const BN = require("bn.js")
 const { ZERO, BN256, MAXUINT256, TEN } = require("./constants")
 
 /**
+ * @typedef {import('../typedef.js').Address} Address
+ */
+
+/**
  * A generalized version of "toWei" for tokens with an arbitrary amount of decimals.
  * If the decimal representation has more decimals than the maximum amount possible, then the extra decimals are truncated.
  *

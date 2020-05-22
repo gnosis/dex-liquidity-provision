@@ -1,3 +1,11 @@
+/**
+ * @typedef {import('../typedef.js').Address} Address
+ */
+
+/**
+ * @typedef {import('../typedef.js').Transaction} Transaction
+ */
+
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const ethUtil = require("ethereumjs-util")
 
@@ -9,22 +17,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
-
-  /**
-   * @typedef Transaction
-   *  * Example:
-   *  {
-   *    operation: CALL,
-   *    to: "0x0000..000",
-   *    value: "10",
-   *    data: "0x00",
-   *  }
-   * @type {object}
-   * @property {number} operation Either CALL or DELEGATECALL
-   * @property {Address} to Ethereum address receiving the transaction
-   * @property {string} value Amount of ETH transferred
-   * @property {string} data Data sent along with the transaction
-   */
 
   const jsonrpc = "2.0"
   const id = 0
@@ -42,7 +34,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Wait for n (evm) seconds to pass
-   * 
+   *
    * @param {number} seconds number of seconds to wait
    */
   const waitForNSeconds = async function (seconds) {
@@ -79,7 +71,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
   }
 
-  const signHashWithPrivateKey = function(hash, privateKey) {
+  const signHashWithPrivateKey = function (hash, privateKey) {
     const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
     const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
     return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
@@ -105,7 +97,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Given a collection of transactions, creates a single transaction that bundles all of them
-   * 
+   *
    * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
    * @returns {Transaction} Multisend transaction bundling all input transactions
    */
@@ -148,7 +140,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
-   * 
+   *
    * @param {Address} masterAddress Address of a controlled Safe
    * @param {Address} bracketAddress Address of a Safe, owned only by master, target of execTransaction
    * @param {Transaction} transaction The transaction to be executed by execTransaction
@@ -177,7 +169,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * Users can set up their Gnosis Safe to have a fallback handler: a contract to which all transactions
    * with nonempty data triggering a call to the fallback are forwarded.
    * The fallback contract address is always located at the same storage position for every Safe.
-   * 
+   *
    * @param {Address} safeAddress Address of a Gnosis Safe
    * @returns {Address} Fallback contract of the input Gnosis Safe
    */
