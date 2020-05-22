@@ -41,7 +41,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
    * @param {string} network either rinkeby or mainnet
-   * @param {number} [nonce=null] specified transaction index. Will fetch correctg value if not specified.
+   * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
    * @param {boolean} [dryRun=false] Do all steps of the function except actually sending the transaction.
    */
   const signAndSend = async function (masterSafe, transaction, network, nonce = null, dryRun = false) {
