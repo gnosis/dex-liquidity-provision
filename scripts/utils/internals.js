@@ -63,12 +63,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ZERO_ADDRESS,
       nonce
     )
-    const sigs = await web3.eth.sign(transactionHash, signer)
-    // The following signature manipulation is according to
-    // signature standards for Gnosis Safe execTransaction
-    // https://docs.gnosis.io/safe/docs/contracts_signatures/
-    const modifiedSigs = sigs.slice(0, -2) + (sigs.slice(-2) === "00" ? "1f" : "20")
-
+    const sigs = getSafeCompatibleSignature(transactionHash, signer)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
@@ -79,7 +74,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       0,
       ZERO_ADDRESS,
       ZERO_ADDRESS,
-      modifiedSigs
+      sigs
     )
   }
 
@@ -179,6 +174,15 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
+  const getSafeCompatibleSignature = async function (transactionHash, signer) {
+    const sigs = await web3.eth.sign(transactionHash, signer)
+    // The following signature manipulation is according to
+    // signature standards for Gnosis Safe execTransaction
+    // https://docs.gnosis.io/safe/docs/contracts_signatures/
+    const modifiedSigs = sigs.slice(0, -2) + (sigs.slice(-2) === "00" ? "1f" : "20")
+    return modifiedSigs
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
@@ -187,6 +191,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     encodeMultiSend,
     buildBundledTransaction,
     buildExecTransaction,
+    getSafeCompatibleSignature,
     CALL,
   }
 }
