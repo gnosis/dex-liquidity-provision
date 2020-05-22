@@ -1,13 +1,13 @@
 const BN = require("bn.js")
 const assert = require("assert")
 const Contract = require("@truffle/contract")
+const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 // const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { getUnlimitedOrderAmounts } = require("../scripts/utils/price_utils")(web3, artifacts)
 const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
@@ -266,8 +266,8 @@ contract("Verification checks", function (accounts) {
       const highestLimit = 120
 
       // create unlimited orders to sell low and buy high
-      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
-      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
+      const { base: upperSellAmount, quote: upperBuyAmount } = getUnlimitedOrderAmounts(highestLimit, 18, 18)
+      const { base: lowerSellAmount, quote: lowerBuyAmount } = getUnlimitedOrderAmounts(1 / lowestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
       const buyTokens = [baseToken.id, baseToken.id]
@@ -304,8 +304,8 @@ contract("Verification checks", function (accounts) {
       const highestLimit = 120
 
       // create unlimited orders to sell low and buy high
-      const [upperSellAmount, upperBuyAmount] = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
-      const [lowerBuyAmount, lowerSellAmount] = getUnlimitedOrderAmounts(highestLimit, 18, 18)
+      const { base: upperSellAmount, quote: upperBuyAmount } = getUnlimitedOrderAmounts(lowestLimit, 18, 18)
+      const { base: lowerSellAmount, quote: lowerBuyAmount } = getUnlimitedOrderAmounts(1 / highestLimit, 18, 18)
 
       const validFrom = (await exchange.getCurrentBatchId.call()).toNumber() + 3
       const buyTokens = [baseToken.id, quoteToken.id]

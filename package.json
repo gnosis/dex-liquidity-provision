@@ -38,7 +38,7 @@
     "truffle-plugin-verify": "^0.3.10"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.3.0",
+    "@gnosis.pm/dex-contracts": "^0.3.2",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#v1.1.1-dev.1",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
@@ -46,7 +46,7 @@
     "@truffle/contract": "4.2.5",
     "@openzeppelin/contracts": "=2.5.1",
     "axios": "^0.19.2",
-    "bn.js": "^5.1.1",
+    "bn.js": "^5.1.2",
     "canonical-weth": "^1.4.0",
     "csv-writer": "^1.6.0",
     "dotenv": "^8.0.0",
