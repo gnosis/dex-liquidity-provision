@@ -76,6 +76,6 @@
  * @type {object}
  * @property {number} operation Either CALL or DELEGATECALL
  * @property {Address} to Ethereum address receiving the transaction
- * @property {string} value Amount of ETH transferred
+ * @property {number|string|BN} value Amount of ETH transferred
  * @property {string} data Data sent along with the transaction
  */
