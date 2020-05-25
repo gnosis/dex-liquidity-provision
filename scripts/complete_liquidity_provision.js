@@ -9,7 +9,7 @@ const {
   checkSufficiencyOfBalance,
   hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
+const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")

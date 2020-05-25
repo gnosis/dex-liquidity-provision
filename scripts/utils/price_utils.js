@@ -1,4 +1,4 @@
-module.exports = function (web3 = web3, artifacts = artifacts) {
+module.exports = function {
   const assert = require("assert")
   const axios = require("axios")
   const BN = require("bn.js")

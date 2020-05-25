@@ -2,7 +2,7 @@ const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = requir
   web3,
   artifacts
 )
-const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")(web3, artifacts)
+const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
 const { DEFAULT_ORDER_EXPIRY } = require("./utils/constants")
