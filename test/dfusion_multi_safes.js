@@ -25,7 +25,7 @@ const {
   isOnlySafeOwner,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
 

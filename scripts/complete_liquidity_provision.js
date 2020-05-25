@@ -9,12 +9,13 @@ const {
   checkSufficiencyOfBalance,
   hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
 const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
+const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
+
+const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
 const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
-const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 const { DEFAULT_NUM_SAFES } = require("./utils/constants")
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
 
