@@ -97,41 +97,53 @@ npx truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE -
 
 ### Withdrawing
 
-To withdraw funds from the bracket traders, all withdrawals have to be specified in a file with the following format:
+Funds can be withdrawn using the scripts `request_withdraw.js` and `withdraw.js`.
+
+To this end, you must specify the brackets you want to withdraw from with `--brackets` and the tokens to be withdrawn using either `--tokens` (which takes a list of addresses) or `--tokenIds` (which takes a list of token IDs).
+
+First, a withdraw request must be created for each bracket and token.
+The following command request withdrawing of all DAI and WETH (token ID 7 and 1 respectively) for the brackets at addresses `0x1` and `0x2`:
+
+```js
+npx truffle exec scripts/request_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+```
+
+This command can be used to halt all tradings involving these brackets and tokens: Even if orders are still up, no trading will be possible starting from the next batch after the corresponding transaction has been confirmed.
+No funds will have moved yet, but a withdraw request will have been registered on the exchange.
+
+The next step transfers the funds from the exchange to the master Safe.
+Internally, it composes two steps together: withdrawing funds from the exchange to each brackets, and then transferring funds from the brackets to master.
+The parameters of the call are the same as before, the only change is the name of the script to be executed:
+
+```js
+npx truffle exec scripts/withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+```
+
+If necessary, for example if some funds are stuck in some of the bracket, the previous command can be split into two independent units: withdrawing from the exchange into the bracket and transferring funds from the bracket into the master Safe.
+
+```js
+npx truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+```
+
+```js
+npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+```
+
+For a more fine-grained management of the amounts to be withdrawn, withdrawal files can be used instead of `--brackets`, `--tokens`, and `--tokenIds` in both `request_withdraw.js` and `withdraw.js`.
+All desired withdrawals should be specified in a JSON file with the following format:
 
 ```
+[
     {
         "amount": "100000000000000000",
         "tokenAddress": "0xc778417e063141139fce010982780140aa0cd5ab",
         "bracketAddress": "0xfA4a18c2218945bC018BF94D093BCa66c88D3c40"
-    }
+    },
+    ...
 ]
 ```
 
-If you have forgotten the addresses of your brackets, then you should read in the next section how to retrieve them.
-
-The script can automatically determine the amount, instead of having to specify it on the file.
-This is achieved by adding the flag `--allTokens` to the withraw command. This is possible in any of the following commands.
-
-Withdrawing is a two-step process: first, withdrawals must be requested on the exchange; then the withdrawals can be executed, and at the same time the funds can be sent back to the master Safe.
-
-```js
-npx truffle exec scripts/withdraw.js --requestWithdraw --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
-```
-
-```js
-npx truffle exec scripts/withdraw.js --withdraw --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
-```
-
-The latter instruction can be split into two independent units, if needed: withdrawing from the exchange to the bracket and transferring funds from the bracket to the master Safe.
-
-```js
-npx truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
-```
-
-```js
-npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --withdrawalFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
-```
+See `examples/exampleDepositList.json` for a concrete example.
 
 ### Documenting brackets
 
