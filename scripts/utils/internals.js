@@ -174,10 +174,29 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
+  const estimateGas = async function (masterSafe, transaction) {
+    const estimateCall = masterSafe.contract.methods
+      .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
+      .encodeABI()
+    const estimateResponse = await web3.eth.call({
+      to: masterSafe.address,
+      from: masterSafe.address,
+      data: estimateCall,
+      gasPrice: 0,
+    })
+    // https://docs.gnosis.io/safe/docs/contracts_tx_execution/#safe-transaction-gas-limit-estimation
+    // The value returned by requiredTxGas is encoded in a revert error message. For retrieving the hex
+    // encoded uint value the first 68 bytes of the error message need to be removed.
+    const txGasEstimate = parseInt(estimateResponse.substring(138), 16)
+    // Multiply with 64/63 due to EIP-150 (https://github.com/ethereum/EIPs/blob/master/EIPS/eip-150.md)
+    return Math.ceil((txGasEstimate * 64) / 63)
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
     getFallbackHandler,
+    estimateGas,
     execTransaction,
     encodeMultiSend,
     signHashWithPrivateKey,
