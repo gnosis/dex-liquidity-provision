@@ -36,7 +36,7 @@
     "prettier": "^2.0.5",
     "sol-merger": "^3.0.1",
     "tmp-promise": "^3.0.2",
-    "truffle-plugin-verify": "^0.3.10"
+    "truffle-plugin-verify": "^0.3.11"
   },
   "dependencies": {
     "@gnosis.pm/dex-contracts": "^0.3.2",
