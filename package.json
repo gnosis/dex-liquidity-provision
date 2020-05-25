@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
-    "eslint": "^7.0.0",
+    "eslint": "^7.1.0",
     "eslint-plugin-jsdoc": "^25.4.2",
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-react": "^7.20.0",
