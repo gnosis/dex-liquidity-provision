@@ -170,10 +170,17 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
     const sigs = await web3.eth.sign(transactionHash, signer)
+    console.log("Modifying last two characters of signature", sigs.slice(-2))
     // The following signature manipulation is according to
     // signature standards for Gnosis Safe execTransaction
     // https://docs.gnosis.io/safe/docs/contracts_signatures/
-    const modifiedSigs = sigs.slice(0, -2) + (sigs.slice(-2) === "00" ? "1f" : "20")
+    const nodeMap = {
+      "00": "1f",
+      "1b": "1f",
+      "01": "20",
+      "1c": "20",
+    }
+    const modifiedSigs = sigs.slice(0, -2) + nodeMap[sigs.slice(-2)]
     return modifiedSigs
   }
 
