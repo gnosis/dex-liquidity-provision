@@ -55,7 +55,7 @@
     "ethereumjs-util": "^6.2.0",
     "node-fetch": "^2.6.0",
     "synthetix-js": "=2.21.13",
-    "truffle": "^5.1.26",
+    "truffle": "^5.1.27",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   }
 }
