@@ -112,7 +112,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareDirectWithdraw = async function (argv, printOutput = false) {
+  const prepareWithdraw = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -211,17 +211,6 @@ module.exports = function (web3, artifacts) {
     return transactionPromise
   }
 
-  const prepareWithdraw = function (argv, printOutput = false) {
-    // if both options are unset, wa assume the user wants to withdraw and transfer funds to master
-    if (argv.withdraw == argv.transferFundsToMaster) {
-      return prepareWithdrawAndTransferFundsToMaster(argv, printOutput)
-    } else if (argv.withdraw) {
-      return prepareDirectWithdraw(argv, printOutput)
-    } else {
-      return prepareTransferFundsToMaster(argv, printOutput)
-    }
-  }
-
   const defaultWithdrawYargs = default_yargs
     .option("masterSafe", {
       type: "string",
@@ -259,6 +248,8 @@ module.exports = function (web3, artifacts) {
   return {
     prepareRequestWithdraw,
     prepareWithdraw,
+    prepareWithdrawAndTransferFundsToMaster,
+    prepareTransferFundsToMaster,
     defaultWithdrawYargs,
   }
 }

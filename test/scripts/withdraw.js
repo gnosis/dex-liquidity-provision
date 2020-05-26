@@ -15,7 +15,12 @@ const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../
   web3,
   artifacts
 )
-const { prepareRequestWithdraw, prepareWithdraw } = require("../../scripts/wrapper/withdraw")(web3, artifacts)
+const {
+  prepareRequestWithdraw,
+  prepareWithdraw,
+  prepareTransferFundsToMaster,
+  prepareWithdrawAndTransferFundsToMaster,
+} = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
 
@@ -177,7 +182,6 @@ contract("Withdraw script", function (accounts) {
       const argv2 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -185,9 +189,8 @@ contract("Withdraw script", function (accounts) {
       const argv3 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        transferFundsToMaster: true,
       }
-      const transaction3 = await prepareWithdraw(argv3)
+      const transaction3 = await prepareTransferFundsToMaster(argv3)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -222,7 +225,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -317,7 +320,6 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -356,7 +358,6 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -365,9 +366,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        transferFundsToMaster: true,
       }
-      const transaction3 = await prepareWithdraw(argv3)
+      const transaction3 = await prepareTransferFundsToMaster(argv3)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -409,7 +409,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -435,7 +435,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address],
       }
-      const transaction = await prepareWithdraw(argv)
+      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv)
       // if the built transaction used the token balance of the bracket instead of zero, then
       // the following transaction would fail.
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
