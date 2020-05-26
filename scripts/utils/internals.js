@@ -171,16 +171,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
     const sig = await web3.eth.sign(transactionHash, signer)
     console.log(`Modifying recovery byte (${sig.slice(-2)}) for compatibility with Gnosis Safe Transaction Services`)
+    let v = parseInt(sig.slice(-2), 16)
+    if (v === 0 || v === 1) {
+      // According to Ethereum Yellow Paper: recovery byte is supposed to be 27 or 28.
+      // https://github.com/ethereum/yellowpaper/blob/7e819ec24cf397a5f0aaf52f00b21702eca78d0a/Paper.tex#L1721-L1726)
+      // However, ganache-cli: 6.9.1, is currently returning 0 or 1
+      v += 27
+    }
     // The following signature manipulation is according to
     // signature standards for Gnosis Safe execTransaction
     // https://docs.gnosis.io/safe/docs/contracts_signatures/
-    const recoveryByteMap = {
-      "00": "1f",
-      "1b": "1f",
-      "01": "20",
-      "1c": "20",
-    }
-    const modifiedSig = sig.slice(0, -2) + recoveryByteMap[sig.slice(-2)]
+    const recoveryByte = v + 4
+    const modifiedSig = sig.slice(0, -2) + recoveryByte.toString(16)
     return modifiedSig
   }
 
