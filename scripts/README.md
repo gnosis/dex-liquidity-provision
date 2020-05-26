@@ -97,17 +97,19 @@ npx truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE -
 
 ### Withdrawing
 
-Funds can be withdrawn using the scripts `request_withdraw.js` and `withdraw.js`.
+Funds can be withdrawn using the scripts `request_withdraw.js` and `claim_withdraw.js`.
 
 To this end, you must specify the brackets you want to withdraw from with `--brackets` and the tokens to be withdrawn using either `--tokens` (which takes a list of addresses) or `--tokenIds` (which takes a list of token IDs).
+To make sure that the transaction does not need more gas than what fits in a block, the amount of tokens times the amount of brackets should indicatively be smaller than 40.
 
 First, a withdraw request must be created for each bracket and token.
-The following command request withdrawing of all DAI and WETH (token ID 7 and 1 respectively) for the brackets at addresses `0x1` and `0x2`:
+The following command request withdrawing of all DAI and WETH (token ID 7 and 1 respectively) for the brackets at addresses `0x0000000000000000000000000000000000000001` and `0x0000000000000000000000000000000000000002`:
 
 ```js
-npx truffle exec scripts/request_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+npx truffle exec scripts/request_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
+See [documenting brackets](#documenting-brackets) for how to retrieve the addresses of the brackets you created.
 This command can be used to halt all tradings involving these brackets and tokens: Even if orders are still up, no trading will be possible starting from the next batch after the corresponding transaction has been confirmed.
 No funds will have moved yet, but a withdraw request will have been registered on the exchange.
 
@@ -116,20 +118,19 @@ Internally, it composes two steps together: withdrawing funds from the exchange 
 The parameters of the call are the same as before, the only change is the name of the script to be executed:
 
 ```js
-npx truffle exec scripts/withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+npx truffle exec scripts/claim_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
-If necessary, for example if some funds are stuck in some of the bracket, the previous command can be split into two independent units: withdrawing from the exchange into the bracket and transferring funds from the bracket into the master Safe.
+These scripts should be executed in the right order.
+The script `claim_withdraw.js` will not withdraw any funds if run before requesting a withdrawal.
+Running `request_withdraw.js` twice would cause all funds to be sent to the brackets instead of to the master Safe.
+In this scenario, you can use the script `transfer_funds_to_master.js` with the same parameters to recover the funds from the brackets:
 
 ```js
-npx truffle exec scripts/withdraw.js --withdraw --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
+npx truffle exec scripts/transfer_funds_to_master.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
-```js
-npx truffle exec scripts/withdraw.js --transferFundsToMaster --masterSafe=$MASTER_SAFE --brackets=0x1,0x2 --tokenIds=1,7 --network=$NETWORK_NAME
-```
-
-For a more fine-grained management of the amounts to be withdrawn, withdrawal files can be used instead of `--brackets`, `--tokens`, and `--tokenIds` in both `request_withdraw.js` and `withdraw.js`.
+For a more fine-grained management of the amounts to be withdrawn, withdrawal files can be used instead of `--brackets`, `--tokens`, and `--tokenIds` in all the scripts of this section.
 All desired withdrawals should be specified in a JSON file with the following format:
 
 ```
