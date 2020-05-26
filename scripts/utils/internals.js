@@ -169,8 +169,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
-    const sigs = await web3.eth.sign(transactionHash, signer)
-    console.log(`Modifying recovery byte (${sigs.slice(-2)}) for compatibility with Gnosis Safe Transaction Services`)
+    const sig = await web3.eth.sign(transactionHash, signer)
+    console.log(`Modifying recovery byte (${sig.slice(-2)}) for compatibility with Gnosis Safe Transaction Services`)
     // The following signature manipulation is according to
     // signature standards for Gnosis Safe execTransaction
     // https://docs.gnosis.io/safe/docs/contracts_signatures/
@@ -180,8 +180,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       "01": "20",
       "1c": "20",
     }
-    const modifiedSigs = sigs.slice(0, -2) + recoveryByteMap[sigs.slice(-2)]
-    return modifiedSigs
+    const modifiedSig = sig.slice(0, -2) + recoveryByteMap[sig.slice(-2)]
+    return modifiedSig
   }
 
   return {
