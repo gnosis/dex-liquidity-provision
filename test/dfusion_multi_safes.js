@@ -737,7 +737,6 @@ contract("GnosisSafe", function (accounts) {
       await assertNodejs.rejects(
         buildOrders(masterSafe.address, bracketSafes, baseToken, quoteToken, lowestLimit, highestLimit),
         {
-          name: "AssertionError [ERR_ASSERTION]",
           message: "Lowest limit must be lower than highest limit",
         }
       )
