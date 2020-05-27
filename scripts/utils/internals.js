@@ -170,7 +170,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
     const sig = await web3.eth.sign(transactionHash, signer)
-    console.log(`Modifying recovery byte (${sig.slice(-2)}) for compatibility with Gnosis Safe Transaction Services`)
     let v = parseInt(sig.slice(-2), 16)
     if (v === 0 || v === 1) {
       // According to Ethereum Yellow Paper: recovery byte is supposed to be 27 or 28.
@@ -182,8 +181,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // signature standards for Gnosis Safe execTransaction
     // https://docs.gnosis.io/safe/docs/contracts_signatures/
     const recoveryByte = v + 4
-    const modifiedSig = sig.slice(0, -2) + recoveryByte.toString(16)
-    return modifiedSig
+    return sig.slice(0, -2) + recoveryByte.toString(16)
   }
 
   return {
