@@ -250,9 +250,10 @@
     "@gnosis.pm/util-contracts" "^2.0.0"
     verify-on-etherscan "^1.1.1"
 
-"@gnosis.pm/safe-contracts@github:gnosis/safe-contracts#v1.1.1-dev.2":
+"@gnosis.pm/safe-contracts@v1.1.1-dev.2":
   version "1.1.1-dev.2"
-  resolved "https://codeload.github.com/gnosis/safe-contracts/tar.gz/2584f4e291c32d3a9b1ceae1a9011b492985ac61"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-contracts/-/safe-contracts-1.1.1-dev.2.tgz#4a5b9a9befe66d15df87d2216237d4ea4f64118f"
+  integrity sha512-x0x8K3/XzfDmtmL6RaF8eSJUPJVmT7jd29kmwoodm/JlYlyOmdQNBynUZUTkmknIlF1coiypCLls9zDbx8QQfw==
   dependencies:
     "@truffle/hdwallet-provider" "^1.0.0"
     dotenv "^8.0.0"
