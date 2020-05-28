@@ -33,22 +33,13 @@ const deploySafe = async function (gnosisSafeMasterCopy, proxyFactory, owners, t
   return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, null)
 }
 
-// Need some small adjustments to default implementation for web3js 1.x
-async function getParamFromTxEvent(transaction, eventName, paramName, contract, subject) {
-  if (subject != null) {
-    logGasUsage(subject, transaction)
-  }
+const getParamFromTxEvent = async function (transaction, eventName, paramName, contractAddress) {
   let logs = transaction.logs
   if (eventName != null) {
-    logs = logs.filter((l) => l.event === eventName && l.address === contract)
+    logs = logs.filter((l) => l.event === eventName && l.address === contractAddress)
   }
   assert.equal(logs.length, 1, "too many logs found!")
   return logs[0].args[paramName]
-}
-
-function logGasUsage(subject, transactionOrReceipt) {
-  const receipt = transactionOrReceipt.receipt || transactionOrReceipt
-  console.log("    Gas costs for " + subject + ": " + receipt.gasUsed)
 }
 
 const createTokenAndGetData = async function (symbol, decimals) {
@@ -64,7 +55,6 @@ const createTokenAndGetData = async function (symbol, decimals) {
 
 module.exports = {
   deploySafe,
-  getParamFromTxEvent,
   createTokenAndGetData,
   prepareTokenRegistration,
   addCustomMintableTokenToExchange,

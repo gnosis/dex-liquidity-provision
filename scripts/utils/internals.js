@@ -1,3 +1,8 @@
+/**
+ * @typedef {import('../typedef.js').Address} Address
+ * @typedef {import('../typedef.js').Transaction} Transaction
+ */
+
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
 
@@ -7,22 +12,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
-
-  /**
-   * @typedef Transaction
-   *  * Example:
-   *  {
-   *    operation: CALL,
-   *    to: "0x0000..000",
-   *    value: "10",
-   *    data: "0x00",
-   *  }
-   * @type {object}
-   * @property {int} operation Either CALL or DELEGATECALL
-   * @property {EthereumAddress} to Ethereum address receiving the transaction
-   * @property {string} value Amount of ETH transferred
-   * @property {string} data Data sent along with the transaction
-   */
 
   const jsonrpc = "2.0"
   const id = 0
@@ -40,7 +29,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Wait for n (evm) seconds to pass
-   * @param seconds: int
+   *
+   * @param {number} seconds number of seconds to wait
    */
   const waitForNSeconds = async function (seconds) {
     await send("evm_increaseTime", [seconds], web3)
@@ -96,11 +86,13 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Given a collection of transactions, creates a single transaction that bundles all of them
+   *
    * @param {Transaction[]} transactions List of {@link Transaction} that are to be bundled together
-   * @return {Transaction} Multisend transaction bundling all input transactions
+   * @returns {Transaction} Multisend transaction bundling all input transactions
    */
   const buildBundledTransaction = async function (transactions) {
-    // TODO: do we really need to await the concrete instance of multiSend, since we are only using it to compute the data of a transaction?
+    // TODO: do we really need to await the concrete instance of multiSend?
+    // since we are only using it to compute the data of a transaction?
     const multiSend = await multiSendPromise
     const transactionData = encodeMultiSend(multiSend, transactions)
     const bundledTransaction = {
@@ -137,10 +129,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Creates a transaction that makes a master Safe execute a transaction on behalf of a (single-owner) owned trader using execTransaction
-   * @param {EthereumAddress} masterAddress Address of a controlled Safe
-   * @param {EthereumAddress} bracketAddress Address of a Safe, owned only by master, target of execTransaction
+   *
+   * @param {Address} masterAddress Address of a controlled Safe
+   * @param {Address} bracketAddress Address of a Safe, owned only by master, target of execTransaction
    * @param {Transaction} transaction The transaction to be executed by execTransaction
-   * @return {Transaction} Transaction calling execTransaction; should be executed by master
+   * @returns {Transaction} Transaction calling execTransaction; should be executed by master
    */
   const buildExecTransaction = async function (masterAddress, bracketAddress, transaction) {
     const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise // TODO: do we need the master copy instance?
@@ -164,8 +157,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * Users can set up their Gnosis Safe to have a fallback handler: a contract to which all transactions
    * with nonempty data triggering a call to the fallback are forwarded.
    * The fallback contract address is always located at the same storage position for every Safe.
-   * @param {Address} transactions Address of a Gnosis Safe
-   * @return {Address} Fallback contract of the input Gnosis Safe
+   *
+   * @param {Address} safeAddress Address of a Gnosis Safe
+   * @returns {Address} Fallback contract of the input Gnosis Safe
    */
   const getFallbackHandler = async function (safeAddress) {
     const fallbackHandlerStorageSlot = web3.utils.keccak256("fallback_manager.handler.address")
@@ -173,12 +167,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
-    const sigs = await web3.eth.sign(transactionHash, signer)
+    const sig = await web3.eth.sign(transactionHash, signer)
+    let v = parseInt(sig.slice(-2), 16)
+    if (v === 0 || v === 1) {
+      // Recovery byte is supposed to be 27 or 28. This is a known issue with ganache
+      // https://github.com/trufflesuite/ganache-cli/issues/757
+      v += 27
+    }
     // The following signature manipulation is according to
     // signature standards for Gnosis Safe execTransaction
     // https://docs.gnosis.io/safe/docs/contracts_signatures/
-    const modifiedSigs = sigs.slice(0, -2) + (sigs.slice(-2) === "00" ? "1f" : "20")
-    return modifiedSigs
+    const recoveryByte = v + 4
+    return sig.slice(0, -2) + recoveryByte.toString(16)
   }
 
   return {

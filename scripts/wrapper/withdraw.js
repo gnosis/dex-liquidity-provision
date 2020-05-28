@@ -2,7 +2,6 @@ module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
   const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
 
-  const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const {
     getExchange,
     fetchTokenInfoAtAddresses,
@@ -12,16 +11,12 @@ module.exports = function (web3, artifacts) {
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+  const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
+  const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const { MAXUINT256 } = require("../utils/constants")
 
   const assertGoodArguments = function (argv) {
     if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
-
-    if (!argv.requestWithdraw && !argv.withdraw && !argv.transferFundsToMaster) {
-      throw new Error("Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given")
-    } else if (argv.requestWithdraw && (argv.transferFundsToMaster || argv.withdraw)) {
-      throw new Error("Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster")
-    }
 
     if (!argv.withdrawalFile && !argv.brackets) {
       throw new Error("Argument error: one of --withdrawalFile, --brackets must be given")
@@ -42,36 +37,25 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const determineAmountToWithdraw = async function (argv, bracketAddress, tokenData, exchange) {
-    let amount
-    const token = tokenData.instance
-    if (argv.requestWithdraw) {
-      amount = MAXUINT256.toString()
-    } else {
-      if (argv.withdraw) {
-        amount = await getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
-      }
-      if (argv.transferFundsToMaster) {
-        amount = amount || (await token.balanceOf(bracketAddress)).toString()
-      }
-    }
-    return amount
-  }
-
-  return async function (argv, printOutput = false) {
+  const getWithdrawalsAndTokenInfo = async function (
+    amountFunction,
+    withdrawalFile,
+    brackets,
+    tokens,
+    tokenIds,
+    printOutput = false
+  ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
-
-    assertGoodArguments(argv)
 
     let withdrawals
     let tokenInfoPromises
-    if (argv.withdrawalFile) {
-      withdrawals = JSON.parse(await fs.readFile(argv.withdrawalFile, "utf8"))
+    if (withdrawalFile) {
+      withdrawals = JSON.parse(await fs.readFile(withdrawalFile, "utf8"))
       tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
     } else {
       const exchangePromise = getExchange(web3)
       const tokenAddresses =
-        argv.tokens || (await Promise.all(argv.tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
+        tokens || (await Promise.all(tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
       tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
       const exchange = await exchangePromise
 
@@ -79,11 +63,9 @@ module.exports = function (web3, artifacts) {
       const tokenDataList = await Promise.all(Object.entries(tokenInfoPromises).map(([, tokenDataPromise]) => tokenDataPromise))
       const tokenBracketPairs = []
       for (const tokenData of tokenDataList)
-        for (const bracketAddress of argv.brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+        for (const bracketAddress of brackets) tokenBracketPairs.push([bracketAddress, tokenData])
       const maxWithdrawableAmounts = await Promise.all(
-        tokenBracketPairs.map(([bracketAddress, tokenData]) =>
-          determineAmountToWithdraw(argv, bracketAddress, tokenData, exchange)
-        )
+        tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
       )
       withdrawals = []
       maxWithdrawableAmounts.forEach((amount, index) => {
@@ -96,48 +78,178 @@ module.exports = function (web3, artifacts) {
       })
     }
 
-    log("Started building withdraw transaction.")
-    let transactionPromise
-    if (argv.requestWithdraw) transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
-    else if (argv.withdraw && !argv.transferFundsToMaster) transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
-    else if (!argv.withdraw && argv.transferFundsToMaster)
-      transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
-    else if (argv.withdraw && argv.transferFundsToMaster)
-      transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
-    else {
-      throw new Error("No operation specified")
+    return {
+      withdrawals,
+      tokenInfoPromises,
     }
+  }
+
+  const prepareRequestWithdraw = async function (argv, printOutput = false) {
+    const log = printOutput ? (...a) => console.log(...a) : () => {}
+
+    assertGoodArguments(argv)
+
+    const amountFunction = function () {
+      return MAXUINT256.toString()
+    }
+    const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
+      amountFunction,
+      argv.withdrawalFile,
+      argv.brackets,
+      argv.tokens,
+      argv.tokenIds,
+      printOutput
+    )
+
+    log("Started building withdraw transaction.")
+    const transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
+
+    for (const withdrawal of withdrawals) {
+      const { symbol: tokenSymbol } = await tokenInfoPromises[withdrawal.tokenAddress]
+
+      log(`Requesting withdrawal of all ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
+    }
+
+    return transactionPromise
+  }
+  const prepareWithdraw = async function (argv, printOutput = false) {
+    const log = printOutput ? (...a) => console.log(...a) : () => {}
+
+    assertGoodArguments(argv)
+
+    const amountFunction = function (bracketAddress, tokenData, exchange) {
+      return getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
+    }
+    const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
+      amountFunction,
+      argv.withdrawalFile,
+      argv.brackets,
+      argv.tokens,
+      argv.tokenIds,
+      printOutput
+    )
+
+    log("Started building withdraw transaction.")
+    const transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
+
+    for (const withdrawal of withdrawals) {
+      const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
+
+      const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
+      log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
+    }
+
+    return transactionPromise
+  }
+  const prepareTransferFundsToMaster = async function (argv, printOutput = false) {
+    const log = printOutput ? (...a) => console.log(...a) : () => {}
+
+    assertGoodArguments(argv)
+
+    const amountFunction = async function (bracketAddress, tokenData) {
+      return (await tokenData.instance.balanceOf(bracketAddress)).toString()
+    }
+    const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
+      amountFunction,
+      argv.withdrawalFile,
+      argv.brackets,
+      argv.tokens,
+      argv.tokenIds,
+      printOutput
+    )
+
+    log("Started building withdraw transaction.")
+    const transactionPromise = buildTransferFundsToMaster(argv.masterSafe, withdrawals, true)
 
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
 
-      if (argv.requestWithdraw)
-        log(
-          `Requesting withdrawal of ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`
-        )
-      else if (argv.withdraw && !argv.transferFundsToMaster)
-        log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
-      else if (!argv.withdraw && argv.transferFundsToMaster)
-        log(
-          `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
-            argv.masterSafe
-          )}`
-        )
-      else if (argv.withdraw && argv.transferFundsToMaster)
-        log(
-          `Safe ${
-            withdrawal.bracketAddress
-          } withdrawing ${userAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
-            argv.masterSafe
-          )})`
-        )
-      else {
-        throw new Error("No operation specified")
-      }
+      log(
+        `Transferring ${userAmount} ${tokenSymbol} from Safe ${withdrawal.bracketAddress} into master Safe ${shortenedAddress(
+          argv.masterSafe
+        )}`
+      )
     }
 
     return transactionPromise
+  }
+  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false) {
+    const log = printOutput ? (...a) => console.log(...a) : () => {}
+
+    assertGoodArguments(argv)
+
+    const amountFunction = function (bracketAddress, tokenData, exchange) {
+      return getWithdrawableAmount(bracketAddress, tokenData.address, exchange, web3)
+    }
+    const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
+      amountFunction,
+      argv.withdrawalFile,
+      argv.brackets,
+      argv.tokens,
+      argv.tokenIds,
+      printOutput
+    )
+
+    log("Started building withdraw transaction.")
+    const transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
+
+    for (const withdrawal of withdrawals) {
+      const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
+
+      const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
+      log(
+        `Safe ${
+          withdrawal.bracketAddress
+        } withdrawing ${userAmount} ${tokenSymbol} from BatchExchange and forwarding the whole amount into master Safe ${shortenedAddress(
+          argv.masterSafe
+        )})`
+      )
+    }
+
+    return transactionPromise
+  }
+
+  const defaultWithdrawYargs = default_yargs
+    .option("masterSafe", {
+      type: "string",
+      describe: "address of Gnosis Safe owning bracketSafes",
+      demandOption: true,
+    })
+    .option("withdrawalFile", {
+      type: "string",
+      describe: "file name (and path) to the list of withdrawals",
+    })
+    .option("brackets", {
+      type: "string",
+      describe:
+        "comma-separated list of brackets from which to withdraw the entire balance. Compatible with all valid combinations of --requestWithdraw, --withdraw, --transferFundsToMaster",
+      coerce: (str) => {
+        return str.split(",")
+      },
+    })
+    .option("tokens", {
+      type: "string",
+      describe: "comma separated address list of tokens to withdraw, to use in combination with --brackets",
+      coerce: (str) => {
+        return str.split(",")
+      },
+    })
+    .option("tokenIds", {
+      type: "string",
+      describe: "comma separated list of exchange ids for the tokens to withdraw, to use in combination with --brackets",
+      coerce: (str) => {
+        return str.split(",")
+      },
+    })
+    .check(checkBracketsForDuplicate)
+
+  return {
+    prepareRequestWithdraw,
+    prepareWithdraw,
+    prepareWithdrawAndTransferFundsToMaster,
+    prepareTransferFundsToMaster,
+    defaultWithdrawYargs,
   }
 }

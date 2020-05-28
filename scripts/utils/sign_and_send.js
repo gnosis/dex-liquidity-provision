@@ -1,3 +1,8 @@
+/**
+ * @typedef {import('../typedef.js').Address} Address
+ * @typedef {import('../typedef.js').Transaction} Transaction
+ */
+
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
 
@@ -29,8 +34,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Signs and sends the transaction to the gnosis-safe UI
-   * @param {Address} masterAddress Address of the master safe owning the brackets
+   *
+   * @param {Address} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
+   * @param {string} network either rinkeby or mainnet
+   * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
+   * @param {boolean} [dryRun=false] Do all steps of the function except actually sending the transaction.
    */
   const signAndSend = async function (masterSafe, transaction, network, nonce = null, dryRun = false) {
     if (nonce === null) {

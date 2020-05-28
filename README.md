@@ -14,6 +14,9 @@ Install needed dependencies:
 yarn install
 ```
 
+Note that the installation might be successful even if errors are shown in the console output.
+In case of doubt, running `echo $?` immediately after `yarn install` should return 0 if the installation was successful.
+
 Run Ganache in the background with an increased gas limit (this is needed to deploy Gnosis Protocol):
 
 ```
