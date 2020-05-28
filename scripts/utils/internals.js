@@ -168,7 +168,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
-
   const estimateGas = async function (masterSafe, transaction) {
     const estimateCall = masterSafe.contract.methods
       .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
