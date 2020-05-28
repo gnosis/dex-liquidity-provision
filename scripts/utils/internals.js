@@ -174,7 +174,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     if (v === 0 || v === 1) {
       // According to Ethereum Yellow Paper: recovery byte is supposed to be 27 or 28.
       // https://github.com/ethereum/yellowpaper/blob/7e819ec24cf397a5f0aaf52f00b21702eca78d0a/Paper.tex#L1721-L1726)
-      // However, ganache-cli: 6.9.1, is currently returning 0 or 1
+      // However, this is a known issue with ganache
+      // https://github.com/trufflesuite/ganache-cli/issues/757
       v += 27
     }
     // The following signature manipulation is according to
