@@ -4,9 +4,7 @@
  */
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
-  const assert = require("assert")
   const axios = require("axios")
-
   const { signHashWithPrivateKey, estimateGas } = require("../utils/internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
 
@@ -15,7 +13,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     mainnet: "",
   }
 
-  const withHexPrefix = (string) => (string.startsWith("0x") ? string : `0x${string}`)
 
   /**
    * Signs and sends the transaction to the gnosis-safe UI
@@ -50,11 +47,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       return
     }
 
-    assert(process.env.PK != null, "This script requires a private key be explicitly provided. Please export PK")
-    const privateKey = withHexPrefix(process.env.PK)
-    const account = web3.eth.accounts.privateKeyToAccount(privateKey)
-    console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${account.address}`)
-    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
+    const signer = (await web3.eth.getAccounts())[0]
+    console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${signer}`)
+    const sigs = await getSafeCompatibleSignature(transactionHash, signer)
 
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/safes/${masterSafe.address}/transactions/`
     const postData = {
@@ -69,7 +64,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       refundReceiver: ZERO_ADDRESS,
       nonce: nonce,
       contractTransactionHash: transactionHash,
-      sender: web3.utils.toChecksumAddress(account.address),
+      sender: web3.utils.toChecksumAddress(signer),
       signature: sigs,
     }
     await axios.post(endpoint, postData).catch(function (error) {

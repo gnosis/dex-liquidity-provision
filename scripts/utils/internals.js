@@ -39,7 +39,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     await send("evm_mine", [], web3)
   }
 
-  const execTransaction = async function (safe, privateKey, transaction) {
+  const execTransaction = async function (safe, signer, transaction) {
     const nonce = await safe.nonce()
     const transactionHash = await safe.getTransactionHash(
       transaction.to,
@@ -53,7 +53,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ZERO_ADDRESS,
       nonce
     )
-    const sigs = signHashWithPrivateKey(transactionHash, privateKey)
+    const sigs = await getSafeCompatibleSignature(transactionHash, signer)
     await safe.execTransaction(
       transaction.to,
       transaction.value,
@@ -66,12 +66,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ZERO_ADDRESS,
       sigs
     )
-  }
-
-  const signHashWithPrivateKey = function (hash, privateKey) {
-    const msgBuff = new Buffer(ethUtil.stripHexPrefix(hash), "hex")
-    const sig = ethUtil.ecsign(msgBuff, new Buffer(ethUtil.stripHexPrefix(privateKey), "hex"))
-    return "0x" + sig.r.toString("hex") + sig.s.toString("hex") + sig.v.toString(16)
   }
 
   const encodeMultiSend = function (multiSend, txs) {
@@ -174,6 +168,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
+
   const estimateGas = async function (masterSafe, transaction) {
     const estimateCall = masterSafe.contract.methods
       .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
@@ -192,6 +187,21 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return Math.ceil((txGasEstimate * 64) / 63)
   }
 
+  const getSafeCompatibleSignature = async function (transactionHash, signer) {
+    const sig = await web3.eth.sign(transactionHash, signer)
+    let v = parseInt(sig.slice(-2), 16)
+    if (v === 0 || v === 1) {
+      // Recovery byte is supposed to be 27 or 28. This is a known issue with ganache
+      // https://github.com/trufflesuite/ganache-cli/issues/757
+      v += 27
+    }
+    // The following signature manipulation is according to
+    // signature standards for Gnosis Safe execTransaction
+    // https://docs.gnosis.io/safe/docs/contracts_signatures/
+    const recoveryByte = v + 4
+    return sig.slice(0, -2) + recoveryByte.toString(16)
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
@@ -199,9 +209,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     estimateGas,
     execTransaction,
     encodeMultiSend,
-    signHashWithPrivateKey,
     buildBundledTransaction,
     buildExecTransaction,
+    getSafeCompatibleSignature,
     CALL,
   }
 }
