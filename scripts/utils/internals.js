@@ -4,8 +4,6 @@
  */
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
-  const ethUtil = require("ethereumjs-util")
-
   const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
 
   const IProxy = artifacts.require("IProxy")
@@ -155,7 +153,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return safe.masterCopy()
   }
 
-  const fallbackHandlerStorageSlot = "0x" + ethUtil.keccak256("fallback_manager.handler.address").toString("hex")
   /**
    * Users can set up their Gnosis Safe to have a fallback handler: a contract to which all transactions
    * with nonempty data triggering a call to the fallback are forwarded.
@@ -165,6 +162,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {Address} Fallback contract of the input Gnosis Safe
    */
   const getFallbackHandler = async function (safeAddress) {
+    const fallbackHandlerStorageSlot = web3.utils.keccak256("fallback_manager.handler.address")
     return web3.utils.padLeft(await web3.eth.getStorageAt(safeAddress, fallbackHandlerStorageSlot), 40)
   }
 
