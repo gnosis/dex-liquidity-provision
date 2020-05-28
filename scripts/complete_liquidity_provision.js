@@ -82,6 +82,8 @@ const argv = default_yargs
 
 module.exports = async (callback) => {
   try {
+    const signer = (await web3.eth.getAccounts())[0]
+    console.log("Using account:", signer)
     // Init params
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
@@ -97,6 +99,8 @@ module.exports = async (callback) => {
 
     const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
     const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
+
+    assert((await masterSafe.getOwners()).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
 
     if (argv.brackets) {
       assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
