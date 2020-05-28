@@ -5,14 +5,13 @@
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
-  const { signHashWithPrivateKey, estimateGas } = require("../utils/internals")(web3, artifacts)
+  const { getSafeCompatibleSignature, estimateGas } = require("../utils/internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
     mainnet: "",
   }
-
 
   /**
    * Signs and sends the transaction to the gnosis-safe UI
