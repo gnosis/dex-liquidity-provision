@@ -3,7 +3,7 @@ const assert = require("assert")
 const Contract = require("@truffle/contract")
 
 const { addCustomMintableTokenToExchange } = require("./test_utils")
-const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price_utils")(web3, artifacts)
+const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price_utils")
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 contract("PriceOracle", function (accounts) {

@@ -8,7 +8,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     artifacts
   )
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
-  const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")(web3, artifacts)
+  const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   // const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
