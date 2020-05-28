@@ -172,9 +172,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const sig = await web3.eth.sign(transactionHash, signer)
     let v = parseInt(sig.slice(-2), 16)
     if (v === 0 || v === 1) {
-      // According to Ethereum Yellow Paper: recovery byte is supposed to be 27 or 28.
-      // https://github.com/ethereum/yellowpaper/blob/7e819ec24cf397a5f0aaf52f00b21702eca78d0a/Paper.tex#L1721-L1726)
-      // However, this is a known issue with ganache
+      // Recovery byte is supposed to be 27 or 28. This is a known issue with ganache
       // https://github.com/trufflesuite/ganache-cli/issues/757
       v += 27
     }
