@@ -15,8 +15,13 @@ const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../
   web3,
   artifacts
 )
+const {
+  prepareRequestWithdraw,
+  prepareWithdraw,
+  prepareTransferFundsToMaster,
+  prepareWithdrawAndTransferFundsToMaster,
+} = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
-const prepareWithdraw = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
 
 const bnMaxUint256 = new BN(2).pow(new BN(256)).subn(1)
@@ -111,9 +116,8 @@ contract("Withdraw script", function (accounts) {
       const argv = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        requestWithdraw: true,
       }
-      const transaction = await prepareWithdraw(argv)
+      const transaction = await prepareRequestWithdraw(argv)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -136,9 +140,8 @@ contract("Withdraw script", function (accounts) {
       const argv1 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
@@ -171,16 +174,14 @@ contract("Withdraw script", function (accounts) {
       const argv1 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -188,9 +189,8 @@ contract("Withdraw script", function (accounts) {
       const argv3 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        transferFundsToMaster: true,
       }
-      const transaction3 = await prepareWithdraw(argv3)
+      const transaction3 = await prepareTransferFundsToMaster(argv3)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -216,19 +216,16 @@ contract("Withdraw script", function (accounts) {
       const argv1 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
       const argv2 = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
-        withdraw: true,
-        transferFundsToMaster: true,
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -260,9 +257,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        requestWithdraw: true,
       }
-      const transaction = await prepareWithdraw(argv)
+      const transaction = await prepareRequestWithdraw(argv)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -289,9 +285,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokenIds: [usdcId, wethId],
-        requestWithdraw: true,
       }
-      const transaction = await prepareWithdraw(argv)
+      const transaction = await prepareRequestWithdraw(argv)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -316,9 +311,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
@@ -326,7 +320,6 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -356,9 +349,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
@@ -366,7 +358,6 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        withdraw: true,
       }
       const transaction2 = await prepareWithdraw(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
@@ -375,9 +366,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        transferFundsToMaster: true,
       }
-      const transaction3 = await prepareWithdraw(argv3)
+      const transaction3 = await prepareTransferFundsToMaster(argv3)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -409,9 +399,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        requestWithdraw: true,
       }
-      const transaction1 = await prepareWithdraw(argv1)
+      const transaction1 = await prepareRequestWithdraw(argv1)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction1)
       await waitForNSeconds(301)
 
@@ -419,10 +408,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
-        withdraw: true,
-        transferFundsToMaster: true,
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
       await execTransaction(masterSafe, safeOwner.privateKey, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -447,10 +434,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address],
-        withdraw: true,
-        transferFundsToMaster: true,
       }
-      const transaction = await prepareWithdraw(argv)
+      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv)
       // if the built transaction used the token balance of the bracket instead of zero, then
       // the following transaction would fail.
       await execTransaction(masterSafe, safeOwner.privateKey, transaction)
@@ -462,41 +447,6 @@ contract("Withdraw script", function (accounts) {
       {
         argv: {},
         error: "Argument error: --masterSafe is required",
-      },
-      {
-        argv: {
-          masterSafe: masterSafe.address,
-          withdrawalFile: "/dev/null",
-          requestWithdraw: true,
-          withdraw: true,
-        },
-        error: "Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster",
-      },
-      {
-        argv: {
-          masterSafe: masterSafe.address,
-          withdrawalFile: "/dev/null",
-          requestWithdraw: true,
-          transferFundsToMaster: true,
-        },
-        error: "Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster",
-      },
-      {
-        argv: {
-          masterSafe: masterSafe.address,
-          withdrawalFile: "/dev/null",
-          requestWithdraw: true,
-          withdraw: true,
-          transferFundsToMaster: true,
-        },
-        error: "Argument error: --requestWithdraw cannot be used with any of --withdraw, --transferFundsToMaster",
-      },
-      {
-        argv: {
-          masterSafe: masterSafe.address,
-          withdrawalFile: "/dev/zero",
-        },
-        error: "Argument error: one of --requestWithdraw, --withdraw, --transferFundsToMaster must be given",
       },
       {
         argv: {
