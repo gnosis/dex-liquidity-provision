@@ -2696,10 +2696,10 @@ escape-string-regexp@1.0.5, escape-string-regexp@^1.0.2, escape-string-regexp@^1
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
   integrity sha1-G2HAViGQqN/2rjuyzwIAyhMLhtQ=
 
-eslint-plugin-jsdoc@^25.4.3:
-  version "25.4.3"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-25.4.3.tgz#83e0d8ac778b7866be0aca23cadb5ec3b0dc1910"
-  integrity sha512-5FyIKcNoM+AMBf1sTHvs2DVyij2x6eCYO1hxOUWFLBZV6H5AIdXPT3fVc9H6hrxOYe9SRF+5SjY1hqimV3Q+gQ==
+eslint-plugin-jsdoc@^26.0.0:
+  version "26.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-26.0.0.tgz#91d0d958eec1a2b8915a60462a7a57a665c58ef1"
+  integrity sha512-/oEywHPBn6eVDExTgDTwdwyQlVIuJziovXOPXBROW8yW93vk6/IGezW5jbzmA2pX4tVRCQc/jz5/mZea+FCmfw==
   dependencies:
     comment-parser "^0.7.4"
     debug "^4.1.1"
@@ -7405,9 +7405,10 @@ web3-provider-engine@15.0.4:
     xhr "^2.2.0"
     xtend "^4.0.1"
 
-"web3-provider-engine@git+https://github.com/trufflesuite/provider-engine.git#web3-one":
+"web3-provider-engine@https://github.com/trufflesuite/provider-engine#web3-one":
   version "14.0.6"
-  resolved "git+https://github.com/trufflesuite/provider-engine.git#3538c60bc4836b73ccae1ac3f64c8fed8ef19c1a"
+  uid "3538c60bc4836b73ccae1ac3f64c8fed8ef19c1a"
+  resolved "https://github.com/trufflesuite/provider-engine#3538c60bc4836b73ccae1ac3f64c8fed8ef19c1a"
   dependencies:
     async "^2.5.0"
     backoff "^2.5.0"
