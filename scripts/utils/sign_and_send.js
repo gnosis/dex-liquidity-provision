@@ -92,7 +92,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     console.log(`The reproduced transaction has the gnosis-safe hash ${transactionHash} and nonce ${nonce}`)
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/transactions/${transactionHash}/`
     await axios.get(endpoint).catch(function (error) {
-      console.log(error.response.data.detail)
       if (error.response.data.detail === "Not found.") {
         throw new Error("The reproduced transaction was not found. There is something wrong. Contact the proposer.")
       }
