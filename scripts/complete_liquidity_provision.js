@@ -9,7 +9,7 @@ const {
   checkSufficiencyOfBalance,
   hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { signAndSend, checkTransactionExistenceOnSafeServer } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
@@ -182,31 +182,32 @@ module.exports = async (callback) => {
       true
     )
 
-    let nonce = argv.nonce
-    if (nonce === undefined) {
-      nonce = (await masterSafe.nonce()).toNumber()
-    }
     if (!argv.verify) {
       console.log(
         "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
       )
-      await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
     } else {
       console.log("==> Order placing transaction")
-      await checkTransactionExistenceOnSafeServer(masterSafe, orderTransaction, argv.network, nonce)
     }
+    let nonce = argv.nonce
+    if (nonce === undefined) {
+      nonce = (await masterSafe.nonce()).toNumber()
+    }
+    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
 
     if (!argv.verify) {
       console.log(
         "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
       )
-      await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+    } else {
+      console.log("==> Funds transferring transaction")
+    }
+    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
+
+    if (!argv.verify) {
       console.log(
         `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
       )
-    } else {
-      console.log("==> Funds transferring transaction")
-      await checkTransactionExistenceOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
     }
 
     callback()

@@ -7,7 +7,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
   const { getSafeCompatibleSignature, estimateGas } = require("../utils/internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
-  const baseGas = 0
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
@@ -21,12 +20,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Transaction} transaction The transaction to be signed and sent
    * @param {string} network either rinkeby or mainnet
    * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
+   * @param {boolean} [dryRun=false] Do all steps of the function except actually sending the transaction.
    */
-  const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
+  const signAndSend = async function (masterSafe, transaction, network, nonce = null, dryRun = false) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
     const safeTxGas = await estimateGas(masterSafe, transaction)
+    const baseGas = 0
     const transactionHash = await masterSafe.getTransactionHash(
       transaction.to,
       transaction.value,
@@ -39,6 +40,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       ZERO_ADDRESS,
       nonce
     )
+
+    if (dryRun) {
+      console.log(`Would send tx with hash ${transactionHash} and nonce ${nonce}`)
+      return
+    }
 
     const signer = (await web3.eth.getAccounts())[0]
     console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${signer}`)
@@ -67,45 +73,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     console.log("Transaction awaiting execution in the interface", interfaceLink)
   }
 
-  /**
-   * Checks that a transaction was already proposed to the gnosis-safe UI
-   *
-   * @param {Address} masterSafe Address of the master safe owning the brackets
-   * @param {Transaction} transaction The transaction to be signed and sent
-   * @param {string} network either rinkeby or mainnet
-   * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
-   */
-  const checkTransactionExistenceOnSafeServer = async function (masterSafe, transaction, network, nonce = null) {
-    const safeTxGas = await estimateGas(masterSafe, transaction)
-    const transactionHash = await masterSafe.getTransactionHash(
-      transaction.to,
-      transaction.value,
-      transaction.data,
-      transaction.operation,
-      safeTxGas,
-      baseGas,
-      0,
-      ZERO_ADDRESS,
-      ZERO_ADDRESS,
-      nonce
-    )
-    console.log(`The reproduced transaction has the gnosis-safe hash ${transactionHash} and nonce ${nonce}`)
-    const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/transactions/${transactionHash}/`
-    await axios.get(endpoint).catch(function (error) {
-      console.log(error.response.data.detail)
-      if (error.response.data.detail === "Not found.") {
-        throw new Error("The reproduced transaction was not found. There is something wrong. Contact the proposer.")
-      }
-      throw new Error("Error while talking to the gnosis-interface: " + JSON.stringify(error.response.data))
-    })
-    const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
-    console.log(
-      `The reproduced transaction was is already proposed! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
-    )
-  }
-
   return {
     signAndSend,
-    checkTransactionExistenceOnSafeServer,
   }
 }
