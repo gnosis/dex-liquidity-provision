@@ -93,6 +93,7 @@ const findBracketsWithExistingOrders = async function (bracketAddresses, exchang
 
 module.exports = async (callback) => {
   try {
+    // initialize promises that will be used later in the code to speed up execution
     const exchangePromise = getExchange()
     const masterSafePromise = getSafe(argv.masterSafe)
     const signerPromise = web3.eth.getAccounts().then((accounts) => accounts[0])
