@@ -117,9 +117,9 @@ module.exports = async (callback) => {
     const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
     const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
     const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
-    const isBaseTokenBalanceSufficientPromise = checkSufficiencyOfBalance(baseToken, argv.masterSafe, depositBaseToken)
-    const isQuoteTokenBalanceSufficientPromise = checkSufficiencyOfBalance(quoteToken, argv.masterSafe, depositQuoteToken)
-    const priceCheckPromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
+    const hasSufficientBaseTokenPromise = checkSufficiencyOfBalance(baseToken, argv.masterSafe, depositBaseToken)
+    const hasSufficientQuoteTokenPromise = checkSufficiencyOfBalance(quoteToken, argv.masterSafe, depositQuoteToken)
+    const isPriceCloseToDexagsPromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
 
     const signer = await signerPromise
     console.log("Using account:", signer)
@@ -130,21 +130,21 @@ module.exports = async (callback) => {
     }
 
     console.log("==> Performing safety checks")
-    if (!(await isBaseTokenBalanceSufficientPromise)) {
+    if (!(await hasSufficientBaseTokenPromise)) {
       callback(`Error: MasterSafe ${argv.masterSafe} has insufficient balance for base token ${baseToken.address}`)
     }
-    if (!(await isQuoteTokenBalanceSufficientPromise)) {
+    if (!(await hasSufficientQuoteTokenPromise)) {
       callback(`Error: MasterSafe ${argv.masterSafe} has insufficient balance for quote token ${quoteToken.address}`)
     }
 
     // check price against dex.ag's API
-    if (!(await priceCheckPromise)) {
+    if (!(await isPriceCloseToDexagsPromise)) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
       }
     }
-    const boundCheck = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
-    if (!boundCheck) {
+    const areBoundsTooSpreadOut = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
+    if (!areBoundsTooSpreadOut) {
       if (!(await proceedAnyways("Bound checks failed!"))) {
         callback("Error: Bound checks did not pass")
       }
