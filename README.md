@@ -17,16 +17,25 @@ yarn install
 Note that the installation might be successful even if errors are shown in the console output.
 In case of doubt, running `echo $?` immediately after `yarn install` should return 0 if the installation was successful.
 
-Run Ganache in the background with an increased gas limit (this is needed to deploy Gnosis Protocol):
-
+Build Truffle artifacts:
 ```
-npx ganache-cli --gasLimit=80000000
+yarn build
 ```
 
-Run test:
+This concludes the setup procedures.
+Any liquidity provision script can be run at this point.
+See `scripts/README.md` for details.
 
+## How to test
+
+Start and keep the test Ethereum network running in the background:
 ```
-npx truffle test
+yarn testnet
+```
+
+Run tests:
+```
+yarn test
 ```
 
 Use scripts as described in `scripts/README.md`.
