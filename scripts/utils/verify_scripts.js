@@ -27,6 +27,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const master = await getSafe(masterAddress)
     const brackets = await Promise.all(bracketAddresses.map((bracketAddress) => getSafe(bracketAddress)))
 
+    // TODO - enable this verification according to discussion in
+    // https://github.com/gnosis/dex-liquidity-provision/issues/217
+    // log("- Verify proxy bytecode")
+    // await Promise.all(
+    //   bracketAddresses.map(async (bracketAddress) => {
+    //     assert.equal(
+    //       await web3.eth.getCode(bracketAddress),
+    //       GnosisSafeProxy.deployedBytecode,
+    //       `Bytecode at bracket ${bracketAddress} does not agree with that GnosisSafeProxy v1.1.1`
+    //     )
+    //   })
+    // )
+
     if (!masterOwners || !masterThreshold) log("Warning: master safe owner verification skipped")
     else {
       log("- Verify owners of masterSafe")
@@ -43,18 +56,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         "Master owners are different than expected"
       )
     }
-    // TODO - enable this verification according to discussion in
-    // https://github.com/gnosis/dex-liquidity-provision/issues/217
-    // log("- Verify proxy bytecode")
-    // await Promise.all(
-    //   bracketAddresses.map(async (bracketAddress) => {
-    //     assert.equal(
-    //       await web3.eth.getCode(bracketAddress),
-    //       GnosisSafeProxy.deployedBytecode,
-    //       `Bytecode at bracket ${bracketAddress} does not agree with that GnosisSafeProxy v1.1.1`
-    //     )
-    //   })
-    // )
 
     log("- Verify that brackets are owned solely by masterSafe")
     await Promise.all(
