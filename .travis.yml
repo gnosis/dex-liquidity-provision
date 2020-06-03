@@ -6,11 +6,11 @@ before_install:
   - rm -rf build
   - npm install -g yarn@latest
   - yarn --version
-  - npm install -g ganache-cli@latest
-  - ganache-cli --version
 before_script:
-  - ganache-cli -l 8e6 > /dev/null &
+  - ganache-cli --version
+  - yarn testnet > /dev/null &
 script:
   - yarn lint
   - yarn pretty-check
+  - yarn build
   - yarn test
