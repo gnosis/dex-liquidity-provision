@@ -8,12 +8,11 @@ Use at your own risk!
 
 The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node](https://nodejs.org/en/).
 
-The Gnosis Protocol contracts must be compiled and the deployment addresses must be injected into built contract-artifacts.
-To do so, run:
 
+Install needed dependencies and build needed artifact:
 ```
-yarn compile
-yarn run networks-inject
+yarn install
+yarn builD
 ```
 
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
