@@ -19,6 +19,7 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
+    "build": "yarn compile && yarn networks-inject",
     "compile": "truffle compile",
     "migrate": "truffle migrate",
     "verify": "truffle run verify",
