@@ -170,7 +170,7 @@ contract("Verification checks", function (accounts) {
       const evilSafe = await GnosisSafe.at(evilProxy.address)
       await evilSafe.setup([masterSafe.address], "1", ZERO_ADDRESS, "0x", ZERO_ADDRESS, ZERO_ADDRESS, "0", ZERO_ADDRESS)
       await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
-        message: `Bytecode at bracket ${evilProxy.address} does not agree with that of a GnosisSafeProxy v1.1.1`,
+        message: `Bytecode at bracket ${evilProxy.address} does not agree with that of a Gnosis Safe Proxy v1.1.1`,
       })
       // TODO - this test only checks against bad proxy, but not against a bad safe.
     })
