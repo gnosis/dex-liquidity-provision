@@ -13,8 +13,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
-  const expectedBytecodePromise = GnosisSafeProxyFactory.deployed().then(proxyFactory => proxyFactory.proxyRuntimeCode())
-
+  const expectedBytecodePromise = GnosisSafeProxyFactory.deployed().then((proxyFactory) => proxyFactory.proxyRuntimeCode())
 
   const verifyBracketsWellFormed = async function (
     masterAddress,
