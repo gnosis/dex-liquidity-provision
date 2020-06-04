@@ -8,11 +8,11 @@ Use at your own risk!
 
 The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node](https://nodejs.org/en/).
 
-
 Install needed dependencies and build needed artifact:
+
 ```
 yarn install
-yarn builD
+yarn build
 ```
 
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
