@@ -90,17 +90,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       nonce
     )
     const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/transactions/${transactionHash}/`
-    await axios.get(endpoint).catch(function (error) {
+    const result = await axios.get(endpoint).catch(function (error) {
       if (error.response.data.detail === "Not found.") {
-        throw new Error("Error: The transaction does not match any transaction in the interface!")
+        console.log("Error: The transaction does not match any transaction in the interface!")
       } else {
         throw new Error("Error while talking to the gnosis-interface: " + JSON.stringify(error.response.data))
       }
     })
-    const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
-    console.log(
-      `The transaction matches a transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
-    )
+    if (result !== undefined) {
+      const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
+      console.log(
+        `The transaction matches a transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
+      )
+    }
   }
 
   return {
