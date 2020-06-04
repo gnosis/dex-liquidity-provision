@@ -74,7 +74,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Transaction} transaction The transaction whose existence is checked
    * @param {string} network either rinkeby or mainnet
    * @param {number} [nonce] Gnosis Safe transaction nonce.
-   * @returns {bool} Whether the tx exists in the web-interface
    */
   const transactionExistsOnSafeServer = async function (masterSafe, transaction, network, nonce) {
     const safeTxGas = await estimateGas(masterSafe, transaction)

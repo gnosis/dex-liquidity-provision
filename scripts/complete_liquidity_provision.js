@@ -125,7 +125,7 @@ module.exports = async (callback) => {
     const signer = await signerPromise
     console.log("Using account:", signer)
     if (!argv.verify) {
-    assert((await masterOwnersPromise).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
+      assert((await masterOwnersPromise).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
     }
     if (argv.brackets) {
       assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
