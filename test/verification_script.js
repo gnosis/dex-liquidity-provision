@@ -172,7 +172,6 @@ contract("Verification checks", function (accounts) {
       await assert.rejects(verifyCorrectSetup([evilProxy.address], masterSafe.address), {
         message: `Bytecode at bracket ${evilProxy.address} does not agree with that of a Gnosis Safe Proxy v1.1.1`,
       })
-      // TODO - this test only checks against bad proxy, but not against a bad safe.
     })
   })
   describe("No modules are installed", async () => {
