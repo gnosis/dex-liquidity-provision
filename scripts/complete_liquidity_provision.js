@@ -10,7 +10,7 @@ const {
   getSafe,
   getExchange,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
@@ -117,14 +117,16 @@ module.exports = async (callback) => {
     const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
     const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
     const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
+
     const hasSufficientBaseTokenPromise = checkSufficiencyOfBalance(baseToken, argv.masterSafe, depositBaseToken)
     const hasSufficientQuoteTokenPromise = checkSufficiencyOfBalance(quoteToken, argv.masterSafe, depositQuoteToken)
     const isPriceCloseToDexagsPromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
 
     const signer = await signerPromise
     console.log("Using account:", signer)
-    assert((await masterOwnersPromise).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
-
+    if (!argv.verify) {
+      assert((await masterOwnersPromise).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
+    }
     if (argv.brackets) {
       assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
     }
@@ -197,33 +199,28 @@ module.exports = async (callback) => {
       true
     )
 
-    if (!argv.verify) {
-      console.log(
-        "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
-      )
-    } else {
-      console.log("==> Order placing transaction")
-    }
     let nonce = argv.nonce
     const masterSafe = await masterSafePromise
     if (nonce === undefined) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
-    await signAndSend(masterSafe, orderTransaction, argv.network, nonce, argv.verify)
-
     if (!argv.verify) {
+      console.log(
+        "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
+      )
+      await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
       console.log(
         "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
       )
-    } else {
-      console.log("==> Funds transferring transaction")
-    }
-    await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1, argv.verify)
-
-    if (!argv.verify) {
+      await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
       console.log(
         `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
       )
+    } else {
+      console.log("==> Verifying order placing transaction.")
+      await transactionExistsOnSafeServer(masterSafe, orderTransaction, argv.network, nonce)
+      console.log("==> Verifying funds transferring transaction.")
+      await transactionExistsOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
     }
 
     callback()

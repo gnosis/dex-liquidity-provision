@@ -5,8 +5,9 @@
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
-  const { getSafeCompatibleSignature, estimateGas } = require("../utils/internals")(web3, artifacts)
+  const { getSafeCompatibleSignature, estimateGas } = require("./internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
+  const CommonBaseGasForGnosisSafeTransaction = 0
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
@@ -20,31 +21,24 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Transaction} transaction The transaction to be signed and sent
    * @param {string} network either rinkeby or mainnet
    * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
-   * @param {boolean} [dryRun=false] Do all steps of the function except actually sending the transaction.
    */
-  const signAndSend = async function (masterSafe, transaction, network, nonce = null, dryRun = false) {
+  const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
     if (nonce === null) {
       nonce = (await masterSafe.nonce()).toNumber()
     }
     const safeTxGas = await estimateGas(masterSafe, transaction)
-    const baseGas = 0
     const transactionHash = await masterSafe.getTransactionHash(
       transaction.to,
       transaction.value,
       transaction.data,
       transaction.operation,
       safeTxGas,
-      baseGas,
+      CommonBaseGasForGnosisSafeTransaction,
       0,
       ZERO_ADDRESS,
       ZERO_ADDRESS,
       nonce
     )
-
-    if (dryRun) {
-      console.log(`Would send tx with hash ${transactionHash} and nonce ${nonce}`)
-      return
-    }
 
     const signer = (await web3.eth.getAccounts())[0]
     console.log(`Signing and posting multi-send transaction ${transactionHash} from proposer account ${signer}`)
@@ -57,7 +51,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       data: transaction.data,
       operation: transaction.operation,
       safeTxGas: safeTxGas,
-      baseGas: baseGas,
+      baseGas: CommonBaseGasForGnosisSafeTransaction,
       gasPrice: 0, // important that this is zero
       gasToken: ZERO_ADDRESS,
       refundReceiver: ZERO_ADDRESS,
@@ -73,7 +67,47 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     console.log("Transaction awaiting execution in the interface", interfaceLink)
   }
 
+  /**
+   * Checks whether a transaction was already proposed to the gnosis-safe UI
+   *
+   * @param {Address} masterSafe Address of the master safe owning the brackets
+   * @param {Transaction} transaction The transaction whose existence is checked
+   * @param {string} network either rinkeby or mainnet
+   * @param {number} [nonce] Gnosis Safe transaction nonce.
+   */
+  const transactionExistsOnSafeServer = async function (masterSafe, transaction, network, nonce) {
+    const safeTxGas = await estimateGas(masterSafe, transaction)
+    const transactionHash = await masterSafe.getTransactionHash(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      safeTxGas,
+      CommonBaseGasForGnosisSafeTransaction,
+      0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
+      nonce
+    )
+    const endpoint = `https://safe-transaction.${network}.gnosis.io/api/v1/transactions/${transactionHash}/`
+    const result = await axios.get(endpoint).catch(function (error) {
+      if (error.response.data.detail === "Not found.") {
+        console.log("Error: The transaction does not match any transaction in the interface!")
+      } else {
+        throw new Error("Error while talking to the gnosis-interface: " + JSON.stringify(error.response.data))
+      }
+    })
+    if (result !== undefined) {
+      const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
+      console.log(
+        `The transaction matches a transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
+      )
+    }
+  }
+
   return {
     signAndSend,
+    transactionExistsOnSafeServer,
+    linkPrefix,
   }
 }
