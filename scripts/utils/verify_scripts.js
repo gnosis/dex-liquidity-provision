@@ -11,8 +11,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
-  // const GnosisSafeProxy = artifacts.require("GnosisSafeProxy.sol")
+  const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
+  const expectedBytecodePromise = GnosisSafeProxyFactory.deployed().then((proxyFactory) => proxyFactory.proxyRuntimeCode())
 
   const verifyBracketsWellFormed = async function (
     masterAddress,
@@ -26,6 +27,17 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const gnosisSafe = await gnosisSafeMasterCopy
     const master = await getSafe(masterAddress)
     const brackets = await Promise.all(bracketAddresses.map((bracketAddress) => getSafe(bracketAddress)))
+
+    log("- Verify that all brackets are Gnosis Safes")
+    await Promise.all(
+      bracketAddresses.map(async (bracketAddress) => {
+        assert.equal(
+          await web3.eth.getCode(bracketAddress),
+          await expectedBytecodePromise,
+          `Bytecode at bracket ${bracketAddress} does not agree with that of a Gnosis Safe Proxy v1.1.1`
+        )
+      })
+    )
 
     if (!masterOwners || !masterThreshold) log("Warning: master safe owner verification skipped")
     else {
@@ -43,18 +55,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         "Master owners are different than expected"
       )
     }
-    // TODO - enable this verification according to discussion in
-    // https://github.com/gnosis/dex-liquidity-provision/issues/217
-    // log("- Verify proxy bytecode")
-    // await Promise.all(
-    //   bracketAddresses.map(async (bracketAddress) => {
-    //     assert.equal(
-    //       await web3.eth.getCode(bracketAddress),
-    //       GnosisSafeProxy.deployedBytecode,
-    //       `Bytecode at bracket ${bracketAddress} does not agree with that GnosisSafeProxy v1.1.1`
-    //     )
-    //   })
-    // )
 
     log("- Verify that brackets are owned solely by masterSafe")
     await Promise.all(
