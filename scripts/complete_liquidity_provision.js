@@ -9,10 +9,7 @@ const {
   checkSufficiencyOfBalance,
   hasExistingOrders,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { signAndSend, transactionExistsOnSafeServer, linkPrefix } = require("./utils/gnosis_safe_server_interactions")(
-  web3,
-  artifacts
-)
+const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
@@ -103,7 +100,6 @@ module.exports = async (callback) => {
 
     const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
     const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
-    const interfaceLink = `https://${linkPrefix[argv.network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
     if (!argv.verify) {
       assert((await masterSafe.getOwners()).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
     }
@@ -203,26 +199,10 @@ module.exports = async (callback) => {
         `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
       )
     } else {
-      console.log("==> Order placing transaction")
-      if (await transactionExistsOnSafeServer(masterSafe, orderTransaction, argv.network, nonce)) {
-        console.log(
-          `The order placing transaction built from the verification parameters matches the transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
-        )
-      } else {
-        console.log(
-          "Error: The order placement transaction built from the verification parameters does not match any transaction in the interface!"
-        )
-      }
-      console.log("==> Funds transferring transaction")
-      if (await transactionExistsOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)) {
-        console.log(
-          `The funds transferring transaction built from the verification parameters matches the transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
-        )
-      } else {
-        console.log(
-          "Error: The funds transferring transaction built from the verification parameters does not match any transaction in the interface!"
-        )
-      }
+      console.log("==> Verifying order placing transaction.")
+      await transactionExistsOnSafeServer(masterSafe, orderTransaction, argv.network, nonce)
+      console.log("==> Verifying funds transferring transaction.")
+      await transactionExistsOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
     }
 
     callback()
