@@ -2,10 +2,11 @@ const { SynthetixJs } = require("synthetix-js")
 const ethers = require("ethers")
 const fetch = require("node-fetch")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
+const { default_yargs } = require("../utils/default_yargs")
 
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
-const argv = require("../utils/default_yargs")
+const argv = default_yargs
   .option("gasPrice", {
     type: "string",
     describe: "Gas price to be used for order submission",
@@ -50,6 +51,30 @@ const gasStationURL = {
   4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
 }
 
+const toWEI = function (value, decimals) {
+  const h = Math.floor(decimals / 2)
+  const a = new BN(10).pow(new BN(h))
+  const b = new BN(10).pow(new BN(decimals - h))
+
+  return new BN(value * a).mul(new BN(b))
+}
+
+const BN = require("bn.js")
+// Could also use linkPrefix here.
+const estimationURLPrexix = {
+  1: "https://dex-price-estimator.gnosis.io//api/v1/",
+  4: "https://dex-price-estimator.rinkeby.gnosis.io//api/v1/",
+}
+
+const priceEstimation = async function (buyTokenId, sellTokenId, amount, networkId) {
+  const searchCriteria = `markets/${buyTokenId}-${sellTokenId}/estimated-buy-amount/${amount}?atoms=true`
+  const estimationData = await (await fetch(estimationURLPrexix[networkId] + searchCriteria)).json()
+
+  return estimationData.buyAmountInBase / estimationData.sellAmountInQuote
+}
+
+const MIN_SELL_USD = 10
+
 module.exports = async (callback) => {
   try {
     const networkId = await web3.eth.net.getId()
@@ -73,44 +98,75 @@ module.exports = async (callback) => {
     // Note that sUSD always has a price of 1 within synthetix protocol.
     const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETHKey)
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
-    console.log("sETH Price", snxjs.utils.formatEther(exchangeRate))
+    console.log("Oracle sETH Price (in sUSD)", formatedRate)
+
+    const exchangeBuyETHPrice = await priceEstimation(
+      sETH.exchangeId,
+      sUSD.exchangeId,
+      toWEI(MIN_SELL_USD, sUSD.decimals),
+      networkId
+    )
+    console.log("Exchange buy  sETH price (in sUSD)", 1 / exchangeBuyETHPrice)
+
+    const minSellETH = toWEI(MIN_SELL_USD / formatedRate, sETH.decimals)
+    const exchangeSellETHPrice = await priceEstimation(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
+    console.log("Exchange sell sETH price (in sUSD)", exchangeSellETHPrice)
 
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
     const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)))
     const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
 
-    // Compute buy-sell amounts based on unlimited orders with rates from above.
-    const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
-      1 / (formatedRate * (1 - sUSDTosETHFee)),
-      sETH.decimals,
-      sUSD.decimals
-    )
-    const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
-      formatedRate * (1 + sETHTosUSDFee),
-      sUSD.decimals,
-      sETH.decimals
-    )
+    // Initialize all arrays needed for potential order placement.
+    const [buyAmounts, sellAmounts, buyTokens, sellTokens] = [[], [], [], []]
 
-    const buyAmounts = [buyETHAmount, buySUSDAmount]
-    const sellAmounts = [sellSUSDAmount, sellETHAmount]
+    // Compute buy-sell amounts based on unlimited orders with rates from above when the price is right.
+    const ourBuyETHRate = formatedRate * (1 - sUSDTosETHFee)
+    if (ourBuyETHRate < exchangeBuyETHPrice) {
+      console.log(`Placing an order to buy sETH at ${ourBuyETHRate}`)
+      const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
+        1 / ourBuyETHRate,
+        sETH.decimals,
+        sUSD.decimals
+      )
+      buyAmounts.push(buyETHAmount)
+      sellAmounts.push(sellSUSDAmount)
+      buyTokens.push(sETH)
+      sellTokens.push(sUSD)
+    } else {
+      console.log(`Not placing buy  sETH order, our rate of ${ourBuyETHRate.toFixed(2)} is too low  for exchange.`)
+    }
 
-    // Fetch auction index and declare validity interval for orders.
-    // Note that order validity interval is inclusive on both sides.
-    const batchId = (await exchange.getCurrentBatchId.call()).toNumber()
-    const validFroms = Array(2).fill(batchId)
-    const validTos = Array(2).fill(batchId)
+    const ourSellETHRate = formatedRate * (1 + sETHTosUSDFee)
+    if (ourSellETHRate < exchangeSellETHPrice) {
+      console.log(`Placing an order to sell sETH at ${ourSellETHRate}`)
+      const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
+        formatedRate * (1 + sETHTosUSDFee),
+        sUSD.decimals,
+        sETH.decimals
+      )
+      buyAmounts.push(buySUSDAmount)
+      sellAmounts.push(sellETHAmount)
+      buyTokens.push(sUSD)
+      sellTokens.push(sETH)
+    } else {
+      console.log(`Not placing sell sETH order, our rate of ${ourSellETHRate.toFixed(2)} is too high for exchange.`)
+    }
 
-    // Avoid querying exchange by tokenAddress for fixed tokenId
-    const buyTokens = [sETH, sUSD].map((token) => token.exchangeId)
-    const sellTokens = [sUSD, sETH].map((token) => token.exchangeId)
+    if (buyAmounts.length > 0) {
+      // Fetch auction index and declare validity interval for orders.
+      // Note that order validity interval is inclusive on both sides.
+      const batchId = (await exchange.getCurrentBatchId.call()).toNumber()
+      const validFroms = Array(buyAmounts.length).fill(batchId)
+      const validTos = Array(buyAmounts.length).fill(batchId)
 
-    const gasPrices = await (await fetch(gasStationURL[networkId])).json()
-    const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
-    console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
-    await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
-      from: account,
-      gasPrice: scaledGasPrice,
-    })
+      const gasPrices = await (await fetch(gasStationURL[networkId])).json()
+      const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
+      console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
+      await exchange.placeValidFromOrders(buyTokens, sellTokens, validFroms, validTos, buyAmounts, sellAmounts, {
+        from: account,
+        gasPrice: scaledGasPrice,
+      })
+    }
     callback()
   } catch (error) {
     callback(error)
