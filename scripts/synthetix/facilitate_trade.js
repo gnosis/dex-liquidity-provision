@@ -1,10 +1,9 @@
 const { SynthetixJs } = require("synthetix-js")
-const BN = require("bn.js")
 const ethers = require("ethers")
 const fetch = require("node-fetch")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 const { default_yargs } = require("../utils/default_yargs")
-
+const { floatToErc20Units } = require("../utils/printing_tools")
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
 
 const argv = default_yargs
@@ -52,14 +51,6 @@ const gasStationURL = {
   4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
 }
 
-const toWEI = function (value, decimals) {
-  const h = Math.floor(decimals / 2)
-  const a = new BN(10).pow(new BN(h))
-  const b = new BN(10).pow(new BN(decimals - h))
-
-  return new BN(value * a).mul(new BN(b))
-}
-
 const estimationURLPrexix = {
   1: "https://dex-price-estimator.gnosis.io//api/v1/",
   4: "https://dex-price-estimator.rinkeby.gnosis.io//api/v1/",
@@ -102,12 +93,12 @@ module.exports = async (callback) => {
     const exchangeBuyETHPrice = await estimatePrice(
       sETH.exchangeId,
       sUSD.exchangeId,
-      toWEI(MIN_SELL_USD, sUSD.decimals),
+      floatToErc20Units(MIN_SELL_USD, sUSD.decimals),
       networkId
     )
     console.log("Exchange buy  sETH price (in sUSD)", 1 / exchangeBuyETHPrice)
 
-    const minSellETH = toWEI(MIN_SELL_USD / formatedRate, sETH.decimals)
+    const minSellETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
     const exchangeSellETHPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
     console.log("Exchange sell sETH price (in sUSD)", exchangeSellETHPrice)
 
@@ -120,7 +111,8 @@ module.exports = async (callback) => {
 
     // Compute buy-sell amounts based on unlimited orders with rates from above when the price is right.
     const ourBuyETHRate = formatedRate * (1 - sUSDTosETHFee)
-    if (ourBuyETHRate < exchangeBuyETHPrice) {
+    if (ourBuyETHRate > 1 / exchangeBuyETHPrice) {
+      // If we are willing to pay more than the exchange quotes as buy price.
       console.log(`Placing an order to buy sETH at ${ourBuyETHRate}`)
       const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
         1 / ourBuyETHRate,
@@ -139,6 +131,7 @@ module.exports = async (callback) => {
 
     const ourSellETHRate = formatedRate * (1 + sETHTosUSDFee)
     if (ourSellETHRate < exchangeSellETHPrice) {
+      // If we are willing to sell at a price less than exchange quote.
       console.log(`Placing an order to sell sETH at ${ourSellETHRate}`)
       const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
         formatedRate * (1 + sETHTosUSDFee),

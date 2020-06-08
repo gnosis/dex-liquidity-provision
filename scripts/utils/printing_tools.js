@@ -32,6 +32,18 @@ const toErc20Units = function (amount, decimals) {
 }
 
 /**
+ * A generalized version of "toWei" for tokens with an arbitrary amount of decimals.
+ * If the decimal representation has more decimals than the maximum amount possible, then the extra decimals are truncated.
+ *
+ * @param {number} amount Float representation for the amount of some ERC20 token
+ * @param {(number|string|BN)} decimals Maximum number of decimals of the token
+ * @returns {BN} number of token units corresponding to the input amount
+ */
+const floatToErc20Units = function (amount, decimals) {
+  return toErc20Units(amount.toString(), decimals)
+}
+
+/**
  * A generalized version of "fromWei" for tokens with an arbitrary amount of decimals.
  *
  * @param {(string|BN)} amount Decimal representation of the (integer) number of token units
@@ -66,6 +78,7 @@ const shortenedAddress = function (address) {
 
 module.exports = {
   toErc20Units,
+  floatToErc20Units,
   fromErc20Units,
   shortenedAddress,
 }
