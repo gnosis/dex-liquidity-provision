@@ -2019,10 +2019,10 @@ commander@3.0.2:
   resolved "https://registry.yarnpkg.com/commander/-/commander-3.0.2.tgz#6837c3fb677ad9933d1cfba42dd14d5117d6b39e"
   integrity sha512-Gar0ASD4BDyKC4hl4DwHqDrmvjoxWKZigVnAbn5H1owvm4CxCPdb0HQDehwNYMJpla5+M2tPmPARzhtYuwpHow==
 
-commander@^2.19.0:
-  version "2.20.3"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
-  integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
+commander@5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-5.1.0.tgz#46abbd1652f8e059bddaef99bbdcb2ad9cf179ae"
+  integrity sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==
 
 commander@^4.0.1:
   version "4.1.1"
@@ -6557,10 +6557,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.21.13:
-  version "2.21.13"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.21.13.tgz#7cf49b0e05bad4b214618ab3a886e850cb84790a"
-  integrity sha512-WayH46WmYOfsHdTb2ZLC9Zh5JNyhf4Uya5hroK1oMePzjPNnMg+WF/tQHHQzclnypQPQPxnC/DUbcEs0cKxdIQ==
+synthetix-js@=2.22.4:
+  version "2.22.4"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.22.4.tgz#8cacbf176985a03be77cc00f57d6924cc5adcd12"
+  integrity sha512-AAhpxb4eCFYDRG5EHuwoLOt0IvFdIjn1qDKLQosGiDAwG8RwaOR8+9Zko/AAjPL+xGVPZUBfr1K9wfaCaKDS0w==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -6571,17 +6571,17 @@ synthetix-js@=2.21.13:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.21.13"
+    synthetix "2.22.4"
     trezor-connect "7.0.3"
     walletlink "1.0.0"
 
-synthetix@2.21.13:
-  version "2.21.13"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.21.13.tgz#80fd991c5620bfa48f869e7bb897e35a91d01eff"
-  integrity sha512-qj8oXaz2fsq+5SUlsWHwKhz3UcrUdXUM2Cph7SC2QHy/oOI0h3ZM0m/qQeicqsGhgPIAEJrIwMA8QzlO4siY3Q==
+synthetix@2.22.4:
+  version "2.22.4"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.22.4.tgz#a224edbc0df7a1c5867b28a6bd06e5ab40b9faa3"
+  integrity sha512-/NRrKOlaS5IxS8n9k294efW59vI63IqOGp1L52jMujsizIwpjA7OXeihOmotCQa1gmXBqIdorLuHFVICOcrcow==
   dependencies:
     "@chainlink/contracts-0.0.3" "npm:@chainlink/contracts@0.0.3"
-    commander "^2.19.0"
+    commander "5.1.0"
     openzeppelin-solidity-2.3.0 "npm:openzeppelin-solidity@2.3.0"
     pretty-error "^2.1.1"
     web3-utils "1.2.2"
