@@ -4,8 +4,9 @@ const fetch = require("node-fetch")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const { default_yargs } = require("../utils/default_yargs")
 
-const argv = require("../utils/default_yargs")
+const argv = default_yargs
   .option("gasPrice", {
     type: "string",
     describe: "Gas price to be used for order submission",
