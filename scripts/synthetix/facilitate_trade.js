@@ -56,8 +56,8 @@ const estimationURLPrexix = {
   4: "https://dex-price-estimator.rinkeby.gnosis.io//api/v1/",
 }
 
-const estimatePrice = async function (buyTokenId, sellTokenId, amount, networkId) {
-  const searchCriteria = `markets/${buyTokenId}-${sellTokenId}/estimated-buy-amount/${amount}?atoms=true`
+const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, networkId) {
+  const searchCriteria = `markets/${buyTokenId}-${sellTokenId}/estimated-buy-amount/${sellAmount}?atoms=true`
   const estimationData = await (await fetch(estimationURLPrexix[networkId] + searchCriteria)).json()
 
   return estimationData.buyAmountInBase / estimationData.sellAmountInQuote
@@ -90,17 +90,18 @@ module.exports = async (callback) => {
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("Oracle sETH Price (in sUSD)", formatedRate)
 
-    const exchangeBuyETHPrice = await estimatePrice(
+    const theirSellPriceInverted = await estimatePrice(
       sETH.exchangeId,
       sUSD.exchangeId,
       floatToErc20Units(MIN_SELL_USD, sUSD.decimals),
       networkId
     )
-    console.log("Exchange buy  sETH price (in sUSD)", 1 / exchangeBuyETHPrice)
+    const theirSellPrice = 1 / theirSellPriceInverted
+    console.log("Exchange sell sETH price (in sUSD)", theirSellPrice)
 
     const minSellETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
-    const exchangeSellETHPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
-    console.log("Exchange sell sETH price (in sUSD)", exchangeSellETHPrice)
+    const theirBuyPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
+    console.log("Exchange buy  sETH price (in sUSD)", theirBuyPrice)
 
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
     const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)))
@@ -110,12 +111,12 @@ module.exports = async (callback) => {
     const orders = []
 
     // Compute buy-sell amounts based on unlimited orders with rates from above when the price is right.
-    const ourBuyETHRate = formatedRate * (1 - sUSDTosETHFee)
-    if (ourBuyETHRate > 1 / exchangeBuyETHPrice) {
-      // If we are willing to pay more than the exchange quotes as buy price.
-      console.log(`Placing an order to buy sETH at ${ourBuyETHRate}`)
+    const ourBuyPrice = formatedRate * (1 - sUSDTosETHFee)
+    if (ourBuyPrice > theirSellPrice) {
+      // We are willing to pay more than the exchange is selling for.
+      console.log(`Placing an order to buy sETH at ${ourBuyPrice}`)
       const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
-        1 / ourBuyETHRate,
+        1 / ourBuyPrice,
         sETH.decimals,
         sUSD.decimals
       )
@@ -126,18 +127,14 @@ module.exports = async (callback) => {
         sellAmount: sellSUSDAmount,
       })
     } else {
-      console.log(`Not placing buy  sETH order, our rate of ${ourBuyETHRate.toFixed(2)} is too low  for exchange.`)
+      console.log(`Not placing buy  sETH order, our rate of ${ourBuyPrice.toFixed(2)} is too low  for exchange.`)
     }
 
-    const ourSellETHRate = formatedRate * (1 + sETHTosUSDFee)
-    if (ourSellETHRate < exchangeSellETHPrice) {
-      // If we are willing to sell at a price less than exchange quote.
-      console.log(`Placing an order to sell sETH at ${ourSellETHRate}`)
-      const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
-        ourSellETHRate,
-        sUSD.decimals,
-        sETH.decimals
-      )
+    const ourSellPrice = formatedRate * (1 + sETHTosUSDFee)
+    if (ourSellPrice < theirBuyPrice) {
+      // We are selling at a price less than the exchange is buying for.
+      console.log(`Placing an order to sell sETH at ${ourSellPrice}`)
+      const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(ourSellPrice, sUSD.decimals, sETH.decimals)
       orders.push({
         buyToken: sUSD.exchangeId,
         sellToken: sETH.exchangeId,
@@ -145,7 +142,7 @@ module.exports = async (callback) => {
         sellAmount: sellETHAmount,
       })
     } else {
-      console.log(`Not placing sell sETH order, our rate of ${ourSellETHRate.toFixed(2)} is too high for exchange.`)
+      console.log(`Not placing sell sETH order, our rate of ${ourSellPrice.toFixed(2)} is too high for exchange.`)
     }
 
     if (orders.length > 0) {
