@@ -134,7 +134,7 @@ module.exports = async (callback) => {
       // If we are willing to sell at a price less than exchange quote.
       console.log(`Placing an order to sell sETH at ${ourSellETHRate}`)
       const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
-        formatedRate * (1 + sETHTosUSDFee),
+        ourSellETHRate,
         sUSD.decimals,
         sETH.decimals
       )
