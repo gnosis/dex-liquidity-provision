@@ -1,3 +1,4 @@
+const assert = require("assert")
 const BN = require("bn.js")
 
 const { ZERO, BN256, MAXUINT256, TEN } = require("./constants")
@@ -40,6 +41,9 @@ const toErc20Units = function (amount, decimals) {
  * @returns {BN} number of token units corresponding to the input amount
  */
 const floatToErc20Units = function (amount, decimals) {
+  // TODO - This method is expected to fail for amounts > 10^20 so we impose a temporary bandaid "assertion"
+  // Please refer to https://github.com/gnosis/dex-liquidity-provision/issues/302
+  assert(amount <= 10 ** 20)
   return toErc20Units(amount.toString(), decimals)
 }
 
