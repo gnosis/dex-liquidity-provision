@@ -65,11 +65,12 @@ const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, netwo
 
 const MIN_SELL_USD = 10
 
-/* All prices refered to hear are for sETH in sUSD.
- * The term "our" referres to prices we are buying and selling for while
- * the term "their" refers to the buy and sell prices offered by the exchange.
- * For example, if ourBuyPrice = 100 and theirSellPrice = 90, this means
- * we are willing to pay 100 sUSD for 1 ETH and the exchange is offering 1 ETH for 90 sUSD
+/* All prices, except those explicitly named with "inverted" refer to the price of sETH in sUSD.
+ * The term "our" is with regards to prices we, the synthetix bot, are buying and selling for while
+ * the term "their" refers to the buy and sell prices offered by the Gnosis Protocol.
+ * For example, if ourBuyPrice = 100 and theirSellPrice = 90, this means that
+ * the synthetix platform is willing to spend 100 sUSD for 1 sETH
+ * and the Gnosis Protocol is currently offering 1 sETH for 90 sUSD.
  */
 module.exports = async (callback) => {
   try {
