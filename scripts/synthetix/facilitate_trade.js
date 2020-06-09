@@ -65,6 +65,12 @@ const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, netwo
 
 const MIN_SELL_USD = 10
 
+/* All prices refered to hear are for sETH in sUSD.
+ * The term "our" referres to prices we are buying and selling for while
+ * the term "their" refers to the buy and sell prices offered by the exchange.
+ * For example, if ourBuyPrice = 100 and theirSellPrice = 90, this means
+ * we are willing to pay 100 sUSD for 1 ETH and the exchange is offering 1 ETH for 90 sUSD
+ */
 module.exports = async (callback) => {
   try {
     const networkId = await web3.eth.net.getId()
