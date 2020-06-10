@@ -1,3 +1,4 @@
+const assert = require("assert")
 const BN = require("bn.js")
 
 const { ZERO, BN256, MAXUINT256, TEN } = require("./constants")
@@ -29,6 +30,21 @@ const toErc20Units = function (amount, decimals) {
   const representation = integerPart.mul(TEN.pow(new BN(decimals))).add(decimalPart)
   if (representation.gt(MAXUINT256)) throw Error("Number larger than ERC20 token maximum amount (uint256)")
   return representation
+}
+
+/**
+ * A generalized version of "toWei" for tokens with an arbitrary amount of decimals.
+ * If the decimal representation has more decimals than the maximum amount possible, then the extra decimals are truncated.
+ *
+ * @param {number} amount Float representation for the amount of some ERC20 token
+ * @param {(number|string|BN)} decimals Maximum number of decimals of the token
+ * @returns {BN} number of token units corresponding to the input amount
+ */
+const floatToErc20Units = function (amount, decimals) {
+  // TODO - This method is expected to fail for amounts > 10^20 so we impose a temporary bandaid "assertion"
+  // Please refer to https://github.com/gnosis/dex-liquidity-provision/issues/302
+  assert(amount <= 10 ** 20)
+  return toErc20Units(amount.toString(), decimals)
 }
 
 /**
@@ -66,6 +82,7 @@ const shortenedAddress = function (address) {
 
 module.exports = {
   toErc20Units,
+  floatToErc20Units,
   fromErc20Units,
   shortenedAddress,
 }
