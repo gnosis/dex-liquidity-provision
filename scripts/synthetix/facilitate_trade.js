@@ -104,11 +104,11 @@ module.exports = async (callback) => {
       networkId
     )
     const theirSellPrice = 1 / theirSellPriceInverted
-    console.log("Exchange sell sETH price (in sUSD)", theirSellPrice)
+    console.log("Gnosis Protocol sell sETH price (in sUSD)", theirSellPrice)
 
     const minSellETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
     const theirBuyPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
-    console.log("Exchange buy  sETH price (in sUSD)", theirBuyPrice)
+    console.log("Gnosis Protocol buy  sETH price (in sUSD)", theirBuyPrice)
 
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
     const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)))
