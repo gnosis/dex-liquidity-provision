@@ -97,17 +97,13 @@ module.exports = async (callback) => {
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("Oracle sETH Price (in sUSD)", formatedRate)
 
-    const theirSellPriceInverted = await estimatePrice(
-      sETH.exchangeId,
-      sUSD.exchangeId,
-      floatToErc20Units(MIN_SELL_USD, sUSD.decimals),
-      networkId
-    )
+    const minSellsUSD = floatToErc20Units(MIN_SELL_USD, sUSD.decimals)
+    const theirSellPriceInverted = await estimatePrice(sETH.exchangeId, sUSD.exchangeId, minSellsUSD, networkId)
     const theirSellPrice = 1 / theirSellPriceInverted
     console.log("Gnosis Protocol sell sETH price (in sUSD)", theirSellPrice)
 
-    const minSellETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
-    const theirBuyPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellETH, networkId)
+    const minSellsETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
+    const theirBuyPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellsETH, networkId)
     console.log("Gnosis Protocol buy  sETH price (in sUSD)", theirBuyPrice)
 
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
@@ -121,18 +117,23 @@ module.exports = async (callback) => {
     const ourBuyPrice = formatedRate * (1 - sUSDTosETHFee)
     if (ourBuyPrice > theirSellPrice) {
       // We are willing to pay more than the exchange is selling for.
-      console.log(`Placing an order to buy sETH at ${ourBuyPrice}`)
-      const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
-        1 / ourBuyPrice,
-        sETH.decimals,
-        sUSD.decimals
-      )
-      orders.push({
-        buyToken: sETH.exchangeId,
-        sellToken: sUSD.exchangeId,
-        buyAmount: buyETHAmount,
-        sellAmount: sellSUSDAmount,
-      })
+      console.log(`Placing an order to buy sETH at ${ourBuyPrice}, but verifying sUSD balance first`)
+      const sUSDBalance = await exchange.getBalance(account, sUSD.address)
+      if (sUSDBalance >= minSellsUSD) {
+        const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
+          1 / ourBuyPrice,
+          sETH.decimals,
+          sUSD.decimals
+        )
+        orders.push({
+          buyToken: sETH.exchangeId,
+          sellToken: sUSD.exchangeId,
+          buyAmount: buyETHAmount,
+          sellAmount: sellSUSDAmount,
+        })
+      } else {
+        console.log(`Warning: Insufficient sUSD (${sUSDBalance} < ${minSellsUSD}) for order placement.`)
+      }
     } else {
       console.log(`Not placing buy  sETH order, our rate of ${ourBuyPrice.toFixed(2)} is too low  for exchange.`)
     }
@@ -140,14 +141,23 @@ module.exports = async (callback) => {
     const ourSellPrice = formatedRate * (1 + sETHTosUSDFee)
     if (ourSellPrice < theirBuyPrice) {
       // We are selling at a price less than the exchange is buying for.
-      console.log(`Placing an order to sell sETH at ${ourSellPrice}`)
-      const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(ourSellPrice, sUSD.decimals, sETH.decimals)
-      orders.push({
-        buyToken: sUSD.exchangeId,
-        sellToken: sETH.exchangeId,
-        buyAmount: buySUSDAmount,
-        sellAmount: sellETHAmount,
-      })
+      console.log(`Placing an order to sell sETH at ${ourSellPrice}, but verifying sETH balance first`)
+      const sETHBalance = await exchange.getBalance(account, sETH.address)
+      if (sETHBalance >= minSellsETH) {
+        const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
+          ourSellPrice,
+          sUSD.decimals,
+          sETH.decimals
+        )
+        orders.push({
+          buyToken: sUSD.exchangeId,
+          sellToken: sETH.exchangeId,
+          buyAmount: buySUSDAmount,
+          sellAmount: sellETHAmount,
+        })
+      } else {
+        console.log(`Warning: Insufficient sETH (${sETHBalance} < ${minSellsETH}) for order placement.`)
+      }
     } else {
       console.log(`Not placing sell sETH order, our rate of ${ourSellPrice.toFixed(2)} is too high for exchange.`)
     }
