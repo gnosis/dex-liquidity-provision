@@ -1,0 +1,12 @@
+[
+    {
+        "amount": 1,
+        "tokenAddress": "0x1a5f9352af8af974bfc03399e3767df6370d82e4",
+        "receiver": "0x7f01D9b227593E033bf8d6FC86e634d27aa85568"
+    },
+    {
+        "amount": 1,
+        "tokenAddress": "0x1a5f9352af8af974bfc03399e3767df6370d82e4",
+        "receiver": "0xcDBa83E03059Fdd2ef71073DA503a29184E2fDa9"
+    }
+]   
