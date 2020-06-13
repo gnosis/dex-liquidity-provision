@@ -7,6 +7,7 @@ const BN = require("bn.js")
  * @typedef {import('../typedef.js').SmartContract} SmartContract
  * @typedef {import('../typedef.js').TokenObject} TokenObject
  * @typedef {import('../typedef.js').Transaction} Transaction
+ * @typedef {import('../typedef.js').Transfer} Transfer
  */
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
@@ -16,7 +17,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
   const { shortenedAddress, fromErc20Units } = require("./printing_tools")
-  const { allElementsOnlyOnce } = require("./js_helpers")
+  const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
@@ -145,13 +146,13 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   /**
    * Retrieves token information foll all tokens involved in the deposits.
    *
-   * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
+   * @param {(Deposit|Withdrawal|Transfer)[]} flux List of {@link Deposit}, {@link Withdrawal} or {@link Transfer}
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {object} object mapping token addresses to a promise of relevant token information
    */
   const fetchTokenInfoForFlux = function (flux, debug = false) {
-    const tokensInvolved = allElementsOnlyOnce(flux.map((entry) => entry.tokenAddress))
-    return fetchTokenInfoAtAddresses(tokensInvolved, debug)
+    const uniqueAddresses = uniqueItems(flux.map((item) => item.tokenAddress))
+    return fetchTokenInfoAtAddresses(uniqueAddresses, debug)
   }
 
   /**
@@ -357,6 +358,45 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     let transactions = []
     for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
+    return buildBundledTransaction(transactions)
+  }
+
+  /**
+   * Batches together a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [useWei=false] flag allowing user to specify if amounts are already in Base token units
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   */
+  const buildTransferDataFromList = async function (masterAddress, transferList, useWei = false, debug = false) {
+    const log = debug ? (...a) => console.log(...a) : () => {}
+
+    const tokenInfo = await fetchTokenInfoForFlux(transferList)
+
+    // TODO - make cumulative sum of deposits by token and assert that masterSafe has sufficient balance
+    const transactions = await Promise.all(
+      transferList.map(async (transfer) => {
+        const token = tokenInfo[transfer.tokenAddress]
+        let unitAmount = transfer.amount
+        if (!useWei) {
+          unitAmount = fromErc20Units(transfer.amount, token.decimals)
+        }
+
+        log(`Transferring ${unitAmount} ${token.symbol} to ${transfer.receiver} from ${masterAddress}`)
+        const transferData = token.instance.contract.methods.transfer(transfer.receiver, unitAmount.toString()).encodeABI()
+        return {
+          operation: CALL,
+          to: token.address,
+          value: 0,
+          data: transferData,
+        }
+      })
+    )
+    console.log(transactions)
     return buildBundledTransaction(transactions)
   }
 
@@ -584,7 +624,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
         const token = (await tokenData).instance
         const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
-        const spenders = allElementsOnlyOnce(eventList.map((event) => event.returnValues.spender))
+        const spenders = uniqueItems(eventList.map((event) => event.returnValues.spender))
         const tokenAllowances = {}
         // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
         await Promise.all(
@@ -626,6 +666,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildOrders,
     buildBundledTransaction,
     buildTransferApproveDepositFromList,
+    buildTransferDataFromList,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
     buildBracketTransactionForTransferApproveDeposit,
