@@ -3,7 +3,7 @@ const { fetchTokenInfoFromExchange, getExchange, getSafe, buildOrders } = requir
   artifacts
 )
 const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
-const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { proceedAnyways, promptUser } = require("./utils/user_interface_helpers")
 const { DEFAULT_ORDER_EXPIRY } = require("./utils/constants")
 
