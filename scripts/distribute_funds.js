@@ -14,6 +14,11 @@ const argv = default_yargs
     type: "string",
     describe: "file name (and path) to the list transfers",
     demandOption: true,
+  })
+  .option("useWei", {
+    type: "string",
+    describe: "file name (and path) to the list transfers",
+    demandOption: false,
   }).argv
 
 module.exports = async (callback) => {
@@ -24,7 +29,7 @@ module.exports = async (callback) => {
     const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
 
     console.log("Preparing transaction data...")
-    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, true)
+    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, argv.useWei, true)
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {

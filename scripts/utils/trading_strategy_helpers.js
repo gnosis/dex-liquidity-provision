@@ -16,7 +16,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
+  const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
   const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
@@ -375,18 +375,22 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const buildTransferDataFromList = async function (masterAddress, transferList, useWei = false, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
-    const tokenInfo = await fetchTokenInfoForFlux(transferList)
+    const uniqueTokens = uniqueItems(transferList.map((t) => t.tokenAddress))
+    const tokenInfo = fetchTokenInfoForFlux(transferList)
 
-    // TODO - make cumulative sum of deposits by token and assert that masterSafe has sufficient balance
+    // Will be used to make sufficient balance assertion before transfer.
+    const cumulativeAmounts = new Map(uniqueTokens.map((address) => [address, new BN(0)]))
     const transactions = await Promise.all(
       transferList.map(async (transfer) => {
-        const token = tokenInfo[transfer.tokenAddress]
+        const token = await tokenInfo[transfer.tokenAddress]
         let unitAmount = transfer.amount
         if (!useWei) {
-          unitAmount = fromErc20Units(transfer.amount, token.decimals)
+          unitAmount = toErc20Units(transfer.amount, token.decimals)
         }
+        // Accumulate amounts being transfered for each token.
+        cumulativeAmounts.set(token.address, cumulativeAmounts.get(token.address).add(unitAmount))
 
-        log(`Transferring ${unitAmount} ${token.symbol} to ${transfer.receiver} from ${masterAddress}`)
+        log(`Transferring ${unitAmount} ${token.symbol} to ${transfer.receiver} from ${shortenedAddress(masterAddress)}`)
         const transferData = token.instance.contract.methods.transfer(transfer.receiver, unitAmount.toString()).encodeABI()
         return {
           operation: CALL,
@@ -396,7 +400,17 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         }
       })
     )
-    console.log(transactions)
+    log(`Transfer bundle contains ${transactions.length} elements and sends ${uniqueTokens.length} distinct tokens.`)
+    // Ensure sufficient funds.
+    for (const tokenAddress of uniqueTokens) {
+      const token = await tokenInfo[tokenAddress]
+      const masterBalance = await token.instance.balanceOf(masterAddress)
+      log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
+      if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
+        throw new Error(`Master Safe has insufficient ${token.symbol} balance`)
+      }
+    }
+    log("Balance verification passed.")
     return buildBundledTransaction(transactions)
   }
 
