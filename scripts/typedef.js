@@ -35,6 +35,21 @@
  */
 
 /**
+ * Example:
+ * {
+ *   amount: 100,
+ *   tokenAddress: 0x0000000000000000000000000000000000000000,
+ *   toAddress: 0x0000000000000000000000000000000000000001
+ * }
+ *
+ * @typedef Transfer
+ * @type {object}
+ * @property {number|string|BN} amount integer denoting amount to be transfered
+ * @property {Address} tokenAddress {@link Address} of ERC20 token to be transfered
+ * @property {Address} receiver {@link Address} of bracket into which to transfer
+ */
+
+/**
  * @typedef Withdrawal
  * Example:
  * {
