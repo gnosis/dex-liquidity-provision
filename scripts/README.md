@@ -1,8 +1,6 @@
-## Script Usage:
+# Script Usage:
 
-## Disclaimer:
-
-Use at your own risk!
+**Disclaimer:** Use at your own risk!
 
 ### Prerequisites
 
@@ -61,6 +59,22 @@ The fleet size should be smaller than or equal to 20, in order to ensure that th
 
 Please document the displayed bracket-trader addresses. They are required for future withdrawals.
 They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
+
+### Safe Airdrop
+
+Create your own transferFile (or use our sample `scripts/data/sampleTransferFile.json`)
+With a master safe that you own execute:
+
+```sh
+npx truffle exec scripts/airdrop.js --masterSafe 0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --transferFile scripts/data/sampleTransferFile.json --network rinkeby
+```
+You will be displayed with logs containing all the transfer data followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
+
+Selecting yes, will yield a link to the Gnosis Safe interface where the transaction can be signed and executed.
+
+To do a "verification" run simply add the argument --verify true and observe the difference in the last two lines of the logs emmited.
+
+## Running Functions Individually
 
 Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
 
