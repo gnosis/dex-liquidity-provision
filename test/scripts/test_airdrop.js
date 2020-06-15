@@ -193,7 +193,7 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
       // assert(executedTx.receipt.gasUsed < GAS_CAP)
       assert((await token.balanceOf(accounts[1])).eq(new BN(numTransfers * transferAmount)))
     })
-    it("transfers 1 token to one user 218 times.", async () => {
+    it("Ensures no partial transfers happen on execution failure", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
       const token = await MintableToken.new("GNO", 18)
       // Only mint enough for the first transfer.
