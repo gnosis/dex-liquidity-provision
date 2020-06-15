@@ -29,7 +29,7 @@ module.exports = async (callback) => {
     const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
 
     console.log("Preparing transaction data...")
-    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, argv.useWei, true)
+    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, argv.useWei, false, true)
 
     const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {

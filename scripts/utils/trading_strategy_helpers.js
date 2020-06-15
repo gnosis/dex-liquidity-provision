@@ -369,10 +369,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [useWei=false] flag allowing user to specify if amounts are already in Base token units
+   * @param {boolean} [unsafe=false] does not perform balance verification
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferDataFromList = async function (masterAddress, transferList, useWei = false, debug = false) {
+  const buildTransferDataFromList = async function (masterAddress, transferList, useWei = false, unsafe = false, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const uniqueTokens = uniqueItems(transferList.map((t) => t.tokenAddress))
@@ -383,7 +384,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const transactions = await Promise.all(
       transferList.map(async (transfer) => {
         const token = await tokenInfo[transfer.tokenAddress]
-        let unitAmount = transfer.amount
+        let unitAmount = new BN(transfer.amount)
         if (!useWei) {
           unitAmount = toErc20Units(transfer.amount, token.decimals)
         }
@@ -401,13 +402,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       })
     )
     log(`Transfer bundle contains ${transactions.length} elements and sends ${uniqueTokens.length} distinct tokens.`)
-    // Ensure sufficient funds.
-    for (const tokenAddress of uniqueTokens) {
-      const token = await tokenInfo[tokenAddress]
-      const masterBalance = await token.instance.balanceOf(masterAddress)
-      log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
-      if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
-        throw new Error(`Master Safe has insufficient ${token.symbol} balance`)
+    if (!unsafe) {
+      // Ensure sufficient funds.
+      for (const tokenAddress of uniqueTokens) {
+        const token = await tokenInfo[tokenAddress]
+        const masterBalance = await token.instance.balanceOf(masterAddress)
+        log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
+        if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
+          throw new Error(
+            `Master Safe has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
+              .get(tokenAddress)
+              .toString()})`
+          )
+        }
       }
     }
     log("Balance verification passed.")
