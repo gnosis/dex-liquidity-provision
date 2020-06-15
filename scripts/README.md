@@ -72,7 +72,7 @@ You will be displayed with logs containing all the transfer data followed by a p
 
 Selecting yes, will yield a link to the Gnosis Safe interface where the transaction can be signed and executed.
 
-To do a "verification" run simply add the argument --verify true and observe the difference in the last two lines of the logs emmited.
+To do a "verification" run simply add the argument `--verify` and observe the difference in the last two lines of the logs emitted.
 
 ## Running Functions Individually
 
