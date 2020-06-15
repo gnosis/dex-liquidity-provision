@@ -7,7 +7,7 @@ const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
   .option("masterSafe", {
     type: "string",
-    describe: "Address of Gnosis Safe owning the brackets",
+    describe: "Address of Gnosis Safe transfering funds",
     demandOption: true,
   })
   .option("transferFile", {
@@ -21,8 +21,8 @@ const argv = default_yargs
     describe: "Do not actually send transactions, just simulate their submission",
   })
   .option("useWei", {
-    type: "string",
-    describe: "file name (and path) to the list transfers",
+    type: "boolean",
+    describe: "boolen flag used to indicate if the amounts provided are already in atoms",
     demandOption: false,
   }).argv
 
