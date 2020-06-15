@@ -404,18 +404,20 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     log(`Transfer bundle contains ${transactions.length} elements and sends ${uniqueTokens.length} distinct tokens.`)
     if (!unsafe) {
       // Ensure sufficient funds.
-      for (const tokenAddress of uniqueTokens) {
-        const token = await tokenInfo[tokenAddress]
-        const masterBalance = await token.instance.balanceOf(masterAddress)
-        log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
-        if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
-          throw new Error(
-            `Master Safe has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
-              .get(tokenAddress)
-              .toString()})`
-          )
-        }
-      }
+      await Promise.all(
+        uniqueTokens.map(async (tokenAddress) => {
+          const token = await tokenInfo[tokenAddress]
+          const masterBalance = await token.instance.balanceOf(masterAddress)
+          log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
+          if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
+            throw new Error(
+              `Master Safe has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
+                .get(tokenAddress)
+                .toString()})`
+            )
+          }
+        })
+      )
     }
     log("Balance verification passed.")
     return buildBundledTransaction(transactions)
