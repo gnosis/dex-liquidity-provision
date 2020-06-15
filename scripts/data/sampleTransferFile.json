@@ -1,11 +1,11 @@
 [
     {
-        "amount": 2.71828,
+        "amount": 0.271828,
         "tokenAddress": "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
         "receiver": "0x0000000000000000000000000000000000000001"
     },
     {
-        "amount": 3.14159,
+        "amount": 0.314159,
         "tokenAddress": "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
         "receiver": "0x0000000000000000000000000000000000000002"
     },
