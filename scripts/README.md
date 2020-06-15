@@ -68,11 +68,14 @@ With a master safe that you own execute:
 ```sh
 npx truffle exec scripts/airdrop.js --masterSafe 0xd9395aeE9141a3Efeb6d16057c8f67fBE296734c --transferFile scripts/data/sampleTransferFile.json --network rinkeby
 ```
+
 You will be displayed with logs containing all the transfer data followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
 
 Selecting yes, will yield a link to the Gnosis Safe interface where the transaction can be signed and executed.
 
 To do a "verification" run simply add the argument `--verify` and observe the difference in the last two lines of the logs emitted.
+
+Note that, the gas costs for such transactions can vary based on the tokens you are transfering (since each token could potentially implement their transfer's differently)
 
 ## Running Functions Individually
 
