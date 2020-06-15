@@ -44,7 +44,7 @@
  *
  * @typedef Transfer
  * @type {object}
- * @property {number|string|BN} amount integer denoting amount to be transfered
+ * @property {number|string|BN} amount value denoting amount to be transferred
  * @property {Address} tokenAddress {@link Address} of ERC20 token to be transfered
  * @property {Address} receiver {@link Address} of bracket into which to transfer
  */
