@@ -408,7 +408,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         uniqueTokens.map(async (tokenAddress) => {
           const token = await tokenInfo[tokenAddress]
           const masterBalance = await token.instance.balanceOf(masterAddress)
-          log(`Ensuring sufficient ${token.symbol} balance for this transfer...`)
           if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
             throw new Error(
               `Master Safe has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
@@ -418,8 +417,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
           }
         })
       )
+      log("Balance verification passed")
     }
-    log("Balance verification passed.")
     return buildBundledTransaction(transactions)
   }
 
