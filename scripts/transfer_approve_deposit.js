@@ -1,6 +1,6 @@
 const fs = require("fs").promises
 
-const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { buildTransferApproveDepositFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
 const { default_yargs } = require("./utils/default_yargs")

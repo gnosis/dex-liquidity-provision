@@ -1,4 +1,4 @@
-const { signAndSend } = require("./utils/sign_and_send")(web3, artifacts)
+const { signAndSend } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { getSafe } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { defaultWithdrawYargs, prepareRequestWithdraw } = require("./wrapper/withdraw")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
