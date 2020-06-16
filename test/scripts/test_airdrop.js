@@ -165,8 +165,7 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
       const transaction = await buildTransferDataFromList(masterSafe.address, transferList)
       const executedTx = await execTransaction(masterSafe, safeOwner, transaction)
 
-      // assert(executedTx.receipt.gasUsed < GAS_CAP)
-      console.log(executedTx.receipt.gasUsed)
+      assert(executedTx.receipt.gasUsed < GAS_CAP)
       assert((await token.balanceOf(accounts[1])).eq(mintAmount))
     })
     it("Ensures no partial transfers happen on execution failure", async () => {
