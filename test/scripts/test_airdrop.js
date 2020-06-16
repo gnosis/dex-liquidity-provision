@@ -122,7 +122,7 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
       ]
 
       await assert.rejects(buildTransferDataFromList(masterSafe.address, transferList), {
-        message: "Master Safe has insufficient FOO balance (0 < 100)",
+        message: "Fund Account has insufficient FOO balance (0 < 100)",
       })
     })
   })

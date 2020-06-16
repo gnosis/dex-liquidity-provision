@@ -27,8 +27,9 @@ module.exports = async (callback) => {
     const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
     const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
+    console.log(`Found ${transfers.length} elements in transfer file`)
     if (transfers.length > 200) {
-      if (!(await proceedAnyways("For gas reasons it is not recommended to attempt more than 200 transfers."))) {
+      if (!(await proceedAnyways("It is not recommended to attempt more than 200 transfers."))) {
         callback("Error: Too many transfers!")
       }
     }
