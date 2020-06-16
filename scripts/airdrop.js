@@ -19,11 +19,6 @@ const argv = default_yargs
     type: "boolean",
     default: false,
     describe: "Do not actually send transactions, just simulate their submission",
-  })
-  .option("useWei", {
-    type: "boolean",
-    describe: "boolen flag used to indicate if the amounts provided are already in atoms",
-    demandOption: false,
   }).argv
 
 module.exports = async (callback) => {
@@ -34,7 +29,7 @@ module.exports = async (callback) => {
     const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
 
     console.log("Preparing transaction data...")
-    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, argv.useWei, false, true)
+    const transaction = await buildTransferDataFromList(masterSafe.address, transfers, false, true)
 
     if (!argv.verify) {
       const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")

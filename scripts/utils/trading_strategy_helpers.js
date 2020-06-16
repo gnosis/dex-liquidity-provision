@@ -368,12 +368,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
-   * @param {boolean} [useWei=false] flag allowing user to specify if amounts are already in Base token units
    * @param {boolean} [unsafe=false] does not perform balance verification
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferDataFromList = async function (masterAddress, transferList, useWei = false, unsafe = false, debug = false) {
+  const buildTransferDataFromList = async function (masterAddress, transferList, unsafe = false, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const uniqueTokens = uniqueItems(transferList.map((t) => t.tokenAddress))
@@ -384,10 +383,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const transactions = await Promise.all(
       transferList.map(async (transfer) => {
         const token = await tokenInfo[transfer.tokenAddress]
-        let unitAmount = new BN(transfer.amount)
-        if (!useWei) {
-          unitAmount = toErc20Units(transfer.amount, token.decimals)
-        }
+        const unitAmount = toErc20Units(transfer.amount, token.decimals)
         // Accumulate amounts being transfered for each token.
         cumulativeAmounts.set(token.address, cumulativeAmounts.get(token.address).add(unitAmount))
 

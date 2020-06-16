@@ -48,30 +48,6 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
       assert((await token.balanceOf(accounts[1])).eq(toErc20Units(1, tokenDecimals)))
       assert((await token.balanceOf(accounts[2])).eq(toErc20Units(2, tokenDecimals)))
     })
-    it("transfers one token to two different accounts with useWei == true", async () => {
-      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
-      const token = await MintableToken.new("GNO", 18)
-      await token.mint(masterSafe.address, 3)
-
-      const transferList = [
-        {
-          amount: 1,
-          tokenAddress: token.address,
-          receiver: accounts[1],
-        },
-        {
-          amount: 2,
-          tokenAddress: token.address,
-          receiver: accounts[2],
-        },
-      ]
-
-      const transaction = await buildTransferDataFromList(masterSafe.address, transferList, true)
-      await execTransaction(masterSafe, safeOwner, transaction)
-
-      assert.equal((await token.balanceOf(accounts[1])).toString(), "1")
-      assert.equal((await token.balanceOf(accounts[2])).toString(), "2")
-    })
     it("transfers two different tokens to two different accounts", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
       const tokenA = await MintableToken.new("GNO", 18)
@@ -156,46 +132,46 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
       const token = await MintableToken.new("GNO", 18)
       const numTransfers = 200
       const transferAmount = 1
-
-      await token.mint(masterSafe.address, numTransfers * transferAmount)
+      const mintAmount = toErc20Units((numTransfers * transferAmount).toString(), await token.decimals.call())
+      await token.mint(masterSafe.address, mintAmount)
 
       const transferList = Array(numTransfers).fill({
         amount: transferAmount,
         tokenAddress: token.address,
         receiver: accounts[1],
       })
-      const transaction = await buildTransferDataFromList(masterSafe.address, transferList, true)
+      const transaction = await buildTransferDataFromList(masterSafe.address, transferList)
 
       // TODO - estimate gas before execTransaction
       // const gasEstimate = await estimateGas(masterSafe.address, transaction)
       // assert(gasEstimate < blockGasLimit / 2)
       const executedTx = await execTransaction(masterSafe, safeOwner, transaction)
       assert(executedTx.receipt.gasUsed < GAS_CAP)
-      assert((await token.balanceOf(accounts[1])).eq(new BN(numTransfers * transferAmount)))
+      assert((await token.balanceOf(accounts[1])).eq(mintAmount))
     })
-    it("transfers 1 token to one user 218 times.", async () => {
+    it("transfers 1 token to one user 213 times.", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
       const token = await MintableToken.new("GNO", 18)
-      const numTransfers = 218
+      const numTransfers = 213
       const transferAmount = 1
-
-      await token.mint(masterSafe.address, numTransfers * transferAmount)
+      const mintAmount = toErc20Units((numTransfers * transferAmount).toString(), await token.decimals.call())
+      await token.mint(masterSafe.address, mintAmount)
 
       const transferList = Array(numTransfers).fill({
         amount: transferAmount,
         tokenAddress: token.address,
         receiver: accounts[1],
       })
-      const transaction = await buildTransferDataFromList(masterSafe.address, transferList, true)
-
+      const transaction = await buildTransferDataFromList(masterSafe.address, transferList)
       const executedTx = await execTransaction(masterSafe, safeOwner, transaction)
-      console.log(executedTx.receipt.gasUsed)
+
       // assert(executedTx.receipt.gasUsed < GAS_CAP)
-      assert((await token.balanceOf(accounts[1])).eq(new BN(numTransfers * transferAmount)))
+      console.log(executedTx.receipt.gasUsed)
+      assert((await token.balanceOf(accounts[1])).eq(mintAmount))
     })
     it("Ensures no partial transfers happen on execution failure", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
-      const token = await MintableToken.new("GNO", 18)
+      const token = await MintableToken.new("No Decimals", 0)
       // Only mint enough for the first transfer.
       await token.mint(masterSafe.address, 1)
 
@@ -212,11 +188,12 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
         },
       ]
       // Build transaction with unsafe mode enabled.
-      const transaction = await buildTransferDataFromList(masterSafe.address, transferList, true, true)
-
+      const transaction = await buildTransferDataFromList(masterSafe.address, transferList, true)
       const executedTx = await execTransaction(masterSafe, safeOwner, transaction)
 
       assert.equal(executedTx.logs[0].event, "ExecutionFailure")
+
+      // These value comparisons are based on the fact that token has no decimals.
       assert((await token.balanceOf(masterSafe.address)).eq(new BN(1)))
       assert((await token.balanceOf(accounts[1])).eq(new BN(0)))
       assert((await token.balanceOf(accounts[2])).eq(new BN(0)))
