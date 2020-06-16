@@ -406,7 +406,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
           const masterBalance = await token.instance.balanceOf(masterAddress)
           if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
             throw new Error(
-              `Master Safe has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
+              `Fund Account has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
                 .get(tokenAddress)
                 .toString()})`
             )

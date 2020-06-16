@@ -2,10 +2,10 @@ const fs = require("fs").promises
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { buildTransferDataFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { promptUser } = require("./utils/user_interface_helpers")
+const { promptUser, proceedAnyways } = require("./utils/user_interface_helpers")
 const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
-  .option("masterSafe", {
+  .option("fundAccount", {
     type: "string",
     describe: "Address of Gnosis Safe transfering funds",
     demandOption: true,
@@ -24,9 +24,14 @@ const argv = default_yargs
 module.exports = async (callback) => {
   try {
     const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.masterSafe)
+    const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
     const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
+    if (transfers.length > 200) {
+      if (!(await proceedAnyways("For gas reasons it is not recommended to attempt more than 200 transfers."))) {
+        callback("Error: Too many transfers!")
+      }
+    }
 
     console.log("Preparing transaction data...")
     const transaction = await buildTransferDataFromList(masterSafe.address, transfers, false, true)
@@ -43,7 +48,7 @@ module.exports = async (callback) => {
 
     callback()
   } catch (error) {
-    console.log(error.response)
+    console.error(error)
     callback(error)
   }
 }
