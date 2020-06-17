@@ -383,12 +383,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const transactions = await Promise.all(
       transferList.map(async (transfer) => {
         const token = await tokenInfo[transfer.tokenAddress]
-        const unitAmount = toErc20Units(transfer.amount, token.decimals)
+        const weiAmount = toErc20Units(transfer.amount, token.decimals)
         // Accumulate amounts being transfered for each token.
-        cumulativeAmounts.set(token.address, cumulativeAmounts.get(token.address).add(unitAmount))
+        cumulativeAmounts.set(token.address, cumulativeAmounts.get(token.address).add(weiAmount))
 
-        log(`Transferring ${unitAmount} ${token.symbol} to ${transfer.receiver} from ${shortenedAddress(masterAddress)}`)
-        const transferData = token.instance.contract.methods.transfer(transfer.receiver, unitAmount.toString()).encodeABI()
+        log(
+          `Transferring ${fromErc20Units(weiAmount, token.decimals)} ${token.symbol} to ${
+            transfer.receiver
+          } from ${shortenedAddress(masterAddress)}`
+        )
+        const transferData = token.instance.contract.methods.transfer(transfer.receiver, weiAmount.toString()).encodeABI()
         return {
           operation: CALL,
           to: token.address,
@@ -411,6 +415,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
                 .toString()})`
             )
           }
+          log(`    * ${fromErc20Units(cumulativeAmounts.get(tokenAddress), token.decimals)} - ${token.symbol}`)
         })
       )
       log("Balance verification passed")
