@@ -4,14 +4,20 @@
 
 ### Prerequisites
 
-The scripts require the following software installed: [git](https://git-scm.com/), [yarn](https://yarnpkg.com/) and [node](https://nodejs.org/en/).
+The scripts require the following software installed:
+
+- [git](https://git-scm.com/),
+- [yarn](https://yarnpkg.com/) and
+- [node](https://nodejs.org/en/) - This project will **only** work with node version 10 or 12.
 
 Install needed dependencies and build needed artifact:
 
-```
+```sh
 yarn install
 yarn build
 ```
+
+Note that yarn build will compile the necessary smart contracts and inject the deployment addresses into the contract artifacts.
 
 Create a gnosis-safe wallet [here-mainnet](https://gnosis-safe.io) or [here-rinkeby](https://rinkeby.gnosis-safe.io). This wallet will be called your Master Safe in the following. It is used to bundle the transactions and setup the bracket-traders.
 
@@ -66,12 +72,17 @@ Create your own transferFile, or use our sample [examples/sampleTransferFile.jso
 With a fundAccount (aka Gnosis Safe) containg sufficient funds that you own execute:
 
 ```sh
-npx truffle exec scripts/airdrop.js --fundAccount $YOUR_SAFE_ADDRESS --transferFile examples/sampleTransferFile.json --network rinkeby
+ export PK=<your private key>
+export INFURA_KEY=<your infura key>
+export FUND_ACCOUNT=<your gnosis safe>
+export TRANSFER_FILE=<path to your transfer file>
+
+npx truffle exec scripts/airdrop.js --fundAccount $FUND_ACCOUNT --transferFile $TRANSFER_FILE --network rinkeby
 ```
 
-You will be displayed with logs containing all the transfer data followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
+Then, you will be provided with logs containing all the transfer details followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
 
-Selecting yes, will yield a link to the Gnosis Safe interface where the transaction can be signed and executed.
+Selecting yes yields a link to the Gnosis Safe interface where the transaction can be signed and executed.
 
 To do a "verification" run simply add the argument `--verify` and observe the difference in the last two lines of the logs emitted.
 
