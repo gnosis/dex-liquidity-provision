@@ -76,8 +76,15 @@ With a fundAccount (aka Gnosis Safe) containg sufficient funds that you own exec
 export INFURA_KEY=<your infura key>
 export FUND_ACCOUNT=<your gnosis safe>
 export TRANSFER_FILE=<path to your transfer file>
+```
 
+Alternatively, there is a sample [.env](.env) file that is not tracked by the project where you can paste these values and `source .env`
+
+With all configuration in place, we are ready to run the script.
+
+```sh
 npx truffle exec scripts/airdrop.js --fundAccount $FUND_ACCOUNT --transferFile $TRANSFER_FILE --network rinkeby
+
 ```
 
 Then, you will be provided with logs containing all the transfer details followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
