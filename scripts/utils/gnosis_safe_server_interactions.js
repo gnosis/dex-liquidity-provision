@@ -99,9 +99,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     })
     if (result !== undefined) {
       const interfaceLink = `https://${linkPrefix[network]}gnosis-safe.io/app/#/safes/${masterSafe.address}/transactions`
-      console.log(
-        `The transaction matches a transaction in the interface! You can sign the transaction with nonce ${nonce} here: ${interfaceLink}`
-      )
+      console.log(`The transaction matches one in the interface with nonce ${nonce} that can be signed here: ${interfaceLink}`)
     }
   }
 
