@@ -83,7 +83,7 @@ Alternatively, there is a sample [.env](.env) file that is not tracked by the pr
 With all configuration in place, we are ready to run the script.
 
 ```sh
-npx truffle exec scripts/airdrop.js --fundAccount $FUND_ACCOUNT --transferFile $TRANSFER_FILE --network rinkeby
+npx truffle exec scripts/airdrop.js --fundAccount=$FUND_ACCOUNT --transferFile=$TRANSFER_FILE --network=$NETWORK_NAME
 
 ```
 
