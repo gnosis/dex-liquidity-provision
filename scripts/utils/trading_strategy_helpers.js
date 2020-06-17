@@ -7,6 +7,7 @@ const BN = require("bn.js")
  * @typedef {import('../typedef.js').SmartContract} SmartContract
  * @typedef {import('../typedef.js').TokenObject} TokenObject
  * @typedef {import('../typedef.js').Transaction} Transaction
+ * @typedef {import('../typedef.js').Transfer} Transfer
  */
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
@@ -15,8 +16,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const Contract = require("@truffle/contract")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
-  const { shortenedAddress, fromErc20Units } = require("./printing_tools")
-  const { allElementsOnlyOnce } = require("./js_helpers")
+  const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
+  const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
@@ -145,13 +146,13 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   /**
    * Retrieves token information foll all tokens involved in the deposits.
    *
-   * @param {(Deposit|Withdrawal)[]} flux List of {@link Deposit} or {@link Withdrawal}
+   * @param {(Deposit|Withdrawal|Transfer)[]} flux List of {@link Deposit}, {@link Withdrawal} or {@link Transfer}
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {object} object mapping token addresses to a promise of relevant token information
    */
   const fetchTokenInfoForFlux = function (flux, debug = false) {
-    const tokensInvolved = allElementsOnlyOnce(flux.map((entry) => entry.tokenAddress))
-    return fetchTokenInfoAtAddresses(tokensInvolved, debug)
+    const uniqueAddresses = uniqueItems(flux.map((item) => item.tokenAddress))
+    return fetchTokenInfoAtAddresses(uniqueAddresses, debug)
   }
 
   /**
@@ -357,6 +358,68 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     let transactions = []
     for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
+    return buildBundledTransaction(transactions)
+  }
+
+  /**
+   * Batches together a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [unsafe=false] does not perform balance verification
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   */
+  const buildTransferDataFromList = async function (masterAddress, transferList, unsafe = false, debug = false) {
+    const log = debug ? (...a) => console.log(...a) : () => {}
+
+    const uniqueTokens = uniqueItems(transferList.map((t) => t.tokenAddress))
+    const tokenInfo = fetchTokenInfoForFlux(transferList)
+
+    // Will be used to make sufficient balance assertion before transfer.
+    const cumulativeAmounts = new Map(uniqueTokens.map((address) => [address, new BN(0)]))
+    const transactions = await Promise.all(
+      transferList.map(async (transfer) => {
+        const token = await tokenInfo[transfer.tokenAddress]
+        const weiAmount = toErc20Units(transfer.amount, token.decimals)
+        // Accumulate amounts being transfered for each token.
+        cumulativeAmounts.set(token.address, cumulativeAmounts.get(token.address).add(weiAmount))
+
+        log(
+          `Transferring ${fromErc20Units(weiAmount, token.decimals)} ${token.symbol} to ${
+            transfer.receiver
+          } from ${shortenedAddress(masterAddress)}`
+        )
+        const transferData = token.instance.contract.methods.transfer(transfer.receiver, weiAmount.toString()).encodeABI()
+        return {
+          operation: CALL,
+          to: token.address,
+          value: 0,
+          data: transferData,
+        }
+      })
+    )
+    log(`Transfer bundle contains ${transactions.length} elements and sends ${uniqueTokens.length} distinct tokens.`)
+    if (!unsafe) {
+      // Ensure sufficient funds.
+      await Promise.all(
+        uniqueTokens.map(async (tokenAddress) => {
+          const token = await tokenInfo[tokenAddress]
+          const masterBalance = await token.instance.balanceOf(masterAddress)
+          if (masterBalance.lt(cumulativeAmounts.get(tokenAddress))) {
+            throw new Error(
+              `Fund Account has insufficient ${token.symbol} balance (${masterBalance.toString()} < ${cumulativeAmounts
+                .get(tokenAddress)
+                .toString()})`
+            )
+          }
+          log(`    * ${fromErc20Units(cumulativeAmounts.get(tokenAddress), token.decimals)} - ${token.symbol}`)
+        })
+      )
+      log("Balance verification passed")
+    }
     return buildBundledTransaction(transactions)
   }
 
@@ -584,7 +647,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       Object.entries(tokenInfo).map(async ([tokenAddress, tokenData]) => {
         const token = (await tokenData).instance
         const eventList = await token.getPastEvents("Approval", { fromBlock: 0, toBlock: "latest", filter: { owner: [owner] } })
-        const spenders = allElementsOnlyOnce(eventList.map((event) => event.returnValues.spender))
+        const spenders = uniqueItems(eventList.map((event) => event.returnValues.spender))
         const tokenAllowances = {}
         // TODO: replace with web3 batch request if we need to reduce number of calls. This may require using web3 directly instead of Truffle contracts
         await Promise.all(
@@ -626,6 +689,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildOrders,
     buildBundledTransaction,
     buildTransferApproveDepositFromList,
+    buildTransferDataFromList,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
     buildBracketTransactionForTransferApproveDeposit,

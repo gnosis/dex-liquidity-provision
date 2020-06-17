@@ -4,7 +4,7 @@
  * @param {*[]} array an array
  * @returns {*[]} the same array without ducplicate elements
  */
-const allElementsOnlyOnce = function (array) {
+const uniqueItems = function (array) {
   return array.filter((value, index, self) => self.indexOf(value) === index)
 }
 
@@ -19,6 +19,6 @@ const sleep = function (milliseconds) {
 }
 
 module.exports = {
-  allElementsOnlyOnce,
+  uniqueItems,
   sleep,
 }

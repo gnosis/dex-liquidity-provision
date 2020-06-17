@@ -52,7 +52,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       nonce
     )
     const sigs = await getSafeCompatibleSignature(transactionHash, signer)
-    await safe.execTransaction(
+    return safe.execTransaction(
       transaction.to,
       transaction.value,
       transaction.data,
