@@ -56,7 +56,7 @@
     "eth-gas-reporter": "^0.2.17",
     "node-fetch": "^2.6.0",
     "synthetix-js": "=2.22.4",
-    "truffle": "^5.1.30",
+    "truffle": "^5.1.31",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   }
 }
