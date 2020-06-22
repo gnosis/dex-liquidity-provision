@@ -78,7 +78,7 @@ export FUND_ACCOUNT=<your gnosis safe>
 export TRANSFER_FILE=<path to your transfer file>
 ```
 
-Alternatively, there is a sample [.env](.env) file that is not tracked by the project where you can paste these values and `source .env`
+Alternatively, there is a sample [.sample_env](.sample_env) file that is not tracked by the project where you can paste these values and `source .sample_env`
 
 With all configuration in place, we are ready to run the script.
 
