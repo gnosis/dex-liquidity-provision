@@ -20,6 +20,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
+  const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
@@ -28,6 +29,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
+  const hardcodedTokensByNetwork = require("./hardcoded_tokens")
 
   /**
    * Returns an instance of the exchange contract
@@ -75,6 +77,33 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return orders != null
   }
 
+  /**
+   * Returns the symbol of the ERC20 token in input.
+   * Returns the velue from a list if present, otherwise executes a contract call.
+   *
+   * @param {string} method the name of the methods that (can be "symbol", "decimals", or "name")
+   * @param {SmartContract} tokenInstance instance of the token at the previous address
+   * @returns {string|number} the result of calling the selected method
+   */
+  const tokenDetail = async function (method, tokenInstance) {
+    let detail
+    const tokenAddress = tokenInstance.address
+    const networkId = tokenInstance.constructor.network_id
+    if (hardcodedTokensByNetwork[networkId] && hardcodedTokensByNetwork[networkId][tokenAddress]) {
+      return hardcodedTokensByNetwork[networkId][tokenAddress][method]
+    }
+    try {
+      detail = await tokenInstance[method].call()
+    } catch (error) {
+      throw Error(`Cannot retrieve ${method}() of token at address ${tokenAddress}`)
+    }
+    if (method === "decimals") {
+      return detail.toNumber()
+    } else {
+      return detail
+    }
+  }
+
   const globalTokenPromisesFromAddress = {}
   /**
    * Queries EVM for ERC20 token details by address and returns a list of promises of detailed token information.
@@ -85,7 +114,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    */
   const fetchTokenInfoAtAddresses = function (tokenAddresses, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
-    const ERC20 = artifacts.require("ERC20Detailed")
 
     let requiresFetching = false
     const tokenPromises = {}
@@ -94,11 +122,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         requiresFetching = true
         globalTokenPromisesFromAddress[tokenAddress] = (async () => {
           const tokenInstance = await ERC20.at(tokenAddress)
-          const [tokenSymbol, tokenDecimals] = await Promise.all([tokenInstance.symbol.call(), tokenInstance.decimals.call()])
+          const [tokenSymbol, tokenDecimals] = await Promise.all([
+            tokenDetail("symbol", tokenInstance),
+            tokenDetail("decimals", tokenInstance),
+          ])
           const tokenInfo = {
             address: tokenAddress,
             symbol: tokenSymbol,
-            decimals: tokenDecimals.toNumber(),
+            decimals: tokenDecimals,
             instance: tokenInstance,
           }
           log(`Found token ${tokenInfo.symbol} at address ${tokenInfo.address} with ${tokenInfo.decimals} decimals`)
@@ -697,6 +728,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     checkSufficiencyOfBalance,
     buildRequestWithdraw,
     buildWithdraw,
+    tokenDetail,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
