@@ -79,7 +79,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   /**
    * Returns the symbol of the ERC20 token in input.
-   * Returns the velue from a list if present, otherwise executes a contract call.
+   * Returns the value from a list if present, otherwise executes a contract call.
    *
    * @param {string} method the name of the methods that (can be "symbol", "decimals", or "name")
    * @param {SmartContract} tokenInstance instance of the token at the previous address
