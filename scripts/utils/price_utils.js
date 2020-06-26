@@ -5,6 +5,13 @@ const BN = require("bn.js")
 const { decodeOrders, getUnitPrice } = require("@gnosis.pm/dex-contracts")
 const { Fraction } = require("@gnosis.pm/dex-contracts")
 
+const { TEN } = require("./constants")
+const { toErc20Units } = require("./printing_tools")
+
+/**
+ * @typedef {import('../typedef.js').TokenObject} TokenObject
+ */
+
 const checkCorrectnessOfDeposits = async (
   currentPrice,
   bracketAddress,
@@ -118,19 +125,78 @@ const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage
   return price
 }
 
+/**
+ * Returns the price on the 1inh aggregator for a given pair.
+ * Optionally, it first checks whether the price is present in an input cache and
+ * in case returns that price without any network request.
+ *
+ * Note that the output price is not very accurate, especially for tokens with
+ * very high value and very little liquidity. This is due to the fact that 1inch
+ * returns a sell and a by price for a given amount, unlike dex.ag, and this function returns only
+ * one of the two.
+ *
+ * See https://1inch.exchange/#/api for API documentation.
+ *
+ * @param {TokenObject} baseToken base token for the price
+ * @param {TokenObject} quoteToken quote token for the price
+ * @param {object} [globalPriceStorage=null] object linking token pairs to prices
+ * @returns {number|undefined} desired price if available, undefined otherwise
+ */
+const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorage = null) {
+  // TODO: escape `-` in token symbols
+  if (globalPriceStorage !== null && baseToken + "-" + quoteToken in globalPriceStorage) {
+    return globalPriceStorage[baseToken + "-" + quoteToken]
+  }
+  if (globalPriceStorage !== null && quoteToken + "-" + baseToken in globalPriceStorage) {
+    return 1.0 / globalPriceStorage[quoteToken + "-" + baseToken]
+  }
+  // use ETH instead of WETH for a more reliable price
+  baseToken = baseToken == "WETH" ? "ETH" : baseToken
+  quoteToken = quoteToken == "WETH" ? "ETH" : quoteToken
+  // 1inch returns only buy and sell prices for specific
+  const quoteTokenAmount = toErc20Units(TEN.pow(new BN(quoteToken.decimals)), quoteToken.decimals)
+  const url =
+    "https://api.1inch.exchange/v1.1/quote?fromTokenSymbol=" +
+    quoteToken.symbol +
+    "&toTokenSymbol=" +
+    quoteToken.symbol +
+    "&amount=" +
+    quoteTokenAmount.toString()
+  let price
+  // try to get price 3 times
+  for (let i = 0; i < 3; i++) {
+    try {
+      const requestResult = await axios.get(url)
+      const amountReceived = parseInt(requestResult.data.value)
+      const amountUsed = parseInt(quoteTokenAmount.toString())
+      price = amountReceived / amountUsed
+      break
+    } catch (error) {
+      if (i == 2) {
+        console.log("Warning: unable to retrieve price information on 1inch. The server returns:")
+        console.log(">", error.response.data.message)
+      }
+    }
+  }
+  if (globalPriceStorage !== null) {
+    globalPriceStorage[baseToken + "-" + quoteToken] = price
+  }
+  return price
+}
+
 const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const dexagPrice = await getDexagPrice(quoteTokenData.symbol, baseTokenData.symbol)
-  if (dexagPrice === undefined) {
-    console.log("Warning: could not perform price check against dex.ag.")
+  const onlinePrice = await getDexagPrice(quoteTokenData.symbol, baseTokenData.symbol)
+  if (onlinePrice === undefined) {
+    console.log("Warning: could not perform price check against price aggregator.")
     return false
-  } else if (Math.abs(dexagPrice - price) / price >= acceptedPriceDeviationInPercentage / 100) {
+  } else if (Math.abs(onlinePrice - price) / price >= acceptedPriceDeviationInPercentage / 100) {
     console.log(
       "Warning: the chosen price differs by more than",
       acceptedPriceDeviationInPercentage,
       "percent from the price found on dex.ag."
     )
     console.log("         chosen price:", price, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
-    console.log("         dex.ag price:", dexagPrice, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
+    console.log("         dex.ag price:", onlinePrice, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
     return false
   }
   return true
@@ -175,5 +241,6 @@ module.exports = {
   areBoundsReasonable,
   checkCorrectnessOfDeposits,
   getDexagPrice,
+  getOneinchPrice,
   checkNoProfitableOffer,
 }
