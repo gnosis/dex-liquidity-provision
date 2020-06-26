@@ -76,7 +76,7 @@
  * @property {string} symbol symbol representing the token
  * @property {(number|BN)} decimals number of decimals of the token
  * @property {Address} address address of the token contract on the EVM
- * @property {object} instance an instance of the token contract
+ * @property {SmartContract} instance an instance of the token contract
  */
 
 /**

@@ -18,8 +18,16 @@ contract("PriceOracle", function (accounts) {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const baseTokenData = { symbol: "WETH" }
-      const quoteTokenData = { symbol: "DAI" }
+      const baseTokenData = { symbol: "WETH", decimals: 18 }
+      const quoteTokenData = { symbol: "DAI", decimals: 18 }
+      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+    })
+    it("checks that price is within reasonable range (10 ≤ price ≤ 1990) for tokens with different decimals", async () => {
+      //the following test especially checks that the price p is not inverted (1/p) and is not below 1
+      const acceptedPriceDeviationInPercentage = 99
+      const price = 1000
+      const baseTokenData = { symbol: "WETH", decimals: 18 }
+      const quoteTokenData = { symbol: "USDC", decimals: 6 }
       assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
