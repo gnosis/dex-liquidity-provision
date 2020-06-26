@@ -5,7 +5,6 @@ const BN = require("bn.js")
 const { decodeOrders, getUnitPrice } = require("@gnosis.pm/dex-contracts")
 const { Fraction } = require("@gnosis.pm/dex-contracts")
 
-const { TEN } = require("./constants")
 const { toErc20Units } = require("./printing_tools")
 
 /**
@@ -144,22 +143,29 @@ const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage
  */
 const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorage = null) {
   // TODO: escape `-` in token symbols
-  if (globalPriceStorage !== null && baseToken + "-" + quoteToken in globalPriceStorage) {
-    return globalPriceStorage[baseToken + "-" + quoteToken]
+  if (globalPriceStorage !== null && baseToken.symbol + "-" + quoteToken.symbol in globalPriceStorage) {
+    return globalPriceStorage[baseToken.symbol + "-" + quoteToken.symbol]
   }
-  if (globalPriceStorage !== null && quoteToken + "-" + baseToken in globalPriceStorage) {
-    return 1.0 / globalPriceStorage[quoteToken + "-" + baseToken]
+  if (globalPriceStorage !== null && quoteToken.symbol + "-" + baseToken.symbol in globalPriceStorage) {
+    return 1.0 / globalPriceStorage[quoteToken.symbol + "-" + baseToken.symbol]
   }
   // use ETH instead of WETH for a more reliable price
   baseToken = baseToken == "WETH" ? "ETH" : baseToken
   quoteToken = quoteToken == "WETH" ? "ETH" : quoteToken
-  // 1inch returns only buy and sell prices for specific
-  const quoteTokenAmount = toErc20Units(TEN.pow(new BN(quoteToken.decimals)), quoteToken.decimals)
+  // TODO: this check is here because apparently the type TokenObject could be BN, according
+  // to '../typedef.js'. I think this is never the case however, so this should be verified
+  // and changed accordingly. There are instances of the code where + and - are used with the
+  // decimals.
+  // It also confirms that .decimals is defined
+  if ((typeof quoteToken.decimals !== "number") | (typeof baseToken.decimals !== "number")) {
+    throw new Error("Invalid token input for retrieving price from aggregator.")
+  }
+  const quoteTokenAmount = toErc20Units("1", quoteToken.decimals)
   const url =
     "https://api.1inch.exchange/v1.1/quote?fromTokenSymbol=" +
     quoteToken.symbol +
     "&toTokenSymbol=" +
-    quoteToken.symbol +
+    baseToken.symbol +
     "&amount=" +
     quoteTokenAmount.toString()
   let price
@@ -167,9 +173,10 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
   for (let i = 0; i < 3; i++) {
     try {
       const requestResult = await axios.get(url)
-      const amountReceived = parseInt(requestResult.data.value)
-      const amountUsed = parseInt(quoteTokenAmount.toString())
-      price = amountReceived / amountUsed
+      const amountReceived = parseInt(requestResult.data.toTokenAmount)
+      const amountUsed = parseInt(requestResult.data.fromTokenAmount)
+      const decimalCorrection = 10 ** (baseToken.decimals - quoteToken.decimals)
+      price = amountReceived / amountUsed / decimalCorrection
       break
     } catch (error) {
       if (i == 2) {
@@ -185,7 +192,7 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
 }
 
 const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePrice = await getDexagPrice(quoteTokenData.symbol, baseTokenData.symbol)
+  const onlinePrice = await getOneinchPrice(quoteTokenData, baseTokenData)
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
     return false
@@ -203,9 +210,9 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
 }
 
 const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
-  const currentMarketPrice = await getDexagPrice(
-    (await tokenInfo[order.buyToken]).symbol,
-    (await tokenInfo[order.sellToken]).symbol,
+  const currentMarketPrice = await getOneinchPrice(
+    await tokenInfo[order.buyToken],
+    await tokenInfo[order.sellToken],
     globalPriceStorage
   )
 
@@ -229,7 +236,11 @@ const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceSto
 }
 
 const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
-  const currentMarketPrice = await getDexagPrice("USDC", (await tokenInfo[order.sellToken]).symbol, globalPriceStorage)
+  const currentMarketPrice = await getOneinchPrice(
+    { symbol: "USDC", decimals: 18 },
+    await tokenInfo[order.sellToken],
+    globalPriceStorage
+  )
 
   return Fraction.fromNumber(parseFloat(currentMarketPrice))
     .mul(new Fraction(order.sellTokenBalance, new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))))

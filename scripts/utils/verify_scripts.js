@@ -8,7 +8,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     artifacts
   )
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
-  const { getDexagPrice, checkNoProfitableOffer } = require("./price_utils")
+  const { getOneinchPrice, checkNoProfitableOffer } = require("./price_utils")
 
   const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
@@ -129,13 +129,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
     const tokenInfo = fetchTokenInfoFromExchange(exchange, Array.from(tradedTokenIds))
 
+    // update globalPriceStorage to include all tokens involved in an order and those needed to compute USD prices
     for (const order of relevantOrders) {
-      await getDexagPrice(
-        (await tokenInfo[order.sellToken]).symbol,
-        (await tokenInfo[order.buyToken]).symbol,
-        globalPriceStorage
-      )
-      await getDexagPrice((await tokenInfo[order.sellToken]).symbol, "USDC", globalPriceStorage)
+      await getOneinchPrice(await tokenInfo[order.sellToken], await tokenInfo[order.buyToken], globalPriceStorage)
+      await getOneinchPrice(await tokenInfo[order.sellToken], { symbol: "USDC", decimals: 18 }, globalPriceStorage)
     }
 
     await verifyBracketsWellFormed(masterSafe, brackets, masterThreshold, masterOwners, logActivated)
