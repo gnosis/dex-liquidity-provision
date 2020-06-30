@@ -1,5 +1,4 @@
 const { SynthetixJs } = require("synthetix-js")
-const ethers = require("ethers")
 const fetch = require("node-fetch")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 const { default_yargs } = require("../utils/default_yargs")
@@ -76,8 +75,6 @@ module.exports = async (callback) => {
       tokenDetails(snxjs, batchExchange, "sUSD"),
     ])
 
-    console.log(sETH)
-    console.log(sUSD)
     // Compute Rates and Fees based on price of sETH.
     // Note that sUSD always has a price of 1 within synthetix protocol.
     const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETH.key)
