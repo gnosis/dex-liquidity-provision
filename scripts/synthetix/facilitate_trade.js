@@ -68,7 +68,7 @@ module.exports = async (callback) => {
     console.log("Using account", account)
 
     const snxjs = new SynthetixJs({ networkId: networkId })
-    const batchExchange = await getExchange(web3)
+    const batchExchange = await getExchange()
 
     const [sETH, sUSD] = await Promise.all([
       tokenDetails(snxjs, batchExchange, "sETH"),
