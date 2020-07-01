@@ -113,7 +113,7 @@ describe("returnFirstNotErroring", () => {
     const badCall = returnFirstNotErroring(resolvedTen, resolvedTwenty, resolvedThirty)
     assert(badCall instanceof Promise)
     await assert.rejects(badCall, {
-      message: "promiseArray.slice is not a function",
+      message: "promiseArray is not iterable",
     })
   })
   it("works if some array entries are not promises", async () => {

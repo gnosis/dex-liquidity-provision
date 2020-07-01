@@ -19,44 +19,6 @@ const sleep = function (milliseconds) {
 }
 
 /**
- * Helper function for returnFirstNotErroring. Returns a promise that
- * resolves to the value of the earliest input promise to resolve, or
- * rejects with a combined error if both promises reject.
- *
- * @param {Promise} combinedPromises promise combining other promises
- * with the same logic as in this function
- * @param {Promise} appendedPromise promise to add to combinedPromises
- * @returns {Promise} timeout
- */
-const appendPromise = (combinedPromises, appendedPromise) =>
-  new Promise((resolve, reject) => {
-    let combinedIsCaught = false
-    let combinedErrors
-    let appendedIsCaught = false
-    let appendedError
-    appendedPromise
-      .then((result) => resolve(result))
-      .catch((error) => {
-        appendedError = error.message || error
-        if (combinedIsCaught) {
-          reject(new Error(appendedError + " && " + combinedErrors))
-        } else {
-          appendedIsCaught = true
-        }
-      })
-    combinedPromises
-      .then((result) => resolve(result))
-      .catch((error) => {
-        combinedErrors = error.message || error
-        if (appendedIsCaught) {
-          reject(new Error(appendedError + " && " + combinedErrors))
-        } else {
-          combinedIsCaught = true
-        }
-      })
-  })
-
-/**
  * Given an array of promises, returns a promise resolving to the
  * output of the first resolving promise of the array. If any promise
  * has been rejected in the meantime, this failure is ignored. If all
@@ -69,33 +31,41 @@ const appendPromise = (combinedPromises, appendedPromise) =>
  * which is not yet availeble on Node.js.
  * https://tc39.es/proposal-promise-any/#sec-promise.any
  *
- * Behaviors that might be unexpected:
- * 1. Unlike Promise.any, if all input promises reject then the return
- *    value is a rejected promise returning an error with a message that
- *    concatenates all promise error messages (or output values, if
- *    message is not available) in the order they appear in the input
- *    array. (Promise.any returns an AggregateError.)
- * 2. Even if all input promises are already resolved, the output is
- *    a pending promise
+ * Unlike Promise.any, if all input promises reject then the return
+ * value is a rejected promise returning an error with a message that
+ * concatenates all promise error messages (or output values, if
+ * message is not available) in the order they appear in the input
+ * array. (Promise.any returns an AggregateError.)
  *
  * @param {Promise[]} promiseArray array of promises (or values)
  * @returns {Promise} promise returning the value returned by the
  * input promise that is the quickest to resolve
  */
-const returnFirstNotErroring = function (promiseArray) {
-  try {
-    if (promiseArray.length === 0) {
-      return Promise.reject()
+const returnFirstNotErroring = (promiseArray) =>
+  new Promise((resolve, reject) => {
+    let resolved = false
+    const errorPromises = []
+    for (const promise of promiseArray) {
+      errorPromises.push(
+        Promise.resolve(promise).then(
+          (result) => {
+            resolved = true
+            resolve(result)
+          },
+          (error) => error
+        )
+      )
     }
-    let combinedPromises = Promise.resolve(promiseArray[promiseArray.length - 1])
-    for (const promise of promiseArray.slice(0, -1).reverse()) {
-      combinedPromises = appendPromise(combinedPromises, Promise.resolve(promise))
-    }
-    return combinedPromises
-  } catch (error) {
-    return Promise.reject(error)
-  }
-}
+    Promise.all(errorPromises).then((errorArray) => {
+      if (!resolved) {
+        let errorString = ""
+        errorArray.forEach((error) => {
+          errorString += " && " + String(error.message || error)
+        })
+        reject(new Error(errorString.slice(4)))
+      }
+    })
+  })
 
 module.exports = {
   uniqueItems,
