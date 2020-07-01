@@ -47,6 +47,7 @@ module.exports = async (callback) => {
     let bracketAddresses
     if (argv.masterSafe) {
       bracketAddresses = await getDeployedBrackets(argv.masterSafe)
+      console.log(`Found ${bracketAddresses.length} brackets`)
     } else {
       if (!argv.brackets) {
         callback("One of --masterSafe or --brackets=... is required.")
@@ -71,7 +72,7 @@ module.exports = async (callback) => {
         }
       })
     )
-
+    console.log("Recovering token balances per bracket...")
     const tokenBalancesPerUser = await Promise.all(
       detailedBrackets.map(async ({ bracketAddress, tokenIds, tokenInfoPromises }) => {
         const tokenBalances = []
@@ -125,8 +126,7 @@ module.exports = async (callback) => {
       )
     }
 
-    console.log()
-    console.log("Total funds:")
+    console.log("/nTotal funds:")
     for (const tokenId in totalBalanceSum) {
       const tokenData = await fetchTokenInfoFromExchange(exchange, [tokenId])[tokenId]
       const optionalString = buildOptionalString({
