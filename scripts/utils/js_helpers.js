@@ -50,6 +50,7 @@ const returnFirstNotErroring = (promiseArray) =>
         Promise.resolve(promise).then(
           (result) => {
             resolved = true
+            // only the first call to resolve() determines the outer promise output
             resolve(result)
           },
           (error) => error
