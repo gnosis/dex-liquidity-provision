@@ -417,18 +417,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
         log(`Safe ${deposit.bracketAddress} depositing ${unitAmount} ${tokenInfo.symbol} into BatchExchange`)
 
-        const depositToken = tokenInfo.instance
-
-        // Get data to approve funds from bracket to exchange
-        const approveData = depositToken.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
-        // Get data to deposit funds from bracket to exchange
+        const approveData = tokenInfo.instance.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
         const depositData = exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
         // Get transaction for approve and deposit multisend on bracket
         const bracketBundledTransaction = await buildBundledTransaction([
           { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
           { operation: CALL, to: exchange.address, value: 0, data: depositData },
         ])
-        // Get transaction executing approve/deposit multisend via bracket
+        // Get transaction executing approve & deposit multisend via bracket
         return await buildExecTransaction(masterAddress, deposit.bracketAddress, bracketBundledTransaction)
       })
     )
