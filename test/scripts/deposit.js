@@ -31,7 +31,7 @@ contract("Deposit scripts", function (accounts) {
       const decimals = tokenData.decimals || 18
       // Adding token to exchange is not actually necessary since one can deposit and withdraw any token.
       const { id, token } = await addCustomMintableTokenToExchange(exchange, symbol, decimals, accounts[0])
-      tokenInfo.push({ symbol: symbol, decimals: decimals, id: id, token: token, address: token.address })
+      tokenInfo.push({ symbol, decimals, id, token, address: token.address })
       for (const bracket of bracketAddresses) {
         await token.mint(bracket, amount)
         deposits.push({
