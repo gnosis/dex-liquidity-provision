@@ -419,7 +419,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
         const approveData = tokenInfo.instance.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
         const depositData = exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
-        // Get transaction for approve and deposit multisend on bracket
         const bracketBundledTransaction = await buildBundledTransaction([
           { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
           { operation: CALL, to: exchange.address, value: 0, data: depositData },
