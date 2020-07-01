@@ -31,7 +31,11 @@ let additionalNetwork = process.env.NETWORK ? JSON.parse(process.env.NETWORK) : 
 const urlDevelopment = process.env.GANACHE_HOST || "localhost"
 
 // network key
-const infuraKey = process.env.INFURA_KEY || "9408f47dedf04716a03ef994182cf150"
+const infuraKey = process.env.INFURA_KEY
+if (!infuraKey) {
+  console.log("Error: no Infura key found! You can create a new project key after registering an account at https://infura.io/")
+  process.exit(1)
+}
 
 const { gas: gasLog } = require("minimist")(process.argv.slice(2), { alias: { gas: "g" } })
 
