@@ -126,7 +126,7 @@ module.exports = async (callback) => {
       )
     }
 
-    console.log("/nTotal funds:")
+    console.log("\nTotal funds:")
     for (const tokenId in totalBalanceSum) {
       const tokenData = await fetchTokenInfoFromExchange(exchange, [tokenId])[tokenId]
       const optionalString = buildOptionalString({
