@@ -9,6 +9,13 @@ const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_ya
 const { fromErc20Units } = require("./utils/printing_tools")
 const { uniqueItems } = require("./utils/js_helpers")
 
+const noMasterSafeAndBracketsTogether = function (argv) {
+  if (!argv.masterSafe === !argv.brackets) {
+    throw new Error("exactly one of the parameters --brackets and --masterSafe must be specified")
+  }
+  return true
+}
+
 const argv = default_yargs
   .option("masterSafe", {
     type: "string",
@@ -21,6 +28,7 @@ const argv = default_yargs
       return str.split(",")
     },
   })
+  .check(noMasterSafeAndBracketsTogether)
   .check(checkBracketsForDuplicate).argv
 
 const buildOptionalString = function ({ tokenData, requestedForWithdraw, storedInBracket }) {
@@ -49,9 +57,6 @@ module.exports = async (callback) => {
       bracketAddresses = await getDeployedBrackets(argv.masterSafe)
       console.log(`Found ${bracketAddresses.length} brackets`)
     } else {
-      if (!argv.brackets) {
-        callback("One of --masterSafe or --brackets=... is required.")
-      }
       bracketAddresses = argv.brackets
     }
     const exchange = await exchangePromise
