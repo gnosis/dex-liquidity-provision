@@ -67,7 +67,7 @@ contract("Deposit scripts", function (accounts) {
         const bracketBalance = (await token.balanceOf(bracketAddress)).toString()
         const exchangeBalance = (await exchange.getBalance(bracketAddress, tokenAddress)).toString()
         assert.equal(bracketBalance, "0", "Bracket balance should be zero")
-        assert.equal(exchangeBalance, amount, "Exchange balance should should contain amount")
+        assert.equal(exchangeBalance, amount, "Exchange balance should contain amount")
       }
     })
   })
