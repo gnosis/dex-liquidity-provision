@@ -59,11 +59,8 @@ const returnFirstNotErroring = (promiseArray) =>
     }
     Promise.all(errorPromises).then((errorArray) => {
       if (!resolved) {
-        let errorString = ""
-        errorArray.forEach((error) => {
-          errorString += " && " + String(error.message || error)
-        })
-        reject(new Error(errorString.slice(4)))
+        const errorString = errorArray.map((error) => String(error.message || error)).join(" && ")
+        reject(new Error(errorString))
       }
     })
   })
