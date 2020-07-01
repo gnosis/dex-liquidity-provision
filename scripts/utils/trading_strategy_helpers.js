@@ -393,6 +393,44 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
+   * Batches together a collection of Deposits from brackets into BatchExchange. Particularily,
+   * the resulting transaction is that of approval and deposit of specified tokens behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   */
+  const buildDepositFromList = async function (masterAddress, depositList, debug = false) {
+    const log = debug ? (...a) => console.log(...a) : () => {}
+    const exchange = await exchangePromise
+    const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
+
+    // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
+    const transactions = await Promise.all(
+      depositList.map(async (deposit) => {
+        assert(
+          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
+          "All depositors must be owned only by the master Safe"
+        )
+        const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
+        const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
+        log(`Safe ${deposit.bracketAddress} depositing ${unitAmount} ${tokenInfo.symbol} into BatchExchange`)
+
+        const approveData = tokenInfo.instance.contract.methods.approve(exchange.address, deposit.amount).encodeABI()
+        const depositData = exchange.contract.methods.deposit(deposit.tokenAddress, deposit.amount).encodeABI()
+        const bracketBundledTransaction = await buildBundledTransaction([
+          { operation: CALL, to: deposit.tokenAddress, value: 0, data: approveData },
+          { operation: CALL, to: exchange.address, value: 0, data: depositData },
+        ])
+        // Get transaction executing approve & deposit multisend via bracket
+        return await buildExecTransaction(masterAddress, deposit.bracketAddress, bracketBundledTransaction)
+      })
+    )
+    return buildBundledTransaction(transactions)
+  }
+
+  /**
    * Batches together a collection of transfer-related transaction information. Particularily,
    * the resulting transaction is that of transfering all specified funds from master through its brackets
    * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
@@ -719,6 +757,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     deployFleetOfSafes,
     buildOrders,
     buildBundledTransaction,
+    buildDepositFromList,
     buildTransferApproveDepositFromList,
     buildTransferDataFromList,
     buildTransferFundsToMaster,
