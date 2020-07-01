@@ -51,7 +51,7 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 
 Here is an example script invocation:
 
-```js
+```
 npx truffle exec scripts/complete_liquidity_provision.js --baseTokenId=1 --quoteTokenId=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --depositBaseToken=0.1 --depositQuoteToken=10 --numBrackets=10 --network=$NETWORK_NAME
 ```
 
@@ -65,6 +65,22 @@ The fleet size should be smaller than or equal to 20, in order to ensure that th
 
 Please document the displayed bracket-trader addresses. They are required for future withdrawals.
 They can also be retrieved from the created transactions. However, since this is a manual process, it is quite cumbersome to extract them right now.
+
+### Monitoring deployed funds
+
+The total amount of funds managed by a master Safe can be printed by running:
+
+```
+npx truffle exec scripts/balance_viewer.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
+```
+
+You can execute the same command for specific brackets without specifying the master Safe:
+
+```
+npx truffle exec scripts/balance_viewer.js --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --network=$NETWORK_NAME
+```
+
+For both commands, every brackets that trades a non-zero balance will be printed, as well as a summary of the total amount of funds involved.
 
 ### Safe Token Distribution
 
