@@ -44,19 +44,19 @@ const buildOptionalString = function ({ tokenData, requestedForWithdraw, storedI
 module.exports = async (callback) => {
   try {
     const exchangePromise = getExchange(web3)
-    let bracketAddressesPromise
+    let bracketAddresses
     if (argv.masterSafe) {
-      bracketAddressesPromise = getDeployedBrackets(argv.masterSafe)
+      bracketAddresses = await getDeployedBrackets(argv.masterSafe)
     } else {
       if (!argv.brackets) {
         callback("One of --masterSafe or --brackets=... is required.")
       }
-      bracketAddressesPromise = Promise.resolve(argv.brackets)
+      bracketAddresses = argv.brackets
     }
     const exchange = await exchangePromise
 
     const detailedBrackets = await Promise.all(
-      (await bracketAddressesPromise).map(async (bracketAddress) => {
+      bracketAddresses.map(async (bracketAddress) => {
         const orders = decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
         let tradedTokenIds = []
         for (const order of orders) {
