@@ -1,5 +1,4 @@
 const { SynthetixJs } = require("synthetix-js")
-const ethers = require("ethers")
 const fetch = require("node-fetch")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 const { default_yargs } = require("../utils/default_yargs")
@@ -19,31 +18,21 @@ const argv = default_yargs
     default: 1.0,
   }).argv
 
-// These are fixed constants for the current version of the dex-contracts
-const sETHByNetwork = {
-  1: {
-    address: "0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb",
-    exchangeId: 8,
-    decimals: 18,
-  },
-  4: {
-    address: "0x0647b2C7a2a818276154b0fC79557F512B165bc1",
-    exchangeId: 12,
-    decimals: 18,
-  },
-}
+const tokenDetails = async function (snxInstance, batchExchange, tokenName) {
+  const address = web3.utils.toChecksumAddress(snxInstance[tokenName].contract.address)
+  const [key, tokenId, decimals] = await Promise.all([
+    snxInstance[tokenName].currencyKey(),
+    batchExchange.tokenAddressToIdMap.call(address),
+    snxInstance[tokenName].decimals(),
+  ])
 
-const sUSDByNetwork = {
-  1: {
-    address: "0x57Ab1E02fEE23774580C119740129eAC7081e9D3",
-    exchangeId: 9,
-    decimals: 18,
-  },
-  4: {
-    address: "0x1b642a124CDFa1E5835276A6ddAA6CFC4B35d52c",
-    exchangeId: 13,
-    decimals: 18,
-  },
+  return {
+    name: tokenName,
+    key: key,
+    exchangeId: tokenId.toNumber(),
+    address: address,
+    decimals: decimals,
+  }
 }
 
 const gasStationURL = {
@@ -79,21 +68,16 @@ module.exports = async (callback) => {
     console.log("Using account", account)
 
     const snxjs = new SynthetixJs({ networkId: networkId })
-    const exchange = await getExchange(web3)
+    const batchExchange = await getExchange()
 
-    const sETH = sETHByNetwork[networkId]
-    const sUSD = sUSDByNetwork[networkId]
-
-    // Both of these hardcoded tokens are assumed to have 18 decimal places.
-    // We "trust" that this will always be the case although it seems
-    // that synthetix reserves the authority to upgrade their token
-    // This could mean issuing a new one with a different number of decimals.
-    const sETHKey = ethers.utils.formatBytes32String("sETH")
-    const sUSDKey = ethers.utils.formatBytes32String("sUSD")
+    const [sETH, sUSD] = await Promise.all([
+      tokenDetails(snxjs, batchExchange, "sETH"),
+      tokenDetails(snxjs, batchExchange, "sUSD"),
+    ])
 
     // Compute Rates and Fees based on price of sETH.
     // Note that sUSD always has a price of 1 within synthetix protocol.
-    const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETHKey)
+    const exchangeRate = await snxjs.ExchangeRates.rateForCurrency(sETH.key)
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("Oracle sETH Price (in sUSD)", formatedRate)
 
@@ -107,8 +91,8 @@ module.exports = async (callback) => {
     console.log("Gnosis Protocol buy  sETH price (in sUSD)", theirBuyPrice)
 
     // Using synthetix's fees, and formatting their return values with their tools, plus parseFloat.
-    const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETHKey, sUSDKey)))
-    const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSDKey, sETHKey)))
+    const sETHTosUSDFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sETH.key, sUSD.key)))
+    const sUSDTosETHFee = parseFloat(snxjs.utils.formatEther(await snxjs.Exchanger.feeRateForExchange(sUSD.key, sETH.key)))
 
     // Initialize order array.
     const orders = []
@@ -118,7 +102,7 @@ module.exports = async (callback) => {
     if (ourBuyPrice > theirSellPrice) {
       // We are willing to pay more than the exchange is selling for.
       console.log(`Placing an order to buy sETH at ${ourBuyPrice}, but verifying sUSD balance first`)
-      const sUSDBalance = await exchange.getBalance(account, sUSD.address)
+      const sUSDBalance = await batchExchange.getBalance(account, sUSD.address)
       if (sUSDBalance.gte(minSellsUSD)) {
         const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
           1 / ourBuyPrice,
@@ -142,7 +126,7 @@ module.exports = async (callback) => {
     if (ourSellPrice < theirBuyPrice) {
       // We are selling at a price less than the exchange is buying for.
       console.log(`Placing an order to sell sETH at ${ourSellPrice}, but verifying sETH balance first`)
-      const sETHBalance = await exchange.getBalance(account, sETH.address)
+      const sETHBalance = await batchExchange.getBalance(account, sETH.address)
       if (sETHBalance.gte(minSellsETH)) {
         const { base: sellETHAmount, quote: buySUSDAmount } = getUnlimitedOrderAmounts(
           ourSellPrice,
@@ -165,14 +149,14 @@ module.exports = async (callback) => {
     if (orders.length > 0) {
       // Fetch auction index and declare validity interval for orders.
       // Note that order validity interval is inclusive on both sides.
-      const batchId = (await exchange.getCurrentBatchId.call()).toNumber()
+      const batchId = (await batchExchange.getCurrentBatchId.call()).toNumber()
       const validFroms = Array(orders.length).fill(batchId)
       const validTos = Array(orders.length).fill(batchId)
 
       const gasPrices = await (await fetch(gasStationURL[networkId])).json()
       const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
       console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
-      await exchange.placeValidFromOrders(
+      await batchExchange.placeValidFromOrders(
         orders.map((order) => order.buyToken),
         orders.map((order) => order.sellToken),
         validFroms,
