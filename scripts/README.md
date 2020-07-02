@@ -28,7 +28,7 @@ The following scripts will use this account to propose transactions to the inter
 
 Setup the following env variables for the deployment process:
 
-```
+```sh
  export PK=<private key of proposer account>
 export GAS_PRICE_GWEI=<look up the suggestion from ethgasstation.info>
 export NETWORK_NAME=<network>
@@ -51,7 +51,7 @@ Making the requests to the gnosis-interfaces does not cost any gas. However, sig
 
 Here is an example script invocation:
 
-```
+```sh
 npx truffle exec scripts/complete_liquidity_provision.js --baseTokenId=1 --quoteTokenId=4 --lowestLimit=150 --highestLimit=200 --currentPrice=175 --masterSafe=$MASTER_SAFE --depositBaseToken=0.1 --depositQuoteToken=10 --numBrackets=10 --network=$NETWORK_NAME
 ```
 
@@ -70,13 +70,13 @@ They can also be retrieved from the created transactions. However, since this is
 
 The total amount of funds managed by a master Safe can be printed by running:
 
-```
+```sh
 npx truffle exec scripts/balance_viewer.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
 ```
 
 You can execute the same command for specific brackets without specifying the master Safe:
 
-```
+```sh
 npx truffle exec scripts/balance_viewer.js --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --network=$NETWORK_NAME
 ```
 
@@ -92,7 +92,7 @@ Requires that Master Safe has already been deployed.
 
 An example of the usage would be:
 
-```js
+```sh
 npx truffle exec scripts/deploy_safes.js --masterSafe=$MASTER_SAFE --numSafes=20 --network=$NETWORK_NAME
 ```
 
@@ -102,7 +102,7 @@ Requires that Master and bracket-traders are already deployed.
 
 An example of the usage would be:
 
-```js
+```sh
 npx truffle exec scripts/bracket_orders.js --baseTokenId=1 --quoteTokenID=7 --currentPrice=270 --lowestLimit=240 --highestLimit=300 --masterSafe=$MASTER_SAFE --brackets=0xb947de73ADe9aBC6D57eb34B2CC2efd41f646636,0xfA4a18c2218945bC018BF94D093BCa66c88D3c40 --network=$NETWORK_NAME
 ```
 
@@ -112,7 +112,7 @@ For this script, a deposit file like the one available in `./examples/exampleDep
 
 Then the script can be used like that:
 
-```js
+```sh
 npx truffle exec scripts/transfer_approve_deposit.js --masterSafe=$MASTER_SAFE --depositFile="./examples/exampleDepositList.json" --network=$NETWORK_NAME
 ```
 
@@ -126,7 +126,7 @@ To make sure that the transaction does not need more gas than what fits in a blo
 First, a withdraw request must be created for each bracket and token.
 The following command request withdrawing of all DAI and WETH (token ID 7 and 1 respectively) for the brackets at addresses `0x0000000000000000000000000000000000000001` and `0x0000000000000000000000000000000000000002`:
 
-```js
+```sh
 npx truffle exec scripts/request_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
@@ -138,7 +138,7 @@ The next step transfers the funds from the exchange to the master Safe.
 Internally, it composes two steps together: withdrawing funds from the exchange to each brackets, and then transferring funds from the brackets to master.
 The parameters of the call are the same as before, the only change is the name of the script to be executed:
 
-```js
+```sh
 npx truffle exec scripts/claim_withdraw.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
@@ -147,14 +147,14 @@ The script `claim_withdraw.js` will not withdraw any funds if run before request
 Running `request_withdraw.js` twice would cause all funds to be sent to the brackets instead of to the master Safe.
 In this scenario, you can use the script `transfer_funds_to_master.js` with the same parameters to recover the funds from the brackets:
 
-```js
+```sh
 npx truffle exec scripts/transfer_funds_to_master.js --masterSafe=$MASTER_SAFE --brackets=0x0000000000000000000000000000000000000001,0x0000000000000000000000000000000000000002 --tokenIds=1,7 --network=$NETWORK_NAME
 ```
 
 For a more fine-grained management of the amounts to be withdrawn, withdrawal files can be used instead of `--brackets`, `--tokens`, and `--tokenIds` in all the scripts of this section.
 All desired withdrawals should be specified in a JSON file with the following format:
 
-```
+```json
 [
     {
         "amount": "100000000000000000",
@@ -171,7 +171,7 @@ See `examples/exampleDepositList.json` for a concrete example.
 
 In order to document the brackets deployed form a specific MASTER_SAFE, one can run the following script:
 
-```js
+```sh
 npx truffle exec scripts/get_deployed_brackets.js --masterSafe=$MASTER_SAFE --network=$NETWORK_NAME
 ```
 

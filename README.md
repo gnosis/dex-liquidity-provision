@@ -10,7 +10,7 @@ Do not use unless you fully understand the code!
 
 Install needed dependencies:
 
-```
+```sh
 yarn install
 ```
 
@@ -19,7 +19,7 @@ In case of doubt, running `echo $?` immediately after `yarn install` should retu
 
 Build Truffle artifacts:
 
-```
+```sh
 yarn build
 ```
 
@@ -31,13 +31,13 @@ See `scripts/README.md` for details.
 
 Start and keep the test Ethereum network running in the background:
 
-```
+```sh
 yarn testnet
 ```
 
 Run tests:
 
-```
+```sh
 yarn test
 ```
 
