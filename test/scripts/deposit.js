@@ -44,7 +44,7 @@ contract("Deposit scripts", function (accounts) {
     return [masterSafe, tokenInfo, deposits]
   }
 
-  describe("buildDepositFromList:", () => {
+  describe("buildDepositFromList", () => {
     it("deposits 1000 DAI (in Wei) for two brackets", async () => {
       const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
       const [masterSafe, tokenInfo, deposits] = await setup(2, amounts)

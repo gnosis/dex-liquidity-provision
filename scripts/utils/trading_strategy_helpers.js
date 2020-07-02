@@ -424,7 +424,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
           { operation: CALL, to: exchange.address, value: 0, data: depositData },
         ])
         // Get transaction executing approve & deposit multisend via bracket
-        return await buildExecTransaction(masterAddress, deposit.bracketAddress, bracketBundledTransaction)
+        return buildExecTransaction(masterAddress, deposit.bracketAddress, bracketBundledTransaction)
       })
     )
     return buildBundledTransaction(transactions)
