@@ -31,9 +31,9 @@
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
     "eslint": "^7.3.1",
-    "eslint-plugin-jsdoc": "^28.5.1",
+    "eslint-plugin-jsdoc": "^28.6.0",
     "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.20.1",
+    "eslint-plugin-react": "^7.20.3",
     "ganache-cli": "6.9.1",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
@@ -41,7 +41,7 @@
     "truffle-plugin-verify": "^0.3.11"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.4.0",
+    "@gnosis.pm/dex-contracts": "^0.4.1",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "v1.1.1-dev.2",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
@@ -55,7 +55,7 @@
     "dotenv": "^8.0.0",
     "eth-gas-reporter": "^0.2.17",
     "node-fetch": "^2.6.0",
-    "synthetix-js": "=2.22.4",
+    "synthetix-js": "=2.23.3",
     "truffle": "^5.1.32",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   }

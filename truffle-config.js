@@ -1,5 +1,9 @@
 const truffleConfig = require("@gnosis.pm/util-contracts/src/util/truffleConfig")
 
+const argv = require("yargs").help(false).version(false).option("network", {
+  type: "string",
+}).argv
+
 const DEFAULT_GAS_LIMIT = 6e6
 const DEFAULT_GAS_PRICE_GWEI = 5
 const DEFAULT_MNEMONIC = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
@@ -31,7 +35,11 @@ let additionalNetwork = process.env.NETWORK ? JSON.parse(process.env.NETWORK) : 
 const urlDevelopment = process.env.GANACHE_HOST || "localhost"
 
 // network key
-const infuraKey = process.env.INFURA_KEY || "9408f47dedf04716a03ef994182cf150"
+const infuraKey = process.env.INFURA_KEY
+if ((argv.network === "rinkeby" || argv.network === "mainnet") && !infuraKey) {
+  console.log("Error: no Infura key found! You can create a new project key after registering an account at https://infura.io/")
+  process.exit(1)
+}
 
 const { gas: gasLog } = require("minimist")(process.argv.slice(2), { alias: { gas: "g" } })
 

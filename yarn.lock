@@ -212,10 +212,10 @@
     "@ethersproject/constants" ">=5.0.0-beta.133"
     "@ethersproject/logger" ">=5.0.0-beta.137"
 
-"@gnosis.pm/dex-contracts@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.4.0.tgz#a7edd147d0426ec6f71d3f4ce8e1488e8e6917cb"
-  integrity sha512-PjHzCUXG7+O+XHT9qfcKZnA7Dfqp3gu5LdIFt4x+eoDWL3h3ddC2LIIQ46qfO9Potq4nnq1iilQ76U9EvHHOmw==
+"@gnosis.pm/dex-contracts@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.4.1.tgz#65ca96b2841e42f8de74220c79b04b6977af3230"
+  integrity sha512-DhMS2lrpBM4N0qC8pT3evzbOQt/DqfwsNbx/bBakPV4copOBLlfiFksNHLpr6G9MfVDOg69CCa6rQhzKcCvUJg==
   dependencies:
     bn.js "^5.1.2"
 
@@ -2667,10 +2667,10 @@ escape-string-regexp@1.0.5, escape-string-regexp@^1.0.2, escape-string-regexp@^1
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
   integrity sha1-G2HAViGQqN/2rjuyzwIAyhMLhtQ=
 
-eslint-plugin-jsdoc@^28.5.1:
-  version "28.5.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-28.5.1.tgz#5a95ee8705af389ba2062a1036be6077b5e62f3f"
-  integrity sha512-1XSWu8UnGwqO8mX3XKGofffL83VRt00ptq0m5OrTLFDN3At4x+/pJ8YHJONKhGC35TtjskcS9/RR6F9pjQ8c+w==
+eslint-plugin-jsdoc@^28.6.0:
+  version "28.6.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-28.6.0.tgz#4fc214a6e2a71e239a69104ff4bb1f8843a2fe49"
+  integrity sha512-4BeFeu5l+1KWQ8Ghq/3JKP4xTB2geocgT7WT3lU/SV8k0p1Uh3qyg5Uu8AmmeVgwODvj5Dihq5NAzGU9Ir0Saw==
   dependencies:
     comment-parser "^0.7.5"
     debug "^4.1.1"
@@ -2685,10 +2685,10 @@ eslint-plugin-no-only-tests@^2.4.0:
   resolved "https://registry.yarnpkg.com/eslint-plugin-no-only-tests/-/eslint-plugin-no-only-tests-2.4.0.tgz#7d565434aa7d16ccc7eea957c391d98f827332ca"
   integrity sha512-azP9PwQYfGtXJjW273nIxQH9Ygr+5/UyeW2wEjYoDtVYPI+WPKwbj0+qcAKYUXFZLRumq4HKkFaoDBAwBoXImQ==
 
-eslint-plugin-react@^7.20.1:
-  version "7.20.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-react/-/eslint-plugin-react-7.20.1.tgz#87fcf8d0de225817ba0b2d8f38740733d61ff4ba"
-  integrity sha512-HitovDhscMmu3uOod3aqZRdKURdXgmlkptEue958gJBmIJO9hvgO4uZyqsJ4+22WqJVP3CsTKfqWSuTlJL6b8w==
+eslint-plugin-react@^7.20.3:
+  version "7.20.3"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react/-/eslint-plugin-react-7.20.3.tgz#0590525e7eb83890ce71f73c2cf836284ad8c2f1"
+  integrity sha512-txbo090buDeyV0ugF3YMWrzLIUqpYTsWSDZV9xLSmExE1P/Kmgg9++PD931r+KEWS66O1c9R4srLVVHmeHpoAg==
   dependencies:
     array-includes "^3.1.1"
     array.prototype.flatmap "^1.2.3"
@@ -6467,10 +6467,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.22.4:
-  version "2.22.4"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.22.4.tgz#8cacbf176985a03be77cc00f57d6924cc5adcd12"
-  integrity sha512-AAhpxb4eCFYDRG5EHuwoLOt0IvFdIjn1qDKLQosGiDAwG8RwaOR8+9Zko/AAjPL+xGVPZUBfr1K9wfaCaKDS0w==
+synthetix-js@=2.23.3:
+  version "2.23.3"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.23.3.tgz#09516901b317af08ffc7a5153c0b8b3781b867f6"
+  integrity sha512-LSsaKlmvTqERBXbK7Pg28abx3+7g5bnoiansrVry4tE36Y4T3Mut5NAmtq1Q3QVThhX3KgrnFeWy9Np8OvpAoQ==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -6481,14 +6481,14 @@ synthetix-js@=2.22.4:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.22.4"
+    synthetix "2.23.3"
     trezor-connect "7.0.3"
     walletlink "1.0.0"
 
-synthetix@2.22.4:
-  version "2.22.4"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.22.4.tgz#a224edbc0df7a1c5867b28a6bd06e5ab40b9faa3"
-  integrity sha512-/NRrKOlaS5IxS8n9k294efW59vI63IqOGp1L52jMujsizIwpjA7OXeihOmotCQa1gmXBqIdorLuHFVICOcrcow==
+synthetix@2.23.3:
+  version "2.23.3"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.23.3.tgz#71d337d58df7bb8074a972050f2dddc762569855"
+  integrity sha512-VDIvye81qMbqZilT5f2vELrMeJ/onhSkvNOl5E5Zx5mZ3yrCRtm02uAao9/pxpapKNOb7qybvisxplbQPHettA==
   dependencies:
     "@chainlink/contracts-0.0.3" "npm:@chainlink/contracts@0.0.3"
     commander "5.1.0"

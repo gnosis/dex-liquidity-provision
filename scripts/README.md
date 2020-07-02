@@ -82,35 +82,6 @@ npx truffle exec scripts/balance_viewer.js --brackets=0x000000000000000000000000
 
 For both commands, every brackets that trades a non-zero balance will be printed, as well as a summary of the total amount of funds involved.
 
-### Safe Token Distribution
-
-Create your own transferFile, or use our sample [examples/sampleTransferFile.json](examples/sampleTransferFile.json).
-With a fundAccount (aka Gnosis Safe) containg sufficient funds that you own execute:
-
-```sh
- export PK=<your private key>
-export INFURA_KEY=<your infura key>
-export FUND_ACCOUNT=<your gnosis safe>
-export TRANSFER_FILE=<path to your transfer file>
-```
-
-Alternatively, there is a sample [.sample_env](.sample_env) file that is not tracked by the project where you can paste these values and `source .sample_env`
-
-With all configuration in place, we are ready to run the script.
-
-```sh
-npx truffle exec scripts/airdrop.js --fundAccount=$FUND_ACCOUNT --transferFile=$TRANSFER_FILE --network=$NETWORK_NAME
-
-```
-
-Then, you will be provided with logs containing all the transfer details followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
-
-Selecting yes yields a link to the Gnosis Safe interface where the transaction can be signed and executed.
-
-To do a "verification" run simply add the argument `--verify` and observe the difference in the last two lines of the logs emitted.
-
-Note that, the gas costs for such transactions can vary based on the tokens you are transfering (since each token could potentially implement their transfer's differently)
-
 ## Running Functions Individually
 
 Instead of doing all the steps with one script, the different steps can also be done individually, as explained in the next section.
