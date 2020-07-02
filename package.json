@@ -31,7 +31,7 @@
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
     "eslint": "^7.3.1",
-    "eslint-plugin-jsdoc": "^28.6.0",
+    "eslint-plugin-jsdoc": "^28.6.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-react": "^7.20.3",
     "ganache-cli": "6.9.1",
