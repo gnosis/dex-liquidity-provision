@@ -61,7 +61,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const isOnlySafeOwner = async function (masterAddress, owned) {
     const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
     const ownerAddresses = await ownedSafe.getOwners()
-    return ownerAddresses.length == 1 && ownerAddresses[0] == masterAddress
+    return ownerAddresses.length == 1 && ownerAddresses[0].toLowerCase() == masterAddress.toLowerCase()
   }
 
   /**
