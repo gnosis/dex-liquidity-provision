@@ -16,6 +16,7 @@ const {
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromOrders,
+  isOnlySafeOwner,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { buildExecTransaction } = require("../scripts/utils/internals")(web3, artifacts)
 const { DEFAULT_ORDER_EXPIRY, CALL, ZERO_ADDRESS } = require("../scripts/utils/constants")
@@ -122,6 +123,13 @@ contract("Verification checks", function (accounts) {
     baseToken = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
     quoteToken = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
     await exchange.placeOrder(baseToken, quoteToken, 1234124, 11241234, 11234234, { from: accounts[0] })
+  })
+  describe("isOnlySafeOwner", async function () {
+    it("is successful if owner address is lowercase", async () => {
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+      const [bracketAddress] = await deployFleetOfSafes(masterSafe.address, 1)
+      assert(await isOnlySafeOwner(masterSafe.address.toLowerCase(), bracketAddress))
+    })
   })
   describe("Owner is master safe", async () => {
     it("throws if the masterSafe is not the only owner", async () => {
