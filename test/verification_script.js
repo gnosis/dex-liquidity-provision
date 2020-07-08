@@ -8,7 +8,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe } = require("./test_utils")
+const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe, populatePriceStorage } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
   getAllowances,
@@ -296,7 +296,8 @@ contract("Verification checks", function (accounts) {
 
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, safeOwner, transaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, []), {
+      const globalPriceStorage = populatePriceStorage("WETH", "DAI")
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, null, null, [], globalPriceStorage), {
         message: "The two orders are not set up to trade back and forth on the same token pair",
       })
     })
@@ -333,7 +334,8 @@ contract("Verification checks", function (accounts) {
       }
       const transaction = await buildExecTransaction(masterSafe.address, bracketAddress, orderTransaction)
       await execTransaction(masterSafe, safeOwner, transaction)
-      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address), {
+      const globalPriceStorage = populatePriceStorage("WETH", "DAI")
+      await assert.rejects(verifyCorrectSetup([bracketAddress], masterSafe.address, null, null, [], globalPriceStorage), {
         message: "Brackets do not gain money when trading",
       })
     })
