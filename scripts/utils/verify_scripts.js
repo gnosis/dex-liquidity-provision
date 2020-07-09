@@ -132,7 +132,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // update globalPriceStorage to include all tokens involved in an order and those needed to compute USD prices
     for (const order of relevantOrders) {
       await getOneinchPrice(await tokenInfo[order.sellToken], await tokenInfo[order.buyToken], globalPriceStorage)
-      await getOneinchPrice(await tokenInfo[order.sellToken], { symbol: "USDC", decimals: 18 }, globalPriceStorage)
+      await getOneinchPrice(await tokenInfo[order.sellToken], { symbol: "USDC", decimals: 6 }, globalPriceStorage)
     }
 
     await verifyBracketsWellFormed(masterSafe, brackets, masterThreshold, masterOwners, logActivated)
