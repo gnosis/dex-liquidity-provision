@@ -56,9 +56,9 @@ contract("PriceOracle", function (accounts) {
       ]
 
       const globalPriceStorage = {}
-      globalPriceStorage["DAI-USDC"] = 1.0
-      globalPriceStorage["WETH-DAI"] = 1 / 120.0
-      globalPriceStorage["WETH-USDC"] = 1 / 120.0
+      globalPriceStorage["DAI-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-DAI"] = { price: 1 / 120.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 1 / 120.0 }
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
@@ -94,8 +94,8 @@ contract("PriceOracle", function (accounts) {
       ]
 
       const globalPriceStorage = {}
-      globalPriceStorage["USDC-USDC"] = 1.0
-      globalPriceStorage["DAI-USDC"] = 1.0
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["DAI-USDC"] = { price: 1.0 }
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
       assert.equal(await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage), true)
       assert.equal(
@@ -130,8 +130,8 @@ contract("PriceOracle", function (accounts) {
       ]
 
       const globalPriceStorage = {}
-      globalPriceStorage["USDC-USDC"] = 1.0
-      globalPriceStorage["DAI-USDC"] = 1.0
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["DAI-USDC"] = { price: 1.0 }
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
       assert.equal(

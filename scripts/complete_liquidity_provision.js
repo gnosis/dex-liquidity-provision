@@ -120,7 +120,7 @@ module.exports = async (callback) => {
 
     const hasSufficientBaseTokenPromise = checkSufficiencyOfBalance(baseToken, argv.masterSafe, depositBaseToken)
     const hasSufficientQuoteTokenPromise = checkSufficiencyOfBalance(quoteToken, argv.masterSafe, depositQuoteToken)
-    const isPriceCloseToDexagsPromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
+    const isPriceCloseToOnlineSourcePromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
 
     const signer = await signerPromise
     console.log("Using account:", signer)
@@ -139,8 +139,8 @@ module.exports = async (callback) => {
       callback(`Error: MasterSafe ${argv.masterSafe} has insufficient balance for quote token ${quoteToken.address}`)
     }
 
-    // check price against dex.ag's API
-    if (!(await isPriceCloseToDexagsPromise)) {
+    // check price against external price API
+    if (!(await isPriceCloseToOnlineSourcePromise)) {
       if (!(await proceedAnyways("Price check failed!"))) {
         callback("Error: Price checks did not pass")
       }

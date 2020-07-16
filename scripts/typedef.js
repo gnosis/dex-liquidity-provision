@@ -94,3 +94,16 @@
  * @property {number|string|BN} value Amount of ETH transferred
  * @property {string} data Data sent along with the transaction
  */
+
+/**
+ * Example:
+ * {
+ *   source: "dex.ag",
+ *   price: 250.0
+ * }
+ *
+ * @typedef PriceFeedSlice
+ * @type {object}
+ * @property {string} source human-readable name of the source price feed
+ * @property {number|undefined} price for the token pair involved
+ */

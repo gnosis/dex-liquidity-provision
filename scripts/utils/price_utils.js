@@ -9,6 +9,7 @@ const { toErc20Units } = require("./printing_tools")
 
 /**
  * @typedef {import('../typedef.js').TokenObject} TokenObject
+ * @typedef {import('../typedef.js').PriceFeedSlice} PriceFeedSlice
  */
 
 const checkCorrectnessOfDeposits = async (
@@ -139,7 +140,7 @@ const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage
  * @param {TokenObject} baseToken base token for the price
  * @param {TokenObject} quoteToken quote token for the price
  * @param {object} [globalPriceStorage=null] object linking token pairs to prices
- * @returns {number|undefined} desired price if available, undefined otherwise
+ * @returns {PriceFeedSlice} price information (if available, undefined otherwise) and ancillary data
  */
 const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorage = null) {
   // TODO: escape `-` in token symbols
@@ -147,11 +148,13 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
     return globalPriceStorage[baseToken.symbol + "-" + quoteToken.symbol]
   }
   if (globalPriceStorage !== null && quoteToken.symbol + "-" + baseToken.symbol in globalPriceStorage) {
-    return 1.0 / globalPriceStorage[quoteToken.symbol + "-" + baseToken.symbol]
+    const inverseSlice = globalPriceStorage[quoteToken.symbol + "-" + baseToken.symbol]
+    const priceFeedSlice = {
+      price: 1.0 / inverseSlice.price,
+      source: inverseSlice.source,
+    }
+    return priceFeedSlice
   }
-  // use ETH instead of WETH for a more reliable price
-  baseToken = baseToken == "WETH" ? "ETH" : baseToken
-  quoteToken = quoteToken == "WETH" ? "ETH" : quoteToken
   // TODO: this check is here because apparently the type TokenObject could be BN, according
   // to '../typedef.js'. I think this is never the case however, so this should be verified
   // and changed accordingly. There are instances of the code where + and - are used with the
@@ -185,36 +188,42 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
       }
     }
   }
-  if (globalPriceStorage !== null) {
-    globalPriceStorage[baseToken + "-" + quoteToken] = price
+  const priceFeedSlice = {
+    price,
+    source: "1inch",
   }
-  return price
+  if (globalPriceStorage !== null) {
+    globalPriceStorage[baseToken + "-" + quoteToken] = priceFeedSlice
+  }
+  return priceFeedSlice
 }
 
 const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePrice = await getOneinchPrice(quoteTokenData, baseTokenData)
+  const onlinePriceSlice = await getOneinchPrice(quoteTokenData, baseTokenData)
+  const onlinePrice = onlinePriceSlice.price
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
     return false
   } else if (Math.abs(onlinePrice - price) / price >= acceptedPriceDeviationInPercentage / 100) {
     console.log(
-      "Warning: the chosen price differs by more than",
-      acceptedPriceDeviationInPercentage,
-      "percent from the price found on dex.ag."
+      `Warning: the chosen price differs by more than ${acceptedPriceDeviationInPercentage} percent from the price found on ${onlinePriceSlice.source}.`
     )
-    console.log("         chosen price:", price, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
-    console.log("         dex.ag price:", onlinePrice, quoteTokenData.symbol, "bought for 1", baseTokenData.symbol)
+    console.log(`         chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
+    console.log(
+      `         ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
+    )
     return false
   }
   return true
 }
 
 const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
-  const currentMarketPrice = await getOneinchPrice(
+  const currentMarketPriceSlice = await getOneinchPrice(
     await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
     globalPriceStorage
   )
+  const currentMarketPrice = currentMarketPriceSlice.price
 
   if (isNaN(currentMarketPrice)) {
     return true
@@ -236,11 +245,12 @@ const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceSto
 }
 
 const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
-  const currentMarketPrice = await getOneinchPrice(
+  const currentMarketPriceSlice = await getOneinchPrice(
     { symbol: "USDC", decimals: 6 },
     await tokenInfo[order.sellToken],
     globalPriceStorage
   )
+  const currentMarketPrice = currentMarketPriceSlice.price
 
   return Fraction.fromNumber(parseFloat(currentMarketPrice))
     .mul(new Fraction(order.sellTokenBalance, new BN(10).pow(new BN((await tokenInfo[order.sellToken]).decimals))))
