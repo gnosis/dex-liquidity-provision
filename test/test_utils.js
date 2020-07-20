@@ -62,17 +62,21 @@ const createTokenAndGetData = async function (symbol, decimals) {
 const populatePriceStorage = function () {
   const DUMMY_PRICE = -1
   const DEFAULT_USD_REFERENCE_TOKEN = "USDC"
+  const MOCK_SLICE = {
+    price: DUMMY_PRICE,
+    source: "mocked in test",
+  }
 
   const priceStorage = {}
   for (let firstTokenIndex = 0; firstTokenIndex < arguments.length; firstTokenIndex++) {
     for (let secondTokenIndex = firstTokenIndex + 1; secondTokenIndex < arguments.length; secondTokenIndex++) {
-      priceStorage[arguments[firstTokenIndex] + "-" + arguments[secondTokenIndex]] = DUMMY_PRICE
+      priceStorage[arguments[firstTokenIndex] + "-" + arguments[secondTokenIndex]] = { ...MOCK_SLICE }
     }
   }
 
   if (!(DEFAULT_USD_REFERENCE_TOKEN in arguments)) {
     for (const token of arguments) {
-      priceStorage[token + "-" + DEFAULT_USD_REFERENCE_TOKEN] = DUMMY_PRICE
+      priceStorage[token + "-" + DEFAULT_USD_REFERENCE_TOKEN] = { ...MOCK_SLICE }
     }
   }
 

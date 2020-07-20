@@ -57,7 +57,7 @@ module.exports = async (callback) => {
     const masterSafePromise = getSafe(argv.masterSafe)
     const exchange = await getExchange()
 
-    // check price against dex.ag's API
+    // check price against external price API
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
     const baseTokenData = await tokenInfoPromises[argv.baseTokenId]
     const quoteTokenData = await tokenInfoPromises[argv.quoteTokenId]
