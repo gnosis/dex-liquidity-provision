@@ -60,7 +60,7 @@ const parseTransferFile = async function (filename) {
   } else if (ext === ".json") {
     return JSON.parse(await fs.readFile(filename, "utf8"))
   } else {
-    throw new Error(`unsupported file type .${ext}`)
+    throw new Error(`unsupported file type ${ext}`)
   }
 }
 
