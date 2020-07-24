@@ -1,11 +1,10 @@
 const BigNumber = require("bignumber.js")
-const csv = require("csv-parser")
-const fs = require("fs")
 const path = require("path")
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { buildTransferDataFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { promptUser, proceedAnyways } = require("./utils/user_interface_helpers")
+const { parseCsvFile } = require("./utils/parse_csv")
 const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
   .option("fundAccount", {
@@ -24,20 +23,8 @@ const argv = default_yargs
     describe: "Do not actually send transactions, just simulate their submission",
   }).argv
 
-const parseCsvFile = async function (filePath) {
-  return new Promise((resolve, reject) => {
-    const results = []
-    fs.createReadStream(filePath, { encoding: "utf-8" })
-      .pipe(csv())
-      .on("data", (data) => results.push(data))
-      .on("end", () => resolve(results))
-      .on("error", (error) => reject(error))
-  })
-}
-
 const toPayment = function (leaderBoardItem) {
   const { receiver, amount, token_address: tokenAddress } = leaderBoardItem
-
   return {
     tokenAddress,
     receiver,
@@ -47,7 +34,6 @@ const toPayment = function (leaderBoardItem) {
 
 const parseTransferFile = async function (filename) {
   const ext = path.extname(filename).toLowerCase()
-
   if (ext === ".csv") {
     const results = await parseCsvFile(filename)
 
@@ -67,17 +53,16 @@ const parseTransferFile = async function (filename) {
 module.exports = async (callback) => {
   try {
     const transfers = await parseTransferFile(argv.transferFile)
-    console.log(transfers)
     console.log(`Found ${transfers.length} elements in transfer file`)
-
-    const GnosisSafe = artifacts.require("GnosisSafe")
-    const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
     if (transfers.length > 200) {
       if (!(await proceedAnyways("It is not recommended to attempt more than 200 transfers."))) {
         callback("Error: Too many transfers!")
       }
     }
+
+    const GnosisSafe = artifacts.require("GnosisSafe")
+    const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
     console.log("Preparing transaction data...")
     const transaction = await buildTransferDataFromList(masterSafe.address, transfers, false, true)
