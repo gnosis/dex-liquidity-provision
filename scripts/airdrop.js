@@ -1,4 +1,6 @@
 const fs = require("fs").promises
+const csv = require("csv-parser")
+const BigNumber = require("bignumber.js")
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { buildTransferDataFromList } = require("./utils/trading_strategy_helpers")(web3, artifacts)
@@ -21,12 +23,56 @@ const argv = default_yargs
     describe: "Do not actually send transactions, just simulate their submission",
   }).argv
 
+const getFileExtension = function (filename) {
+  const parts = filename.split(".")
+  return parts[parts.length - 1].toLowerCase()
+}
+
+const parseCsvFile = async function (filePath) {
+  return new Promise((resolve, reject) => {
+    const results = []
+    fs.createReadStream(filePath, { encoding: "utf-8" })
+      .pipe(csv())
+      .on("data", (data) => results.push(data))
+      .on("end", () => resolve(results))
+      .on("error", (error) => reject(error))
+  })
+}
+// Note that this function is very specific to the incentive program itself
+// It uses gno_estimation for amount and hardcoded GNO_ADDRESS
+const toPayment = function (leaderBoardItem) {
+  const GNO_ADDRESS = "0x6810e776880C02933D47DB1b9fc05908e5386b96"
+  const { trader: receiver, gno_estimation: amount } = leaderBoardItem
+  return {
+    tokenAddress: GNO_ADDRESS,
+    receiver,
+    amount: new BigNumber(amount),
+  }
+}
+
+const parseTransferFile = async function (filename) {
+  const ext = getFileExtension(filename)
+
+  if (ext === "csv") {
+    const results = await parseCsvFile(filename)
+
+    const payments = results.map(toPayment).filter((payment) => !payment.amount.isZero())
+    return payments.map(({ amount, receiver, tokenAddress }) => ({
+      amount: amount.toString(10),
+      receiver,
+      tokenAddress,
+    }))
+  } else if (ext == "json") {
+    return JSON.parse(await fs.readFile(filename, "utf8"))
+  }
+}
+
 module.exports = async (callback) => {
   try {
     const GnosisSafe = artifacts.require("GnosisSafe")
     const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
-    const transfers = JSON.parse(await fs.readFile(argv.transferFile, "utf8"))
+    const transfers = parseTransferFile(argv.transferFile)
     console.log(`Found ${transfers.length} elements in transfer file`)
     if (transfers.length > 200) {
       if (!(await proceedAnyways("It is not recommended to attempt more than 200 transfers."))) {
