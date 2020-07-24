@@ -48,7 +48,7 @@ const toPayment = function (leaderBoardItem) {
 const parseTransferFile = async function (filename) {
   const ext = path.extname(filename).toLowerCase()
 
-  if (ext === "csv") {
+  if (ext === ".csv") {
     const results = await parseCsvFile(filename)
 
     const payments = results.map(toPayment).filter((payment) => !payment.amount.isZero())
@@ -57,7 +57,7 @@ const parseTransferFile = async function (filename) {
       receiver,
       tokenAddress,
     }))
-  } else if (ext === "json") {
+  } else if (ext === ".json") {
     return JSON.parse(await fs.readFile(filename, "utf8"))
   } else {
     throw new Error(`unsupported file type .${ext}`)
