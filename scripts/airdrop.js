@@ -1,4 +1,5 @@
 const BigNumber = require("bignumber.js")
+const fs = require("fs")
 const path = require("path")
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
