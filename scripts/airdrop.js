@@ -38,6 +38,7 @@ const parseCsvFile = async function (filePath) {
       .on("error", (error) => reject(error))
   })
 }
+
 // Note that this function is very specific to the incentive program itself
 // It uses gno_estimation for amount and hardcoded GNO_ADDRESS
 const toPayment = function (leaderBoardItem) {
