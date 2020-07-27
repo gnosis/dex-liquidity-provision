@@ -45,7 +45,7 @@ const parseTransferFile = async function (filename) {
   }
   const payments = results.map(toPayment).filter((payment) => !payment.amount.isZero())
   return payments.map(({ amount, receiver, tokenAddress }) => ({
-    amount: amount.toString(10),
+    amount: amount.integerValue(BigNumber.ROUND_UP).toString(10),
     receiver,
     tokenAddress,
   }))
