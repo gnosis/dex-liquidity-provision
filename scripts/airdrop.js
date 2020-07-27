@@ -1,5 +1,5 @@
 const BigNumber = require("bignumber.js")
-const fs = require("fs")
+const fs = require("fs").promises
 const path = require("path")
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
@@ -35,26 +35,26 @@ const toPayment = function (leaderBoardItem) {
 
 const parseTransferFile = async function (filename) {
   const ext = path.extname(filename).toLowerCase()
+  let results
   if (ext === ".csv") {
-    const results = await parseCsvFile(filename)
-
-    const payments = results.map(toPayment).filter((payment) => !payment.amount.isZero())
-    return payments.map(({ amount, receiver, tokenAddress }) => ({
-      amount: amount.toString(10),
-      receiver,
-      tokenAddress,
-    }))
+    results = await parseCsvFile(filename)
   } else if (ext === ".json") {
-    return JSON.parse(await fs.readFile(filename, "utf8"))
+    results = JSON.parse(await fs.readFile(filename, "utf8"))
   } else {
     throw new Error(`unsupported file type ${ext}`)
   }
+  const payments = results.map(toPayment).filter((payment) => !payment.amount.isZero())
+  return payments.map(({ amount, receiver, tokenAddress }) => ({
+    amount: amount.toString(10),
+    receiver,
+    tokenAddress,
+  }))
 }
 
 module.exports = async (callback) => {
   try {
     const transfers = await parseTransferFile(argv.transferFile)
-    console.log(`Found ${transfers.length} elements in transfer file`)
+    console.log(`Found ${transfers.length} valid elements in transfer file`)
 
     if (transfers.length > 200) {
       if (!(await proceedAnyways("It is not recommended to attempt more than 200 transfers."))) {
