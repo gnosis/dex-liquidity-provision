@@ -107,7 +107,7 @@ module.exports = function (web3, artifacts) {
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol } = await tokenInfoPromises[withdrawal.tokenAddress]
 
-      log(`Requesting withdrawal of all ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
+      log(`Requesting withdrawal of all ${tokenSymbol} from BatchExchange on behalf of Safe ${withdrawal.bracketAddress}`)
     }
 
     return transactionPromise
@@ -136,7 +136,7 @@ module.exports = function (web3, artifacts) {
       const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
 
       const userAmount = fromErc20Units(withdrawal.amount, tokenDecimals)
-      log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange in behalf of Safe ${withdrawal.bracketAddress}`)
+      log(`Withdrawing ${userAmount} ${tokenSymbol} from BatchExchange on behalf of Safe ${withdrawal.bracketAddress}`)
     }
 
     return transactionPromise

@@ -100,6 +100,8 @@ receiver,amount,token_address
 0x274df99cf90c55f18f079f482750d03209b02f92,2,0x6810e776880C02933D47DB1b9fc05908e5386b96
 ```
 
+Note that additional columns may beincluded in the CSV or JSON, but the above shown _must_ be available.
+
 Selecting yes yields a link to the Gnosis Safe interface where the transaction can be signed and executed.
 
 To do a "verification" run simply add the argument `--verify` and observe the difference in the last two lines of the logs emitted.
