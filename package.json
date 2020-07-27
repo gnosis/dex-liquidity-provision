@@ -55,7 +55,7 @@
     "dotenv": "^8.0.0",
     "eth-gas-reporter": "^0.2.17",
     "node-fetch": "^2.6.0",
-    "synthetix-js": "=2.25.0",
+    "synthetix-js": "=2.26.1",
     "truffle": "^5.1.35",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1"
   }
