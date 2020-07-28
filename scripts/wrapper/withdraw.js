@@ -1,7 +1,7 @@
 module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
   const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
-
+  const { amountUSDValue } = require("../utils/price_utils")
   const {
     getExchange,
     fetchTokenInfoAtAddresses,
@@ -13,7 +13,7 @@ module.exports = function (web3, artifacts) {
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
   const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
-  const { MAXUINT256 } = require("../utils/constants")
+  const { MAXUINT256, ONE } = require("../utils/constants")
 
   const assertGoodArguments = function (argv) {
     if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
@@ -43,7 +43,8 @@ module.exports = function (web3, artifacts) {
     brackets,
     tokens,
     tokenIds,
-    printOutput = false
+    printOutput = false,
+    globalPriceStorage = {}
   ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
@@ -64,15 +65,18 @@ module.exports = function (web3, artifacts) {
       const tokenBracketPairs = []
       for (const tokenData of tokenDataList)
         for (const bracketAddress of brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+
       const maxWithdrawableAmounts = await Promise.all(
         tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
       )
       withdrawals = []
-      maxWithdrawableAmounts.forEach((amount, index) => {
-        if (amount !== "0")
+      maxWithdrawableAmounts.forEach(async (amount, index) => {
+        const tokenData = tokenBracketPairs[index][1]
+        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
+        if (usdValue.gte(ONE))
           withdrawals.push({
             bracketAddress: tokenBracketPairs[index][0],
-            tokenAddress: tokenBracketPairs[index][1].address,
+            tokenAddress: tokenData.address,
             amount: amount,
           })
       })
