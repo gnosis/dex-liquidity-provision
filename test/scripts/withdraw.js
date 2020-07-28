@@ -330,6 +330,52 @@ contract("Withdraw script", function (accounts) {
         assert.equal(requestedWithdrawal, "0", "A withdrawal request is still pending")
       }
     })
+    it("claims only amounts worth > 1 USD", async () => {
+      const amounts = [
+        { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
+        { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
+      ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
+      // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
+      // USDC amounts deposited will be too low for withdraw threshold
+      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "2")
+      const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "2")
+      const deposits = depositsUsdc.concat(depositsWeth)
+      await deposit(masterSafe, deposits)
+
+      const argv1 = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+      }
+      const transaction1 = await prepareRequestWithdraw(argv1)
+      await execTransaction(masterSafe, safeOwner, transaction1)
+      await waitForNSeconds(301)
+
+      const argv2 = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+      }
+      const transaction2 = await prepareWithdraw(argv2, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, transaction2)
+
+      const usdcAddress = tokenInfo[0].address
+      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+        const bracketBalance = (await (await ERC20.at(tokenAddress)).balanceOf(bracketAddress)).toString()
+        const pending = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
+        if (tokenAddress === usdcAddress) {
+          assert.equal(bracketBalance, "0", "Not expecting to claim USDC balance")
+        } else {
+          assert.equal(bracketBalance, amount, "Bad amount requested to withdraw")
+          assert.equal(pending, "0", "A withdrawal request is still pending")
+        }
+      }
+    })
     it("transfers funds to master", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
