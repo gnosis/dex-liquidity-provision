@@ -258,7 +258,7 @@ const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) 
 }
 
 const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = null) {
-  const currentMarketPriceSlice = await getOneinchPrice({ symbol: "USDC", decimals: 6 }, tokenInfo, globalPriceStorage)
+  const currentMarketPriceSlice = await getOneinchPrice(tokenInfo, { symbol: "USDC", decimals: 6 }, globalPriceStorage)
   const currentMarketPrice = currentMarketPriceSlice.price
 
   return Fraction.fromNumber(parseFloat(currentMarketPrice))
