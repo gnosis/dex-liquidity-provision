@@ -52,6 +52,12 @@ const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, netwo
   return estimationData.buyAmountInBase / estimationData.sellAmountInQuote
 }
 
+const economicallyViable = async function (gas, gasPrice) {
+  const ethAmount = gas * gasPrice
+  console.log("ETH cost of order placement", ethAmount)
+  return false
+}
+
 const MIN_SELL_USD = 10
 
 /* All prices, except those explicitly named with "inverted" refer to the price of sETH in sUSD.
@@ -102,22 +108,22 @@ module.exports = async (callback) => {
     if (ourBuyPrice > theirSellPrice) {
       // We are willing to pay more than the exchange is selling for.
       console.log(`Placing an order to buy sETH at ${ourBuyPrice}, but verifying sUSD balance first`)
-      const sUSDBalance = await batchExchange.getBalance(account, sUSD.address)
-      if (sUSDBalance.gte(minSellsUSD)) {
-        const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
-          1 / ourBuyPrice,
-          sETH.decimals,
-          sUSD.decimals
-        )
-        orders.push({
-          buyToken: sETH.exchangeId,
-          sellToken: sUSD.exchangeId,
-          buyAmount: buyETHAmount,
-          sellAmount: sellSUSDAmount,
-        })
-      } else {
-        console.log(`Warning: Insufficient sUSD (${sUSDBalance.toString()} < ${minSellsUSD.toString()}) for order placement.`)
-      }
+      // const sUSDBalance = await batchExchange.getBalance(account, sUSD.address)
+      // if (sUSDBalance.gte(minSellsUSD)) {
+      const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
+        1 / ourBuyPrice,
+        sETH.decimals,
+        sUSD.decimals
+      )
+      orders.push({
+        buyToken: sETH.exchangeId,
+        sellToken: sUSD.exchangeId,
+        buyAmount: buyETHAmount,
+        sellAmount: sellSUSDAmount,
+      })
+      // } else {
+      //   console.log(`Warning: Insufficient sUSD (${sUSDBalance.toString()} < ${minSellsUSD.toString()}) for order placement.`)
+      // }
     } else {
       console.log(`Not placing buy  sETH order, our rate of ${ourBuyPrice.toFixed(2)} is too low  for exchange.`)
     }
@@ -156,18 +162,43 @@ module.exports = async (callback) => {
       const gasPrices = await (await fetch(gasStationURL[networkId])).json()
       const scaledGasPrice = parseInt(gasPrices[argv.gasPrice] * argv.gasPriceScale)
       console.log(`Using current "${argv.gasPrice}" gas price scaled by ${argv.gasPriceScale}: ${scaledGasPrice}`)
-      await batchExchange.placeValidFromOrders(
-        orders.map((order) => order.buyToken),
-        orders.map((order) => order.sellToken),
-        validFroms,
-        validTos,
-        orders.map((order) => order.buyAmount),
-        orders.map((order) => order.sellAmount),
-        {
+
+      const gasEstimate = await batchExchange.contract.methods
+        .placeValidFromOrders(
+          orders.map((order) => order.buyToken),
+          orders.map((order) => order.sellToken),
+          validFroms,
+          validTos,
+          orders.map((order) => order.buyAmount.toString(10)),
+          orders.map((order) => order.sellAmount.toString(10))
+        )
+        .estimateGas({
           from: account,
           gasPrice: scaledGasPrice,
-        }
-      )
+        })
+        .then(function (gasAmount) {
+          return gasAmount
+        })
+        .catch(function (error) {
+          callback(error)
+        })
+      console.log("Gas Estimation", gasEstimate)
+      console.log(economicallyViable(gasEstimate, scaledGasPrice))
+      0.009230580000097164
+      // if (economicallyViable(gasEstimate, scaledGasPrice)) {
+      //   await batchExchange.placeValidFromOrders(
+      //     orders.map((order) => order.buyToken),
+      //     orders.map((order) => order.sellToken),
+      //     validFroms,
+      //     validTos,
+      //     orders.map((order) => order.buyAmount),
+      //     orders.map((order) => order.sellAmount),
+      //     {
+      //       from: account,
+      //       gasPrice: scaledGasPrice,
+      //     }
+      //   )
+      // }
     }
     callback()
   } catch (error) {
