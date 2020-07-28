@@ -123,7 +123,7 @@ contract("Withdraw script", function (accounts) {
 
       depositFile.cleanup()
     })
-    it("withdraws", async () => {
+    it("claim withdraw", async () => {
       const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
       const token = tokenInfo[0].token
@@ -290,14 +290,18 @@ contract("Withdraw script", function (accounts) {
         assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
-    it("withdraws", async () => {
+    it("claim withdraw", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
-      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "8000")
+      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "9000")
       const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "40")
       const deposits = depositsUsdc.concat(depositsWeth)
       await deposit(masterSafe, deposits)
@@ -316,7 +320,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdraw(argv2, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -331,6 +335,10 @@ contract("Withdraw script", function (accounts) {
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       const usdcToken = await ERC20.at(tokenInfo[0].address)
       const wethToken = await ERC20.at(tokenInfo[1].address)
@@ -354,7 +362,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdraw(argv2, true, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       const argv3 = {
@@ -362,7 +370,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction3 = await prepareTransferFundsToMaster(argv3)
+      const transaction3 = await prepareTransferFundsToMaster(argv3, true, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction3)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -381,6 +389,10 @@ contract("Withdraw script", function (accounts) {
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       const usdcToken = await ERC20.at(tokenInfo[0].address)
       const wethToken = await ERC20.at(tokenInfo[1].address)
