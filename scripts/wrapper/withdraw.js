@@ -79,7 +79,6 @@ module.exports = function (web3, artifacts) {
             bracketAddress,
             tokenAddress: token.address,
             amount,
-            usdValue,
           })
         } else {
           log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
