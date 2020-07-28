@@ -257,7 +257,17 @@ const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) 
     .toBN()
 }
 
+const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = null) {
+  const currentMarketPriceSlice = await getOneinchPrice({ symbol: "USDC", decimals: 6 }, tokenInfo, globalPriceStorage)
+  const currentMarketPrice = currentMarketPriceSlice.price
+
+  return Fraction.fromNumber(parseFloat(currentMarketPrice))
+    .mul(new Fraction(new BN(amount), new BN(10).pow(new BN(tokenInfo.decimals))))
+    .toBN()
+}
+
 module.exports = {
+  amountUSDValue,
   isPriceReasonable,
   areBoundsReasonable,
   checkCorrectnessOfDeposits,
