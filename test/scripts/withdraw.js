@@ -199,8 +199,11 @@ contract("Withdraw script", function (accounts) {
 
       depositFile.cleanup()
     })
-    it("withdraws and transfers simultaneously", async () => {
+    it("withdraws and transfers simultaneously from file", async () => {
       const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
+      const globalPriceStorage = {}
+      globalPriceStorage["DAI-USDC"] = { price: 1.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
       const token = tokenInfo[0].token
       const deposits = evenDeposits(bracketAddresses, tokenInfo[0], "1000")
@@ -220,7 +223,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
