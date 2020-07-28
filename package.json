@@ -33,7 +33,7 @@
     "eslint": "^7.5.0",
     "eslint-plugin-jsdoc": "^30.0.3",
     "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.20.3",
+    "eslint-plugin-react": "^7.20.4",
     "ganache-cli": "6.9.1",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
