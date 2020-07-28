@@ -70,16 +70,21 @@ module.exports = function (web3, artifacts) {
         tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
       )
       withdrawals = []
-      maxWithdrawableAmounts.forEach(async (amount, index) => {
-        const tokenData = tokenBracketPairs[index][1]
-        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
-        if (usdValue.gte(ONE))
+      for (const [index, amount] of maxWithdrawableAmounts.entries()) {
+        const token = tokenBracketPairs[index][1]
+        const bracketAddress = tokenBracketPairs[index][0]
+        const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
+        if (usdValue.gte(ONE)) {
           withdrawals.push({
-            bracketAddress: tokenBracketPairs[index][0],
-            tokenAddress: tokenData.address,
-            amount: amount,
+            bracketAddress,
+            tokenAddress: token.address,
+            amount,
+            usdValue,
           })
-      })
+        } else {
+          log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
+        }
+      }
     }
 
     return {
@@ -116,7 +121,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdraw = async function (argv, printOutput = false) {
+  const prepareWithdraw = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -130,7 +135,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
@@ -145,7 +151,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareTransferFundsToMaster = async function (argv, printOutput = false) {
+  const prepareTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -159,7 +165,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
@@ -179,7 +186,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false) {
+  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -193,7 +200,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
