@@ -465,7 +465,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
+      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
