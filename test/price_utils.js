@@ -3,7 +3,7 @@ const assert = require("assert")
 const Contract = require("@truffle/contract")
 
 const { addCustomMintableTokenToExchange } = require("./test_utils")
-const { isPriceReasonable, checkNoProfitableOffer } = require("../scripts/utils/price_utils")
+const { isPriceReasonable, checkNoProfitableOffer, amountUSDValue } = require("../scripts/utils/price_utils")
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 contract("PriceOracle", function (accounts) {
@@ -144,6 +144,30 @@ contract("PriceOracle", function (accounts) {
         true,
         "Amount should have been negligible"
       )
+    })
+  })
+
+  describe("amountUSDValue()", async () => {
+    it("Ensures function returns expected values", async () => {
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+      const XYZtokenId = (await addCustomMintableTokenToExchange(exchange, "XYZ", 8, accounts[0])).id
+      const GEMtokenId = (await addCustomMintableTokenToExchange(exchange, "GEM", 2, accounts[0])).id
+
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, XYZtokenId, GEMtokenId])
+      const globalPriceStorage = {}
+
+      globalPriceStorage["DAI-USDC"] = { price: 2.0 }
+      globalPriceStorage["XYZ-USDC"] = { price: 250.0 }
+      globalPriceStorage["GEM-USDC"] = { price: 3.5 }
+
+      const DAIvalue = await amountUSDValue("1000000000000000000", await tokenInfo[DAItokenId], globalPriceStorage)
+      const XYZvalue = await amountUSDValue("100000000", await tokenInfo[XYZtokenId], globalPriceStorage)
+      const GEMvalue = await amountUSDValue("100", await tokenInfo[GEMtokenId], globalPriceStorage)
+
+      assert(DAIvalue.eq(new BN(2)))
+      assert(XYZvalue.eq(new BN(250)))
+      // Note that it should really be 3.5, but BN only works with integers.
+      assert(GEMvalue.eq(new BN(3)))
     })
   })
 })
