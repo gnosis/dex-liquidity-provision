@@ -217,7 +217,7 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
   return true
 }
 
-const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
+const checkNoProfitableOffer = async (order, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
     await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
