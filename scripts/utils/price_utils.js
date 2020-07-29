@@ -199,7 +199,7 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
 }
 
 const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePriceSlice = await getOneinchPrice(quoteTokenData, baseTokenData)
+  const onlinePriceSlice = await getOneinchPrice(baseTokenData, quoteTokenData)
   const onlinePrice = onlinePriceSlice.price
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
@@ -219,8 +219,8 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
 
 const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
-    await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
+    await tokenInfo[order.buyToken],
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
