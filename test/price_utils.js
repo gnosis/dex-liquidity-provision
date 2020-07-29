@@ -20,20 +20,20 @@ contract("PriceOracle", function (accounts) {
   })
   describe("Price oracle sanity check", async () => {
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990)", async () => {
-      //the following test especially checks that the price p is not inverted (1/p) and is not below 1
+      // The following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const baseTokenData = { symbol: "WETH", decimals: 18 }
-      const quoteTokenData = { symbol: "DAI", decimals: 18 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const sellTokenData = { symbol: "WETH", decimals: 18 }
+      const buyTokenData = { symbol: "DAI", decimals: 18 }
+      assert(await isPriceReasonable(buyTokenData, sellTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990) for tokens with different decimals", async () => {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const baseTokenData = { symbol: "WETH", decimals: 18 }
-      const quoteTokenData = { symbol: "USDC", decimals: 6 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const sellTokenData = { symbol: "WETH", decimals: 18 }
+      const buyTokenData = { symbol: "USDC", decimals: 6 }
+      assert(await isPriceReasonable(buyTokenData, sellTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
@@ -67,11 +67,11 @@ contract("PriceOracle", function (accounts) {
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
-      assert.equal(await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[1], tokenInfo, globalPriceStorage), true)
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the different decimals", async () => {
       const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
@@ -102,9 +102,9 @@ contract("PriceOracle", function (accounts) {
       globalPriceStorage["USDC-USDC"] = { price: 1.0 }
       globalPriceStorage["DAI-USDC"] = { price: 1.0 }
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
-      assert.equal(await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage), true)
+      assert.equal(await checkNoProfitableOffer(orders[0], tokenInfo, globalPriceStorage), true)
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )
@@ -140,12 +140,12 @@ contract("PriceOracle", function (accounts) {
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, USDCtokenId])
       assert.equal(
-        await checkNoProfitableOffer(orders[0], exchange, tokenInfo, globalPriceStorage),
+        await checkNoProfitableOffer(orders[0], tokenInfo, globalPriceStorage),
         false,
         "Price should have been profitable for others"
       )
       assert.equal(
-        await checkNoProfitableOffer(orders[1], exchange, tokenInfo, globalPriceStorage),
+        await checkNoProfitableOffer(orders[1], tokenInfo, globalPriceStorage),
         true,
         "Amount should have been negligible"
       )

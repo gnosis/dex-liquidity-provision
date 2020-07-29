@@ -340,7 +340,7 @@ contract("Verification checks", function (accounts) {
       })
     })
   })
-  describe("Brackets must be funded, such their orders are profitable orders for the current market price", async () => {
+  describe("Brackets must be funded, so that orders are not profitable for others at the current market price", async () => {
     it("throws if there are profitable orders", async () => {
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
       const bracketAddresses = await deployFleetOfSafes(masterSafe.address, 3)
