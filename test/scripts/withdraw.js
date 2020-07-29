@@ -23,7 +23,6 @@ const {
 } = require("../../scripts/wrapper/withdraw")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 const { toErc20Units, fromErc20Units } = require("../../scripts/utils/printing_tools")
-const { assert } = require("console")
 
 const bnMaxUint256 = new BN(2).pow(new BN(256)).subn(1)
 
