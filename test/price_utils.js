@@ -23,17 +23,17 @@ contract("PriceOracle", function (accounts) {
       // The following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const sellTokenData = { symbol: "WETH", decimals: 18 }
-      const buyTokenData = { symbol: "DAI", decimals: 18 }
-      assert(await isPriceReasonable(buyTokenData, sellTokenData, price, acceptedPriceDeviationInPercentage))
+      const quoteTokenData = { symbol: "WETH", decimals: 18 }
+      const baseTokenData = { symbol: "DAI", decimals: 18 }
+      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990) for tokens with different decimals", async () => {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
       const acceptedPriceDeviationInPercentage = 99
       const price = 1000
-      const sellTokenData = { symbol: "WETH", decimals: 18 }
-      const buyTokenData = { symbol: "USDC", decimals: 6 }
-      assert(await isPriceReasonable(buyTokenData, sellTokenData, price, acceptedPriceDeviationInPercentage))
+      const quoteTokenData = { symbol: "WETH", decimals: 18 }
+      const baseTokenData = { symbol: "USDC", decimals: 6 }
+      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
