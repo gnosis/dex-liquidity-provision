@@ -3,7 +3,12 @@ const assert = require("assert")
 const Contract = require("@truffle/contract")
 
 const { addCustomMintableTokenToExchange } = require("./test_utils")
-const { isPriceReasonable, checkNoProfitableOffer, amountUSDValue } = require("../scripts/utils/price_utils")
+const {
+  isPriceReasonable,
+  checkNoProfitableOffer,
+  amountUSDValue,
+  orderSellValueInUSD,
+} = require("../scripts/utils/price_utils")
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 contract("PriceOracle", function (accounts) {
@@ -168,6 +173,41 @@ contract("PriceOracle", function (accounts) {
       assert(XYZvalue.eq(new BN(250)))
       // Note that it should really be 3.5, but BN only works with integers.
       assert(GEMvalue.eq(new BN(3)))
+    })
+  })
+  describe("orderSellValueInUSD()", async () => {
+    it.only("Ensures function returns expected values", async () => {
+      const ETHtokenId = (await addCustomMintableTokenToExchange(exchange, "ETH", 18, accounts[0])).id
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+      const GEMtokenId = (await addCustomMintableTokenToExchange(exchange, "GEM", 2, accounts[0])).id
+
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [ETHtokenId, DAItokenId, GEMtokenId])
+      const globalPriceStorage = {}
+      globalPriceStorage["ETH-USDC"] = { price: 250.0 }
+      globalPriceStorage["DAI-USDC"] = { price: 1.02 }
+      globalPriceStorage["GEM-USDC"] = { price: 0.99 }
+
+      const orders = [
+        {
+          sellTokenBalance: "1000000000000000000",
+          sellToken: ETHtokenId,
+          expectedValue: "250",
+        },
+        {
+          sellTokenBalance: "100000000000000000000",
+          sellToken: DAItokenId,
+          expectedValue: "102",
+        },
+        {
+          sellTokenBalance: "1000",
+          sellToken: GEMtokenId,
+          expectedValue: "9", // Note that orderSellValueInUSD returns truncated integers so 9.9 becomes 9!
+        },
+      ]
+      for (const order of orders) {
+        const value = await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)
+        assert.equal(value.toString(10), order.expectedValue)
+      }
     })
   })
 })

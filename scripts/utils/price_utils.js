@@ -246,8 +246,8 @@ const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceSto
 
 const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
-    { symbol: "USDC", decimals: 6 },
     await tokenInfo[order.sellToken],
+    { symbol: "USDC", decimals: 6 },
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
@@ -268,6 +268,7 @@ const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = n
 
 module.exports = {
   amountUSDValue,
+  orderSellValueInUSD,
   isPriceReasonable,
   areBoundsReasonable,
   checkCorrectnessOfDeposits,
