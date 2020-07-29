@@ -6,8 +6,8 @@ module.exports = function (web3, artifacts) {
     getExchange,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoForFlux,
-    buildRequestWithdraw,
-    buildWithdraw,
+    buildWithdrawRequest,
+    buildWithdrawClaim,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
@@ -92,7 +92,7 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const prepareRequestWithdraw = async function (argv, printOutput = false) {
+  const prepareWithdrawRequest = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -110,7 +110,7 @@ module.exports = function (web3, artifacts) {
     )
 
     log("Started building withdraw transaction.")
-    const transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
+    const transactionPromise = buildWithdrawRequest(argv.masterSafe, withdrawals)
 
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol } = await tokenInfoPromises[withdrawal.tokenAddress]
@@ -139,7 +139,7 @@ module.exports = function (web3, artifacts) {
     )
 
     log("Started building withdraw transaction.")
-    const transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
+    const transactionPromise = buildWithdrawClaim(argv.masterSafe, withdrawals)
 
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
@@ -257,7 +257,7 @@ module.exports = function (web3, artifacts) {
     .check(checkBracketsForDuplicate)
 
   return {
-    prepareRequestWithdraw,
+    prepareWithdrawRequest,
     prepareWithdraw,
     prepareWithdrawAndTransferFundsToMaster,
     prepareTransferFundsToMaster,
