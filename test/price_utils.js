@@ -176,7 +176,7 @@ contract("PriceOracle", function (accounts) {
     })
   })
   describe("orderSellValueInUSD()", async () => {
-    it.only("Ensures function returns expected values", async () => {
+    it("Ensures function returns expected values", async () => {
       const ETHtokenId = (await addCustomMintableTokenToExchange(exchange, "ETH", 18, accounts[0])).id
       const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
       const GEMtokenId = (await addCustomMintableTokenToExchange(exchange, "GEM", 2, accounts[0])).id
