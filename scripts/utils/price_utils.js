@@ -132,7 +132,7 @@ const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage
  *
  * Note that the output price is not very accurate, especially for tokens with
  * very high value and very little liquidity. This is due to the fact that 1inch
- * returns a sell and a by price for a given amount
+ * returns a sell and a buy price for a given amount
  *
  * See https://1inch.exchange/#/api for API documentation.
  *
