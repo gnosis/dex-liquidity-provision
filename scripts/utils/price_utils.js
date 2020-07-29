@@ -197,8 +197,8 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
   return priceFeedSlice
 }
 
-const isPriceReasonable = async (baseToken, quoteToken, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePriceSlice = await getOneinchPrice(baseToken, quoteToken)
+const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
+  const onlinePriceSlice = await getOneinchPrice(baseTokenData, quoteTokenData)
   const onlinePrice = onlinePriceSlice.price
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
@@ -207,8 +207,10 @@ const isPriceReasonable = async (baseToken, quoteToken, price, acceptedPriceDevi
     console.log(
       `Warning: the chosen price differs by more than ${acceptedPriceDeviationInPercentage} percent from the price found on ${onlinePriceSlice.source}.`
     )
-    console.log(`    chosen price: ${price} ${baseToken.symbol} bought for 1 ${quoteToken.symbol}`)
-    console.log(`    ${onlinePriceSlice.source} price: ${onlinePrice} ${baseToken.symbol} bought for 1 ${quoteToken.symbol}`)
+    console.log(`    chosen price: ${price} ${baseTokenData.symbol} bought for 1 ${quoteTokenData.symbol}`)
+    console.log(
+      `    ${onlinePriceSlice.source} price: ${onlinePrice} ${baseTokenData.symbol} bought for 1 ${quoteTokenData.symbol}`
+    )
     return false
   }
   return true
