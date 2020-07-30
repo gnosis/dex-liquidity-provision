@@ -92,7 +92,7 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const prepareWithdrawRequest = async function (argv, printOutput = false) {
+  const prepareWithdrawRequest = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -106,7 +106,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")

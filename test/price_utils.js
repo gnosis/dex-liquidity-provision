@@ -25,7 +25,11 @@ contract("PriceOracle", function (accounts) {
       const price = 1000
       const baseTokenData = { symbol: "WETH", decimals: 18 }
       const quoteTokenData = { symbol: "DAI", decimals: 18 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const globalPriceStorage = {}
+      globalPriceStorage["WETH-DAI"] = { price: 250.0 }
+      assert(
+        await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage, globalPriceStorage)
+      )
     })
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990) for tokens with different decimals", async () => {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
@@ -33,7 +37,11 @@ contract("PriceOracle", function (accounts) {
       const price = 1000
       const baseTokenData = { symbol: "WETH", decimals: 18 }
       const quoteTokenData = { symbol: "USDC", decimals: 6 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const globalPriceStorage = {}
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+      assert(
+        await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage, globalPriceStorage)
+      )
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
@@ -62,8 +70,8 @@ contract("PriceOracle", function (accounts) {
 
       const globalPriceStorage = {}
       globalPriceStorage["DAI-USDC"] = { price: 1.0 }
-      globalPriceStorage["WETH-DAI"] = { price: 1 / 120.0 }
-      globalPriceStorage["WETH-USDC"] = { price: 1 / 120.0 }
+      globalPriceStorage["WETH-DAI"] = { price: 120.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 120.0 }
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
