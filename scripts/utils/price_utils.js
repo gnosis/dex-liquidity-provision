@@ -131,7 +131,6 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
     throw new Error("Invalid token input for retrieving price from aggregator.")
   }
   const quoteTokenAmount = toErc20Units("1", quoteToken.decimals)
-  console.log(`Requesting ${baseToken.symbol}-${quoteToken.symbol} price from external source: 1Inch`)
   const url =
     "https://api.1inch.exchange/v1.1/quote?fromTokenSymbol=" +
     quoteToken.symbol +
