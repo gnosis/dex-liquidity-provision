@@ -1,7 +1,7 @@
 {
-  "name": "liquidity-provision-scripts",
+  "name": "@gnosis.pm/dex-liquidity-provision",
+  "version": "0.0.1",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
-  "private": true,
   "keywords": [
     "Gnosis Protocol",
     "liquidity",
