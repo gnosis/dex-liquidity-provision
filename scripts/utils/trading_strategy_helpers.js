@@ -638,7 +638,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction requesting withdraw that must sent from masterAddress
    */
-  const buildRequestWithdraw = function (masterAddress, withdrawals) {
+  const buildWithdrawRequest = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw")
   }
 
@@ -653,7 +653,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
    */
-  const buildWithdraw = function (masterAddress, withdrawals) {
+  const buildWithdrawClaim = function (masterAddress, withdrawals) {
     return buildGenericFundMovement(masterAddress, withdrawals, "withdraw")
   }
 
@@ -705,7 +705,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
    */
   const buildWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
-    const withdrawalTransaction = await buildWithdraw(masterAddress, withdrawals)
+    const withdrawalTransaction = await buildWithdrawClaim(masterAddress, withdrawals)
     const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false)
     return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
   }
@@ -752,29 +752,28 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   return {
-    getSafe,
-    getExchange,
-    deployFleetOfSafes,
-    buildOrders,
-    buildBundledTransaction,
+    assertNoAllowances,
+    buildBracketTransactionForTransferApproveDeposit,
     buildDepositFromList,
+    buildOrders,
+    buildTransferApproveDepositFromOrders,
     buildTransferApproveDepositFromList,
     buildTransferDataFromList,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
-    buildBracketTransactionForTransferApproveDeposit,
-    buildTransferApproveDepositFromOrders,
+    buildWithdrawClaim,
+    buildWithdrawRequest,
     checkSufficiencyOfBalance,
-    buildRequestWithdraw,
-    buildWithdraw,
-    tokenDetail,
+    deployFleetOfSafes,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoFromExchange,
     fetchTokenInfoForFlux,
-    getDeployedBrackets,
-    isOnlySafeOwner,
     getAllowances,
-    assertNoAllowances,
+    getDeployedBrackets,
+    getExchange,
+    getSafe,
     hasExistingOrders,
+    isOnlySafeOwner,
+    tokenDetail,
   }
 }

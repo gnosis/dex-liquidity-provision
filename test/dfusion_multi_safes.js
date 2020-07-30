@@ -18,8 +18,8 @@ const {
   buildOrders,
   buildTransferApproveDepositFromList,
   buildTransferApproveDepositFromOrders,
-  buildRequestWithdraw,
-  buildWithdraw,
+  buildWithdrawRequest,
+  buildWithdrawClaim,
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   isOnlySafeOwner,
@@ -773,7 +773,7 @@ contract("GnosisSafe", function (accounts) {
         )
       }
 
-      const requestWithdrawalTransaction = await buildRequestWithdraw(masterSafe.address, withdrawals)
+      const requestWithdrawalTransaction = await buildWithdrawRequest(masterSafe.address, withdrawals)
       await execTransaction(masterSafe, safeOwner, requestWithdrawalTransaction)
       await waitForNSeconds(301)
 
@@ -837,7 +837,7 @@ contract("GnosisSafe", function (accounts) {
         withdraw.amount = withdraw.amount.add(toErc20Units(1, 18))
         withdraw
       })
-      const withdrawalTransaction = await buildWithdraw(masterSafe.address, withdrawalsModified)
+      const withdrawalTransaction = await buildWithdrawClaim(masterSafe.address, withdrawalsModified)
 
       await execTransaction(masterSafe, safeOwner, withdrawalTransaction, "withdraw for all brackets")
 

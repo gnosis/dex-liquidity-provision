@@ -16,7 +16,7 @@ const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../
   artifacts
 )
 const {
-  prepareRequestWithdraw,
+  prepareWithdrawRequest,
   prepareWithdraw,
   prepareTransferFundsToMaster,
   prepareWithdrawAndTransferFundsToMaster,
@@ -112,7 +112,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction = await prepareRequestWithdraw(argv)
+      const transaction = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -136,7 +136,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const requestTx = await prepareRequestWithdraw(argv1)
+      const requestTx = await prepareWithdrawRequest(argv1)
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
@@ -170,7 +170,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const requestTx = await prepareRequestWithdraw(argv)
+      const requestTx = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
@@ -207,7 +207,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const requestTx = await prepareRequestWithdraw(argv)
+      const requestTx = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
@@ -244,7 +244,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction = await prepareRequestWithdraw(argv)
+      const transaction = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -272,7 +272,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokenIds: [usdcId, wethId],
       }
-      const transaction = await prepareRequestWithdraw(argv)
+      const transaction = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -302,7 +302,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction1 = await prepareRequestWithdraw(argv)
+      const transaction1 = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, transaction1)
       await waitForNSeconds(301)
 
@@ -338,7 +338,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const requestTransaction = await prepareRequestWithdraw(argv)
+      const requestTransaction = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, requestTransaction)
       await waitForNSeconds(301)
 
@@ -381,7 +381,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const requestTransaction = await prepareRequestWithdraw(argv)
+      const requestTransaction = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, requestTransaction)
       await waitForNSeconds(301)
 
@@ -425,7 +425,7 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const requestTx = await prepareRequestWithdraw(argv)
+      const requestTx = await prepareWithdrawRequest(argv)
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 

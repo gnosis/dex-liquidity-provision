@@ -92,39 +92,6 @@ const areBoundsReasonable = function (currentPrice, lowestLimit, highestLimit) {
   return currentPriceWithinBounds && boundsCloseTocurrentPrice
 }
 
-// returns undefined if the price was not available
-const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage = null) {
-  if (globalPriceStorage !== null && tokenBought + "-" + tokenSold in globalPriceStorage) {
-    return globalPriceStorage[tokenBought + "-" + tokenSold]
-  }
-  if (globalPriceStorage !== null && tokenSold + "-" + tokenBought in globalPriceStorage) {
-    return 1.0 / globalPriceStorage[tokenSold + "-" + tokenBought]
-  }
-  // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
-  tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
-  tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
-  // see https://docs.dex.ag/ for API documentation
-  const url = "https://api-v2.dex.ag/price?from=" + tokenSold + "&to=" + tokenBought + "&fromAmount=1&dex=ag"
-  let price
-  // try to get price 3 times
-  for (let i = 0; i < 3; i++) {
-    try {
-      const requestResult = await axios.get(url)
-      price = requestResult.data.price
-      break
-    } catch (error) {
-      if (i == 2) {
-        console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-        console.log(">", error.response.data.error)
-      }
-    }
-  }
-  if (globalPriceStorage !== null) {
-    globalPriceStorage[tokenBought + "-" + tokenSold] = price
-  }
-  return price
-}
-
 /**
  * Returns the price on the 1inh aggregator for a given pair.
  * Optionally, it first checks whether the price is present in an input cache and
@@ -216,7 +183,7 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
   return true
 }
 
-const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
+const checkNoProfitableOffer = async (order, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
     await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
@@ -271,7 +238,6 @@ module.exports = {
   checkCorrectnessOfDeposits,
   checkNoProfitableOffer,
   isPriceReasonable,
-  getDexagPrice,
   getOneinchPrice,
   orderSellValueInUSD,
 }
