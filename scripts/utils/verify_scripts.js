@@ -160,7 +160,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     log("- Verify that no bracket-trader offers profitable orders")
     for (const order of relevantOrders) {
       assert(
-        await checkNoProfitableOffer(order, exchange, tokenInfo, globalPriceStorage),
+        await checkNoProfitableOffer(order, tokenInfo, globalPriceStorage),
         `The order of the bracket ${order.user} is profitable`
       )
     }
