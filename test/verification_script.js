@@ -385,16 +385,16 @@ contract("Verification checks", function (accounts) {
       const globalPriceStorage = {}
       globalPriceStorage["DAI-USDC"] = { price: 1.0 }
       globalPriceStorage["WETH-USDC"] = { price: 1 }
-      globalPriceStorage["DAI-WETH"] = { price: 100 } //<-- price is correct
+      globalPriceStorage["WETH-DAI"] = { price: 100 } //<-- price is correct
       await verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage)
       await verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage)
 
-      globalPriceStorage["DAI-WETH"] = { price: 121 } //<-- price is off, hence orders are profitable
+      globalPriceStorage["WETH-DAI"] = { price: 121 } //<-- price is off, hence orders are profitable
       await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[1].toLowerCase()} is profitable`,
       })
 
-      globalPriceStorage["DAI-WETH"] = { price: 70 } //<-- price is off, hence orders are profitable
+      globalPriceStorage["WETH-DAI"] = { price: 70 } //<-- price is off, hence orders are profitable
       await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[0].toLowerCase()} is profitable`,
       })

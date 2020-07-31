@@ -146,7 +146,7 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
       const amountReceived = parseInt(requestResult.data.toTokenAmount)
       const amountUsed = parseInt(requestResult.data.fromTokenAmount)
       const decimalCorrection = 10 ** (baseToken.decimals - quoteToken.decimals)
-      price = amountReceived / amountUsed / decimalCorrection
+      price = (amountUsed / amountReceived) * decimalCorrection
       break
     } catch (error) {
       if (i == 2) {
@@ -165,8 +165,14 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
   return priceFeedSlice
 }
 
-const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePriceSlice = await getOneinchPrice(quoteTokenData, baseTokenData)
+const isPriceReasonable = async (
+  baseTokenData,
+  quoteTokenData,
+  price,
+  acceptedPriceDeviationInPercentage = 2,
+  globalPriceStorage = {}
+) => {
+  const onlinePriceSlice = await getOneinchPrice(baseTokenData, quoteTokenData, globalPriceStorage)
   const onlinePrice = onlinePriceSlice.price
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
@@ -175,9 +181,9 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
     console.log(
       `Warning: the chosen price differs by more than ${acceptedPriceDeviationInPercentage} percent from the price found on ${onlinePriceSlice.source}.`
     )
-    console.log(`         chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
+    console.log(`    chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
     console.log(
-      `         ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
+      `    ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
     )
     return false
   }
@@ -185,9 +191,11 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
 }
 
 const checkNoProfitableOffer = async (order, tokenInfo, globalPriceStorage = null) => {
+  // Would like to fetch the price of the sell token with respect to the buy token
+  // and make sure that the market price is not more than the sell price
   const currentMarketPriceSlice = await getOneinchPrice(
-    await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
+    await tokenInfo[order.buyToken],
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
@@ -213,8 +221,8 @@ const checkNoProfitableOffer = async (order, tokenInfo, globalPriceStorage = nul
 
 const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
-    { symbol: "USDC", decimals: 6 },
     await tokenInfo[order.sellToken],
+    { symbol: "USDC", decimals: 6 },
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
@@ -227,7 +235,6 @@ const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) 
 const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = null) {
   const currentMarketPriceSlice = await getOneinchPrice(tokenInfo, { symbol: "USDC", decimals: 6 }, globalPriceStorage)
   const currentMarketPrice = currentMarketPriceSlice.price
-
   return Fraction.fromNumber(parseFloat(currentMarketPrice))
     .mul(new Fraction(new BN(amount), new BN(10).pow(new BN(tokenInfo.decimals))))
     .toBN()
@@ -235,9 +242,10 @@ const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = n
 
 module.exports = {
   amountUSDValue,
-  isPriceReasonable,
   areBoundsReasonable,
   checkCorrectnessOfDeposits,
-  getOneinchPrice,
   checkNoProfitableOffer,
+  getOneinchPrice,
+  isPriceReasonable,
+  orderSellValueInUSD,
 }
