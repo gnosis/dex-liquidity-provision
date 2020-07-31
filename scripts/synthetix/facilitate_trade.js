@@ -4,6 +4,7 @@ const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 const { default_yargs } = require("../utils/default_yargs")
 const { floatToErc20Units } = require("../utils/printing_tools")
 const { getExchange } = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const { estimatePrice, estimatedSurplus, estimatedTxCostUSD, gasStationURL, tokenDetails } = require("./snx_utils")
 
 const argv = default_yargs
   .option("gasPrice", {
@@ -17,46 +18,6 @@ const argv = default_yargs
     describe: "Scale used as a multiplier to the gas price",
     default: 1.0,
   }).argv
-
-const tokenDetails = async function (snxInstance, batchExchange, tokenName) {
-  const address = web3.utils.toChecksumAddress(snxInstance[tokenName].contract.address)
-  const [key, tokenId, decimals] = await Promise.all([
-    snxInstance[tokenName].currencyKey(),
-    batchExchange.tokenAddressToIdMap.call(address),
-    snxInstance[tokenName].decimals(),
-  ])
-
-  return {
-    name: tokenName,
-    key: key,
-    exchangeId: tokenId.toNumber(),
-    address: address,
-    decimals: decimals,
-  }
-}
-
-const gasStationURL = {
-  1: "https://safe-relay.gnosis.io/api/v1/gas-station/",
-  4: "https://safe-relay.rinkeby.gnosis.io/api/v1/gas-station/",
-}
-
-const estimationURLPrexix = {
-  1: "https://dex-price-estimator.gnosis.io//api/v1/",
-  4: "https://dex-price-estimator.rinkeby.gnosis.io//api/v1/",
-}
-
-const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, networkId) {
-  const searchCriteria = `markets/${buyTokenId}-${sellTokenId}/estimated-buy-amount/${sellAmount}?atoms=true`
-  const estimationData = await (await fetch(estimationURLPrexix[networkId] + searchCriteria)).json()
-
-  return estimationData.buyAmountInBase / estimationData.sellAmountInQuote
-}
-
-const economicallyViable = async function (gas, gasPrice) {
-  const ethAmount = gas * gasPrice
-  console.log("ETH cost of order placement", ethAmount)
-  return false
-}
 
 const MIN_SELL_USD = 100
 
@@ -108,22 +69,22 @@ module.exports = async (callback) => {
     if (ourBuyPrice > theirSellPrice) {
       // We are willing to pay more than the exchange is selling for.
       console.log(`Placing an order to buy sETH at ${ourBuyPrice}, but verifying sUSD balance first`)
-      // const sUSDBalance = await batchExchange.getBalance(account, sUSD.address)
-      // if (sUSDBalance.gte(minSellsUSD)) {
-      const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
-        1 / ourBuyPrice,
-        sETH.decimals,
-        sUSD.decimals
-      )
-      orders.push({
-        buyToken: sETH.exchangeId,
-        sellToken: sUSD.exchangeId,
-        buyAmount: buyETHAmount,
-        sellAmount: sellSUSDAmount,
-      })
-      // } else {
-      //   console.log(`Warning: Insufficient sUSD (${sUSDBalance.toString()} < ${minSellsUSD.toString()}) for order placement.`)
-      // }
+      const sUSDBalance = await batchExchange.getBalance(account, sUSD.address)
+      if (sUSDBalance.gte(minSellsUSD)) {
+        const { base: sellSUSDAmount, quote: buyETHAmount } = getUnlimitedOrderAmounts(
+          1 / ourBuyPrice,
+          sETH.decimals,
+          sUSD.decimals
+        )
+        orders.push({
+          buyToken: sETH.exchangeId,
+          sellToken: sUSD.exchangeId,
+          buyAmount: buyETHAmount,
+          sellAmount: sellSUSDAmount,
+        })
+      } else {
+        console.log(`Warning: Insufficient sUSD (${sUSDBalance.toString()} < ${minSellsUSD.toString()}) for order placement.`)
+      }
     } else {
       console.log(`Not placing buy  sETH order, our rate of ${ourBuyPrice.toFixed(2)} is too low  for exchange.`)
     }
@@ -183,8 +144,7 @@ module.exports = async (callback) => {
           callback(error)
         })
       console.log("Gas Estimation", gasEstimate)
-      console.log(economicallyViable(gasEstimate, scaledGasPrice))
-      0.009230580000097164
+      console.log(estimatedTxCostUSD(gasEstimate, scaledGasPrice, formatedRate))
       // if (economicallyViable(gasEstimate, scaledGasPrice)) {
       //   await batchExchange.placeValidFromOrders(
       //     orders.map((order) => order.buyToken),
