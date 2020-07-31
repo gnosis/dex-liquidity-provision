@@ -52,7 +52,7 @@ const estimatePrice = async function (buyTokenId, sellTokenId, sellAmount, netwo
   return estimationData.buyAmountInBase / estimationData.sellAmountInQuote
 }
 
-const MIN_SELL_USD = 10
+const MIN_SELL_USD = 100
 
 /* All prices, except those explicitly named with "inverted" refer to the price of sETH in sUSD.
  * The term "our" is with regards to prices we, the synthetix bot, are buying and selling for while
