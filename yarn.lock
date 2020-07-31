@@ -6558,6 +6558,11 @@ solc@0.5.14:
     semver "^5.5.0"
     tmp "0.0.33"
 
+solidity-parser-antlr@^0.4.11:
+  version "0.4.11"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.4.11.tgz#af43e1f13b3b88309a875455f5d6e565b05ee5f1"
+  integrity sha512-4jtxasNGmyC0midtjH/lTFPZYvTTUMy6agYcF+HoMnzW8+cqo3piFrINb4ZCzpPW+7tTVFCGa5ubP34zOzeuMg==
+
 source-map-support@0.5.12:
   version "0.5.12"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.12.tgz#b4f3b10d51857a5af0138d3ce8003b201613d599"
@@ -6884,10 +6889,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.26.1:
-  version "2.26.1"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.26.1.tgz#c21e45e6a44376d0d233d6959dc66fe37b81ca55"
-  integrity sha512-L4iRqCZuH9gt6Fo9qkSJ3WBWp1MJXbv9Yb3aCcvPr/PFP+ByQbFOdwT8djDzFwjJtFFw90tghffprGVt0Y/4sg==
+synthetix-js@=2.26.2:
+  version "2.26.2"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.26.2.tgz#dec27b19665c7cef61c12aea759aa7cff42e5d56"
+  integrity sha512-M7bHLL4CIP5tE1ACX/RXxCAhd8Xu4OkfwlytsJNVgJ4F13y0Xid8GbJWjX0j9KrlXd4JBFWcGfnYnCNwwOBVuw==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -6899,19 +6904,20 @@ synthetix-js@=2.26.1:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.26.1"
+    synthetix "2.26.2"
     trezor-connect "8.1.8"
     walletlink "2.0.2"
 
-synthetix@2.26.1:
-  version "2.26.1"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.26.1.tgz#3b2872c0101460a1d0d99337bd1146b2fef4dec7"
-  integrity sha512-Ppc6SPw3c0XgIux+cJLZ4QF6U4L60SsoO076GNPM8KrWmYBMk9ntEBQH4ozOPcjZH8oiIs9lCWwaqutVG/Jdmw==
+synthetix@2.26.2:
+  version "2.26.2"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.26.2.tgz#eb75f5520bae9beec6122cb70a9eb3a2ffba006d"
+  integrity sha512-Qg7abGpsiclMYvWReBJW2gvejPYg7Fm88n4hAUdhuVAMamFZv03sIpEKekeGlTO3oZafyM7Bg4FBniFN6VHbMg==
   dependencies:
     "@chainlink/contracts-0.0.3" "npm:@chainlink/contracts@0.0.3"
     commander "5.1.0"
     openzeppelin-solidity-2.3.0 "npm:openzeppelin-solidity@2.3.0"
     pretty-error "^2.1.1"
+    solidity-parser-antlr "^0.4.11"
     web3-utils "1.2.2"
 
 table@^5.2.3:
