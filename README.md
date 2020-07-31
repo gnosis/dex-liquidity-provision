@@ -52,7 +52,7 @@ docker build -t gnosispm/dex-liquidity-provision .
 docker run -e PK=$YOUR_PRIVATE_KEY -t gnosispm/dex-liquidity-provision:latest "truffle exec scripts/synthetix/facilitate_trade.js --network rinkeby"
 ```
 
-## Safe Token Distribution
+## Safe Token Distribution (Airdrop)
 
 Create your own transferFile, or use our sample [examples/sampleTransferFile.json](examples/sampleTransferFile.json).
 With a fundAccount (aka Gnosis Safe) containg sufficient funds that you own execute:
@@ -70,10 +70,37 @@ With all configuration in place, we are ready to run the script.
 
 ```sh
 npx truffle exec scripts/airdrop.js --fundAccount=$FUND_ACCOUNT --transferFile=$TRANSFER_FILE --network=$NETWORK_NAME
-
 ```
 
 Then, you will be provided with logs containing all the transfer details followed by a prompt asking "Are you sure you want to send this transaction to the EVM?"
+
+### Transfer File Standard
+
+The airdrop script accepts both `.json` and `.csv` file extensions with the following format
+
+```json
+[
+  {
+    "amount": "0.001",
+    "tokenAddress": "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
+    "receiver": "0x100000000000000000000000000000000000000"
+  },
+  {
+    "amount": "0.002",
+    "tokenAddress": "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
+    "receiver": "0x2000000000000000000000000000000000000000"
+  }
+]
+```
+
+```csv
+receiver,amount,token_address
+0x90d26c3805030a05c7fdd89326a4a2a99cbade31,3.14159,0x6810e776880C02933D47DB1b9fc05908e5386b96
+0x399c7819840329e2b73449d6afcf7f4fd71399b2,2.5,0x6810e776880C02933D47DB1b9fc05908e5386b96
+0x274df99cf90c55f18f079f482750d03209b02f92,2,0x6810e776880C02933D47DB1b9fc05908e5386b96
+```
+
+Note that additional columns may beincluded in the CSV or JSON, but the above shown _must_ be available.
 
 Selecting yes yields a link to the Gnosis Safe interface where the transaction can be signed and executed.
 
