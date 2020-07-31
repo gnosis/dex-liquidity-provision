@@ -92,39 +92,6 @@ const areBoundsReasonable = function (currentPrice, lowestLimit, highestLimit) {
   return currentPriceWithinBounds && boundsCloseTocurrentPrice
 }
 
-// returns undefined if the price was not available
-const getDexagPrice = async function (tokenBought, tokenSold, globalPriceStorage = null) {
-  if (globalPriceStorage !== null && tokenBought + "-" + tokenSold in globalPriceStorage) {
-    return globalPriceStorage[tokenBought + "-" + tokenSold]
-  }
-  if (globalPriceStorage !== null && tokenSold + "-" + tokenBought in globalPriceStorage) {
-    return 1.0 / globalPriceStorage[tokenSold + "-" + tokenBought]
-  }
-  // dex.ag considers WETH to be the same as ETH and fails when using WETH as token
-  tokenBought = tokenBought == "WETH" ? "ETH" : tokenBought
-  tokenSold = tokenSold == "WETH" ? "ETH" : tokenSold
-  // see https://docs.dex.ag/ for API documentation
-  const url = "https://api-v2.dex.ag/price?from=" + tokenSold + "&to=" + tokenBought + "&fromAmount=1&dex=ag"
-  let price
-  // try to get price 3 times
-  for (let i = 0; i < 3; i++) {
-    try {
-      const requestResult = await axios.get(url)
-      price = requestResult.data.price
-      break
-    } catch (error) {
-      if (i == 2) {
-        console.log("Warning: unable to retrieve price information on dex.ag. The server returns:")
-        console.log(">", error.response.data.error)
-      }
-    }
-  }
-  if (globalPriceStorage !== null) {
-    globalPriceStorage[tokenBought + "-" + tokenSold] = price
-  }
-  return price
-}
-
 /**
  * Returns the price on the 1inh aggregator for a given pair.
  * Optionally, it first checks whether the price is present in an input cache and
@@ -179,7 +146,7 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
       const amountReceived = parseInt(requestResult.data.toTokenAmount)
       const amountUsed = parseInt(requestResult.data.fromTokenAmount)
       const decimalCorrection = 10 ** (baseToken.decimals - quoteToken.decimals)
-      price = amountReceived / amountUsed / decimalCorrection
+      price = (amountUsed / amountReceived) * decimalCorrection
       break
     } catch (error) {
       if (i == 2) {
@@ -198,8 +165,14 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
   return priceFeedSlice
 }
 
-const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage = 2) => {
-  const onlinePriceSlice = await getOneinchPrice(quoteTokenData, baseTokenData)
+const isPriceReasonable = async (
+  baseTokenData,
+  quoteTokenData,
+  price,
+  acceptedPriceDeviationInPercentage = 2,
+  globalPriceStorage = {}
+) => {
+  const onlinePriceSlice = await getOneinchPrice(baseTokenData, quoteTokenData, globalPriceStorage)
   const onlinePrice = onlinePriceSlice.price
   if (onlinePrice === undefined) {
     console.log("Warning: could not perform price check against price aggregator.")
@@ -208,19 +181,21 @@ const isPriceReasonable = async (baseTokenData, quoteTokenData, price, acceptedP
     console.log(
       `Warning: the chosen price differs by more than ${acceptedPriceDeviationInPercentage} percent from the price found on ${onlinePriceSlice.source}.`
     )
-    console.log(`         chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
+    console.log(`    chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
     console.log(
-      `         ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
+      `    ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
     )
     return false
   }
   return true
 }
 
-const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceStorage = null) => {
+const checkNoProfitableOffer = async (order, tokenInfo, globalPriceStorage = null) => {
+  // Would like to fetch the price of the sell token with respect to the buy token
+  // and make sure that the market price is not more than the sell price
   const currentMarketPriceSlice = await getOneinchPrice(
-    await tokenInfo[order.buyToken],
     await tokenInfo[order.sellToken],
+    await tokenInfo[order.buyToken],
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
@@ -246,8 +221,8 @@ const checkNoProfitableOffer = async (order, exchange, tokenInfo, globalPriceSto
 
 const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) => {
   const currentMarketPriceSlice = await getOneinchPrice(
-    { symbol: "USDC", decimals: 6 },
     await tokenInfo[order.sellToken],
+    { symbol: "USDC", decimals: 6 },
     globalPriceStorage
   )
   const currentMarketPrice = currentMarketPriceSlice.price
@@ -257,11 +232,20 @@ const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) 
     .toBN()
 }
 
+const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = null) {
+  const currentMarketPriceSlice = await getOneinchPrice(tokenInfo, { symbol: "USDC", decimals: 6 }, globalPriceStorage)
+  const currentMarketPrice = currentMarketPriceSlice.price
+  return Fraction.fromNumber(parseFloat(currentMarketPrice))
+    .mul(new Fraction(new BN(amount), new BN(10).pow(new BN(tokenInfo.decimals))))
+    .toBN()
+}
+
 module.exports = {
-  isPriceReasonable,
+  amountUSDValue,
   areBoundsReasonable,
   checkCorrectnessOfDeposits,
-  getDexagPrice,
-  getOneinchPrice,
   checkNoProfitableOffer,
+  getOneinchPrice,
+  isPriceReasonable,
+  orderSellValueInUSD,
 }

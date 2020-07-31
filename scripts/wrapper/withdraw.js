@@ -1,19 +1,19 @@
 module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
   const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
-
+  const { amountUSDValue } = require("../utils/price_utils")
   const {
     getExchange,
     fetchTokenInfoAtAddresses,
     fetchTokenInfoForFlux,
-    buildRequestWithdraw,
-    buildWithdraw,
+    buildWithdrawRequest,
+    buildWithdrawClaim,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
   const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
-  const { MAXUINT256 } = require("../utils/constants")
+  const { MAXUINT256, ONE } = require("../utils/constants")
 
   const assertGoodArguments = function (argv) {
     if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
@@ -43,7 +43,8 @@ module.exports = function (web3, artifacts) {
     brackets,
     tokens,
     tokenIds,
-    printOutput = false
+    printOutput = false,
+    globalPriceStorage = {}
   ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
@@ -64,18 +65,25 @@ module.exports = function (web3, artifacts) {
       const tokenBracketPairs = []
       for (const tokenData of tokenDataList)
         for (const bracketAddress of brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+
       const maxWithdrawableAmounts = await Promise.all(
         tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
       )
       withdrawals = []
-      maxWithdrawableAmounts.forEach((amount, index) => {
-        if (amount !== "0")
+      for (const [index, amount] of maxWithdrawableAmounts.entries()) {
+        const token = tokenBracketPairs[index][1]
+        const bracketAddress = tokenBracketPairs[index][0]
+        const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
+        if (usdValue.gte(ONE)) {
           withdrawals.push({
-            bracketAddress: tokenBracketPairs[index][0],
-            tokenAddress: tokenBracketPairs[index][1].address,
-            amount: amount,
+            bracketAddress,
+            tokenAddress: token.address,
+            amount,
           })
-      })
+        } else {
+          log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
+        }
+      }
     }
 
     return {
@@ -84,7 +92,7 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const prepareRequestWithdraw = async function (argv, printOutput = false) {
+  const prepareWithdrawRequest = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -98,11 +106,12 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
-    const transactionPromise = buildRequestWithdraw(argv.masterSafe, withdrawals)
+    const transactionPromise = buildWithdrawRequest(argv.masterSafe, withdrawals)
 
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol } = await tokenInfoPromises[withdrawal.tokenAddress]
@@ -112,7 +121,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdraw = async function (argv, printOutput = false) {
+  const prepareWithdraw = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -126,11 +135,12 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
-    const transactionPromise = buildWithdraw(argv.masterSafe, withdrawals)
+    const transactionPromise = buildWithdrawClaim(argv.masterSafe, withdrawals)
 
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
@@ -141,7 +151,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareTransferFundsToMaster = async function (argv, printOutput = false) {
+  const prepareTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -155,7 +165,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
@@ -175,7 +186,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false) {
+  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -189,7 +200,8 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput
+      printOutput,
+      globalPriceStorage
     )
 
     log("Started building withdraw transaction.")
@@ -246,7 +258,7 @@ module.exports = function (web3, artifacts) {
     .check(checkBracketsForDuplicate)
 
   return {
-    prepareRequestWithdraw,
+    prepareWithdrawRequest,
     prepareWithdraw,
     prepareWithdrawAndTransferFundsToMaster,
     prepareTransferFundsToMaster,

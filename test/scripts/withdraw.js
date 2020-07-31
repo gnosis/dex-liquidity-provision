@@ -16,7 +16,7 @@ const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../
   artifacts
 )
 const {
-  prepareRequestWithdraw,
+  prepareWithdrawRequest,
   prepareWithdraw,
   prepareTransferFundsToMaster,
   prepareWithdrawAndTransferFundsToMaster,
@@ -30,6 +30,7 @@ contract("Withdraw script", function (accounts) {
   let gnosisSafeMasterCopy
   let proxyFactory
   let exchange
+  const globalPriceStorage = {}
   const safeOwner = accounts[0]
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
@@ -37,6 +38,8 @@ contract("Withdraw script", function (accounts) {
 
     BatchExchange.setProvider(web3.currentProvider)
     exchange = await BatchExchange.deployed()
+    globalPriceStorage["DAI-USDC"] = { price: 1.0 }
+    globalPriceStorage["USDC-USDC"] = { price: 1.0 }
   })
 
   const setup = async function (numberOfBrackets, amounts) {
@@ -112,7 +115,7 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction = await prepareRequestWithdraw(argv)
+      const transaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -123,7 +126,7 @@ contract("Withdraw script", function (accounts) {
 
       depositFile.cleanup()
     })
-    it("withdraws", async () => {
+    it("claim withdraw", async () => {
       const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
       const token = tokenInfo[0].token
@@ -136,8 +139,8 @@ contract("Withdraw script", function (accounts) {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
-      await execTransaction(masterSafe, safeOwner, transaction1)
+      const requestTx = await prepareWithdrawRequest(argv1, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
       const argv2 = {
@@ -145,8 +148,8 @@ contract("Withdraw script", function (accounts) {
         withdrawalFile: depositFile.path,
         withdraw: true,
       }
-      const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, safeOwner, transaction2)
+      const claimTx = await prepareWithdraw(argv2, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimTx)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const bracketBalance = (await token.balanceOf(bracketAddress)).toString()
@@ -166,27 +169,19 @@ contract("Withdraw script", function (accounts) {
       const depositFile = await tmp.file()
       await fs.writeFile(depositFile.path, JSON.stringify(deposits))
 
-      const argv1 = {
+      const argv = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
-      await execTransaction(masterSafe, safeOwner, transaction1)
+      const requestTx = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const argv2 = {
-        masterSafe: masterSafe.address,
-        withdrawalFile: depositFile.path,
-      }
-      const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, safeOwner, transaction2)
+      const claimTx = await prepareWithdraw(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimTx)
 
-      const argv3 = {
-        masterSafe: masterSafe.address,
-        withdrawalFile: depositFile.path,
-      }
-      const transaction3 = await prepareTransferFundsToMaster(argv3)
-      await execTransaction(masterSafe, safeOwner, transaction3)
+      const transferTx = await prepareTransferFundsToMaster(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, transferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -199,8 +194,9 @@ contract("Withdraw script", function (accounts) {
 
       depositFile.cleanup()
     })
-    it("withdraws and transfers simultaneously", async () => {
+    it("withdraws and transfers simultaneously from file", async () => {
       const amounts = [{ tokenData: { decimals: 18, symbol: "DAI" }, amount: "1000" }]
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(2, amounts)
       const token = tokenInfo[0].token
       const deposits = evenDeposits(bracketAddresses, tokenInfo[0], "1000")
@@ -208,20 +204,16 @@ contract("Withdraw script", function (accounts) {
       const depositFile = await tmp.file()
       await fs.writeFile(depositFile.path, JSON.stringify(deposits))
 
-      const argv1 = {
+      const argv = {
         masterSafe: masterSafe.address,
         withdrawalFile: depositFile.path,
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
-      await execTransaction(masterSafe, safeOwner, transaction1)
+      const requestTx = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const argv2 = {
-        masterSafe: masterSafe.address,
-        withdrawalFile: depositFile.path,
-      }
-      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
-      await execTransaction(masterSafe, safeOwner, transaction2)
+      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimAndTransferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -253,7 +245,12 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction = await prepareRequestWithdraw(argv)
+
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
+      const transaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -281,7 +278,10 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokenIds: [usdcId, wethId],
       }
-      const transaction = await prepareRequestWithdraw(argv)
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+      const transaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -290,33 +290,32 @@ contract("Withdraw script", function (accounts) {
         assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
       }
     })
-    it("withdraws", async () => {
+    it("claim withdraw", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
-      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "8000")
+      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "9000")
       const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "40")
       const deposits = depositsUsdc.concat(depositsWeth)
       await deposit(masterSafe, deposits)
 
-      const argv1 = {
+      const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
+      const transaction1 = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction1)
       await waitForNSeconds(301)
 
-      const argv2 = {
-        masterSafe: masterSafe.address,
-        brackets: bracketAddresses,
-        tokens: [tokenInfo[0].address, tokenInfo[1].address],
-      }
-      const transaction2 = await prepareWithdraw(argv2)
+      const transaction2 = await prepareWithdraw(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -326,11 +325,57 @@ contract("Withdraw script", function (accounts) {
         assert.equal(requestedWithdrawal, "0", "A withdrawal request is still pending")
       }
     })
+    it("claims only amounts worth > 1 USD", async () => {
+      const amounts = [
+        { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
+        { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
+      ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
+      const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
+      // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
+      // USDC amounts deposited will be too low for withdraw threshold
+      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "2")
+      const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "2")
+      const deposits = depositsUsdc.concat(depositsWeth)
+      await deposit(masterSafe, deposits)
+
+      const argv = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+      }
+      const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTransaction)
+      await waitForNSeconds(301)
+
+      const claimTransaction = await prepareWithdraw(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimTransaction)
+
+      const usdcAddress = tokenInfo[0].address
+      for (const { amount, tokenAddress, bracketAddress } of deposits) {
+        const bracketBalance = (await (await ERC20.at(tokenAddress)).balanceOf(bracketAddress)).toString()
+        const pendingWithdraw = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0]
+        if (tokenAddress === usdcAddress) {
+          assert.equal(bracketBalance, "0", "Not expecting to claim USDC balance")
+          assert(pendingWithdraw.gt(new BN(0)), "Should still have non-zero pending withdraw!")
+        } else {
+          assert.equal(bracketBalance, amount, "Bad amount requested to withdraw")
+          assert.equal(pendingWithdraw, "0", "A withdrawal request is still pending")
+        }
+      }
+    })
     it("transfers funds to master", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       const usdcToken = await ERC20.at(tokenInfo[0].address)
       const wethToken = await ERC20.at(tokenInfo[1].address)
@@ -340,30 +385,20 @@ contract("Withdraw script", function (accounts) {
       const deposits = depositsUsdc.concat(depositsWeth)
       await deposit(masterSafe, deposits)
 
-      const argv1 = {
+      const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
-      await execTransaction(masterSafe, safeOwner, transaction1)
+      const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTransaction)
       await waitForNSeconds(301)
 
-      const argv2 = {
-        masterSafe: masterSafe.address,
-        brackets: bracketAddresses,
-        tokens: [tokenInfo[0].address, tokenInfo[1].address],
-      }
-      const transaction2 = await prepareWithdraw(argv2)
-      await execTransaction(masterSafe, safeOwner, transaction2)
+      const claimTransaction = await prepareWithdraw(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimTransaction)
 
-      const argv3 = {
-        masterSafe: masterSafe.address,
-        brackets: bracketAddresses,
-        tokens: [tokenInfo[0].address, tokenInfo[1].address],
-      }
-      const transaction3 = await prepareTransferFundsToMaster(argv3)
-      await execTransaction(masterSafe, safeOwner, transaction3)
+      const transferTransaction = await prepareTransferFundsToMaster(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, transferTransaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -381,6 +416,10 @@ contract("Withdraw script", function (accounts) {
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       const usdcToken = await ERC20.at(tokenInfo[0].address)
       const wethToken = await ERC20.at(tokenInfo[1].address)
@@ -390,22 +429,17 @@ contract("Withdraw script", function (accounts) {
       const deposits = depositsUsdc.concat(depositsWeth)
       await deposit(masterSafe, deposits)
 
-      const argv1 = {
+      const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
-      const transaction1 = await prepareRequestWithdraw(argv1)
-      await execTransaction(masterSafe, safeOwner, transaction1)
+      const requestTx = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const argv2 = {
-        masterSafe: masterSafe.address,
-        brackets: bracketAddresses,
-        tokens: [tokenInfo[0].address, tokenInfo[1].address],
-      }
-      const transaction2 = await prepareWithdrawAndTransferFundsToMaster(argv2)
-      await execTransaction(masterSafe, safeOwner, transaction2)
+      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, claimAndTransferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
         const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
@@ -430,7 +464,9 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address],
       }
-      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv)
+      const globalPriceStorage = {}
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
       // if the built transaction used the token balance of the bracket instead of zero, then
       // the following transaction would fail.
       await execTransaction(masterSafe, safeOwner, transaction)
