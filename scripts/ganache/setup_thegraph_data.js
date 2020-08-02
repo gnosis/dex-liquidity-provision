@@ -62,15 +62,6 @@ const testAutomaticDeposits = async function (tradeInfo, safeOwner, artifacts = 
   const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
   await baseToken.mint(masterSafe.address, depositAmountbaseToken, { from: safeOwner })
 
-  // copy networks also into nodemodule files:
-  fs.copyFile(
-    "build/contracts/BatchExchange.json",
-    "node_modules/@gnosis.pm/dex-contracts/build/contracts/BatchExchange.json",
-    (err) => {
-      if (err) throw err
-      console.log("Created BatchExchange.json")
-    }
-  )
   // Build orders
   const orderTransaction = await buildOrders(
     masterSafe.address,
