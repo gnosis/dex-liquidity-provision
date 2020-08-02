@@ -62,8 +62,6 @@ const testAutomaticDeposits = async function (tradeInfo, safeOwner, artifacts = 
   const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
   await baseToken.mint(masterSafe.address, depositAmountbaseToken, { from: safeOwner })
 
-  console.log(exchange.address)
-  console.log(await exchange.feeToken())
   // copy networks also into nodemodule files:
   fs.copyFile(
     "build/contracts/BatchExchange.json",
@@ -85,8 +83,6 @@ const testAutomaticDeposits = async function (tradeInfo, safeOwner, artifacts = 
   )
   await execTransaction(masterSafe, safeOwner, orderTransaction)
 
-  console.log(exchange.address)
-  console.log(await exchange.feeToken())
   // Make transfers
   const batchTransaction = await buildTransferApproveDepositFromOrders(
     masterSafe.address,
