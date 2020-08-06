@@ -1,21 +1,22 @@
-const TokenOWL = artifacts.require("TokenOWL")
-const TestToken = artifacts.require("DetailedMintableToken")
-
 const { toErc20Units } = require("../scripts/utils/printing_tools")
 const { ZERO_ADDRESS } = require("../scripts/utils/constants")
 
-const prepareTokenRegistration = async function (account, exchange) {
-  const owlToken = await TokenOWL.at(await exchange.feeToken())
+const prepareTokenRegistration = async function (account, exchange, artifacts = artifacts) {
+  const TokenOWL = artifacts.require("TokenOWL")
+  const TestToken = artifacts.require("DetailedMintableToken")
+  const owlToken = await TokenOWL.at(await exchange.feeToken.call())
   await owlToken.setMinter(account)
   await owlToken.mintOWL(account, toErc20Units(10, 18))
   const currentAllowance = await owlToken.allowance(account, exchange.address)
   await owlToken.approve(exchange.address, currentAllowance.add(toErc20Units(10, 18)))
 }
 
-const addCustomMintableTokenToExchange = async function (exchange, symbol, decimals, account) {
+const addCustomMintableTokenToExchange = async function (exchange, symbol, decimals, account, artifacts = artifacts) {
+  const TokenOWL = artifacts.require("TokenOWL")
+  const TestToken = artifacts.require("DetailedMintableToken")
   // TODO: use this function in all tests creating new tokens
   const tokenPromise = TestToken.new(symbol, decimals)
-  await prepareTokenRegistration(account, exchange)
+  await prepareTokenRegistration(account, exchange, artifacts)
   const token = await tokenPromise
   await exchange.addToken(token.address, { from: account })
   const id = await exchange.tokenAddressToIdMap(token.address)
@@ -34,6 +35,7 @@ const deploySafe = async function (gnosisSafeMasterCopy, proxyFactory, owners, t
 }
 
 const getParamFromTxEvent = async function (transaction, eventName, paramName, contractAddress) {
+  const assert = require("assert")
   let logs = transaction.logs
   if (eventName != null) {
     logs = logs.filter((l) => l.event === eventName && l.address === contractAddress)
