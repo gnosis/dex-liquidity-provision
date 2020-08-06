@@ -205,12 +205,10 @@
   dependencies:
     "@gnosis.pm/util-contracts" "2.0.0"
 
-"@gnosis.pm/mock-contract@^3.0.0":
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/mock-contract/-/mock-contract-3.0.8.tgz#3794226161965396710ee0bec5cd809f60ca8d72"
-  integrity sha512-ZsLXSxbKwhEVR4t1CQ1Wxv3g9Q3YHlO0BQcH6XWpoeOcM8pND0ZTPz99ExnR4XCn2o5GlQT5ffNcMD+NAmibBg==
-  dependencies:
-    ethereumjs-abi "^0.6.5"
+"@gnosis.pm/mock-contract@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/mock-contract/-/mock-contract-4.0.0.tgz#eaf500fddcab81b5f6c22280a7b22ff891dd6f87"
+  integrity sha512-SkRq2KwPx6vo0LAjSc8JhgQstrQFXRyn2yqquIfub7r2WHi5nUbF8beeSSXsd36hvBcQxQfmOIYNYRpj9JOhrQ==
 
 "@gnosis.pm/owl-token@^3.1.0":
   version "3.1.0"
@@ -3274,7 +3272,7 @@ ethereum-protocol@^1.0.1:
   resolved "https://registry.yarnpkg.com/ethereum-protocol/-/ethereum-protocol-1.0.1.tgz#b7d68142f4105e0ae7b5e178cf42f8d4dc4b93cf"
   integrity sha512-3KLX1mHuEsBW0dKG+c6EOJS1NBNqdCICvZW9sInmZTt5aY0oxmHVggYRE0lJu1tcnMD1K+AKHdLi6U43Awm1Vg==
 
-ethereumjs-abi@^0.6.5, "ethereumjs-abi@git+https://github.com/ethereumjs/ethereumjs-abi.git":
+"ethereumjs-abi@git+https://github.com/ethereumjs/ethereumjs-abi.git":
   version "0.6.8"
   resolved "git+https://github.com/ethereumjs/ethereumjs-abi.git#1cfbb13862f90f0b391d8a699544d5fe4dfb8c7b"
   dependencies:
