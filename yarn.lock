@@ -516,6 +516,17 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
+"@truffle/artifactor@^4.0.70":
+  version "4.0.70"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.70.tgz#b288cc0ad467de1676070bd436ccef54da08f89a"
+  integrity sha512-OOBlmwo7ZwcogV1JwUfzB1rqcIeM975gXzFcXvVKPIKoUi6cB85DPErXoI5WQ+N2WARLXJ0z1R/XDl3WF4XvGw==
+  dependencies:
+    "@truffle/contract-schema" "^3.2.3"
+    fs-extra "^8.1.0"
+    lodash.assign "^4.2.0"
+    lodash.merge "^4.6.2"
+    source-map-support "^0.5.19"
+
 "@truffle/blockchain-utils@^0.0.22":
   version "0.0.22"
   resolved "https://registry.yarnpkg.com/@truffle/blockchain-utils/-/blockchain-utils-0.0.22.tgz#c66a906cb60dbf72eaf85b0ad088ba9f45eff793"
@@ -5068,6 +5079,11 @@ locate-path@^5.0.0:
   integrity sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==
   dependencies:
     p-locate "^4.1.0"
+
+lodash.assign@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/lodash.assign/-/lodash.assign-4.2.0.tgz#0d99f3ccd7a6d261d19bdaeb9245005d285808e7"
+  integrity sha1-DZnzzNem0mHRm9rrkkUAXShYCOc=
 
 lodash.clonedeep@^4.5.0:
   version "4.5.0"
