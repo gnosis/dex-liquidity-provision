@@ -110,8 +110,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
     const bracketTraderAddresses = brackets.map((address) => address.toLowerCase())
-    const BatchExchangeContract = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchangeContract.setProvider(web3.currentProvider)
+    const BatchExchangeContract = artifacts.require("BatchExchange")
     const exchange = await BatchExchangeContract.deployed()
 
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification

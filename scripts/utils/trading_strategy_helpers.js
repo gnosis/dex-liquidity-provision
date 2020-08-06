@@ -21,11 +21,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
   const ERC20 = artifacts.require("ERC20Detailed")
-  const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
 
-  BatchExchange.setProvider(web3.currentProvider)
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
@@ -37,7 +36,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {SmartContract} An instance of BatchExchange
    */
   const getExchange = function () {
-    BatchExchange.setProvider(web3.currentProvider)
     return BatchExchange.deployed()
   }
 

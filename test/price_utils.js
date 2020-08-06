@@ -14,8 +14,7 @@ const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strateg
 contract("PriceOracle", function (accounts) {
   let exchange
   beforeEach(async function () {
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
+    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
   })
   describe("Price oracle sanity check", async () => {
