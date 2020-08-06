@@ -10,7 +10,7 @@ const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { addCustomMintableTokenToExchange, deploySafe } = require("../test_utils")
+const { deploySafe, addCustomMintableTokenToExchange } = require("../../scripts/utils/test_and_script_code")(web3, artifacts)
 const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(
   web3,
   artifacts

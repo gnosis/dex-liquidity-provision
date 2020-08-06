@@ -10,14 +10,13 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
 
-const { prepareTokenRegistration, addCustomMintableTokenToExchange, deploySafe } = require("./test_utils")
+const { prepareTokenRegistration, deploySafe } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
   deployFleetOfSafes,
   buildOrders,
   buildTransferApproveDepositFromList,
-  buildTransferApproveDepositFromOrders,
   buildWithdrawRequest,
   buildWithdrawClaim,
   buildTransferFundsToMaster,
@@ -25,7 +24,8 @@ const {
   isOnlySafeOwner,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")
+const { testAutomaticDeposits } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
+
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
 
@@ -182,88 +182,7 @@ contract("GnosisSafe", function (accounts) {
       ]
       await Promise.all(testEntries.map(({ decimals, amount }) => testManualDeposits(decimals, amount)))
     })
-    const testAutomaticDeposits = async function (tradeInfo, expectedDistribution) {
-      const {
-        numBrackets,
-        lowestLimit,
-        highestLimit,
-        currentPrice,
-        amountQuoteToken,
-        amountbaseToken,
-        quoteTokenInfo,
-        baseTokenInfo,
-      } = tradeInfo
-      const { decimals: quoteTokenDecimals, symbol: quoteTokenSymbol } = quoteTokenInfo
-      const { decimals: baseTokenDecimals, symbol: baseTokenSymbol } = baseTokenInfo
-      const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
-      assert.equal(
-        bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
-        numBrackets,
-        "Malformed test case, sum of expected distribution should be equal to the fleet size"
-      )
 
-      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
-      const bracketAddresses = await deployFleetOfSafes(masterSafe.address, numBrackets)
-
-      //Create  quoteToken and add it to the exchange
-      const { id: quoteTokenId, token: quoteToken } = await addCustomMintableTokenToExchange(
-        exchange,
-        quoteTokenSymbol,
-        quoteTokenDecimals,
-        accounts[0]
-      )
-      const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
-      await quoteToken.mint(masterSafe.address, depositAmountQuoteToken, { from: accounts[0] })
-
-      //Create  baseToken and add it to the exchange
-      const { id: baseTokenId, token: baseToken } = await addCustomMintableTokenToExchange(
-        exchange,
-        baseTokenSymbol,
-        baseTokenDecimals,
-        accounts[0]
-      )
-      const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
-      await baseToken.mint(masterSafe.address, depositAmountbaseToken, { from: accounts[0] })
-
-      // Build orders
-      const orderTransaction = await buildOrders(
-        masterSafe.address,
-        bracketAddresses,
-        baseTokenId,
-        quoteTokenId,
-        lowestLimit,
-        highestLimit
-      )
-      await execTransaction(masterSafe, safeOwner, orderTransaction)
-
-      // Make transfers
-      const batchTransaction = await buildTransferApproveDepositFromOrders(
-        masterSafe.address,
-        bracketAddresses,
-        baseToken.address,
-        quoteToken.address,
-        lowestLimit,
-        highestLimit,
-        currentPrice,
-        depositAmountQuoteToken,
-        depositAmountbaseToken
-      )
-      await execTransaction(masterSafe, safeOwner, batchTransaction)
-      // Close auction for deposits to be reflected in exchange balance
-      await waitForNSeconds(301)
-
-      for (const bracketAddress of bracketAddresses) {
-        await checkCorrectnessOfDeposits(
-          currentPrice,
-          bracketAddress,
-          exchange,
-          quoteToken,
-          baseToken,
-          bracketsWithQuoteTokenDeposit == 0 ? 0 : depositAmountQuoteToken.div(new BN(bracketsWithQuoteTokenDeposit)),
-          bracketsWithbaseTokenDeposit == 0 ? 0 : depositAmountbaseToken.div(new BN(bracketsWithbaseTokenDeposit))
-        )
-      }
-    }
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
       const tradeInfo = {
         numBrackets: 4,
@@ -279,7 +198,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 2,
         bracketsWithbaseTokenDeposit: 2,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 1", async () => {
       const tradeInfo = {
@@ -296,7 +223,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 1,
         bracketsWithbaseTokenDeposit: 0,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 19", async () => {
       const tradeInfo = {
@@ -313,7 +248,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 18,
         bracketsWithbaseTokenDeposit: 1,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1 and wide brackets", async () => {
       const tradeInfo = {
@@ -330,7 +273,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 2,
         bracketsWithbaseTokenDeposit: 2,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
       const tradeInfo = {
@@ -347,7 +298,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 2,
         bracketsWithbaseTokenDeposit: 2,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
       const tradeInfo = {
@@ -364,7 +323,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 1,
         bracketsWithbaseTokenDeposit: 3,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
       const tradeInfo = {
@@ -381,7 +348,15 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithQuoteTokenDeposit: 0,
         bracketsWithbaseTokenDeposit: 4,
       }
-      await testAutomaticDeposits(tradeInfo, expectedDistribution)
+      await testAutomaticDeposits(
+        tradeInfo,
+        expectedDistribution,
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
     })
     describe("can use automatic deposits to transfer tokens with arbitrary amount of decimals", () => {
       const tokenSetups = [
@@ -423,7 +398,15 @@ contract("GnosisSafe", function (accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
-          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+          await testAutomaticDeposits(
+            tradeInfo,
+            expectedDistribution,
+            gnosisSafeMasterCopy,
+            proxyFactory,
+            safeOwner,
+            exchange,
+            accounts
+          )
         }
       })
       it("when p is in the middle of the brackets and the steps are wide", async () => {
@@ -439,7 +422,15 @@ contract("GnosisSafe", function (accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
-          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+          await testAutomaticDeposits(
+            tradeInfo,
+            expectedDistribution,
+            gnosisSafeMasterCopy,
+            proxyFactory,
+            safeOwner,
+            exchange,
+            accounts
+          )
         }
       })
       it("when p is not in the middle but still inside the brackets", async () => {
@@ -455,7 +446,15 @@ contract("GnosisSafe", function (accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
-          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+          await testAutomaticDeposits(
+            tradeInfo,
+            expectedDistribution,
+            gnosisSafeMasterCopy,
+            proxyFactory,
+            safeOwner,
+            exchange,
+            accounts
+          )
         }
       })
       it("when p is outside the brackets and only quote token is deposited", async () => {
@@ -471,7 +470,15 @@ contract("GnosisSafe", function (accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
-          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+          await testAutomaticDeposits(
+            tradeInfo,
+            expectedDistribution,
+            gnosisSafeMasterCopy,
+            proxyFactory,
+            safeOwner,
+            exchange,
+            accounts
+          )
         }
       })
       it("when p is outside the brackets and only base token is deposited", async () => {
@@ -487,7 +494,15 @@ contract("GnosisSafe", function (accounts) {
         }
         for (const tokenSetup of tokenSetups) {
           const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
-          await testAutomaticDeposits(tradeInfo, expectedDistribution)
+          await testAutomaticDeposits(
+            tradeInfo,
+            expectedDistribution,
+            gnosisSafeMasterCopy,
+            proxyFactory,
+            safeOwner,
+            exchange,
+            accounts
+          )
         }
       })
       it("with extreme prices and decimals", async () => {
@@ -505,7 +520,15 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithQuoteTokenDeposit: 2,
           bracketsWithbaseTokenDeposit: 2,
         }
-        await testAutomaticDeposits(tradeInfo, expectedDistribution)
+        await testAutomaticDeposits(
+          tradeInfo,
+          expectedDistribution,
+          gnosisSafeMasterCopy,
+          proxyFactory,
+          safeOwner,
+          exchange,
+          accounts
+        )
       })
     })
   })
