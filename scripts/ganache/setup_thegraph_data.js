@@ -13,7 +13,7 @@ const ERC20 = artifacts.require("ERC20Detailed")
 const MintableToken = artifacts.require("DetailedMintableToken")
 const { addCustomMintableTokenToExchange, deploySafe } = require("../../test/test_utils")
 
-const testAutomaticDeposits = async function (tradeInfo, safeOwner, artifacts = artifacts) {
+const generateExemplaryData = async function (tradeInfo, safeOwner, artifacts = artifacts) {
   const {
     numBrackets,
     lowestLimit,
@@ -42,8 +42,6 @@ const testAutomaticDeposits = async function (tradeInfo, safeOwner, artifacts = 
     artifacts
   )
 
-  console.log(exchange.address)
-  console.log(await exchange.feeToken())
   const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
   await quoteToken.mint(masterSafe.address, depositAmountQuoteToken, { from: safeOwner })
 
@@ -98,7 +96,7 @@ module.exports = async (callback, accounts) => {
     baseTokenInfo: { symbol: "WETH", decimals: 18 },
   }
   try {
-    await testAutomaticDeposits(tradeInfo, await web3.eth.getAccounts().then((accounts) => accounts[0]), artifacts)
+    await generateExemplaryData(tradeInfo, await web3.eth.getAccounts().then((accounts) => accounts[0]), artifacts)
 
     callback()
   } catch (error) {
