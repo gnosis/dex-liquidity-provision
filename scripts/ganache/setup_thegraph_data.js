@@ -1,14 +1,10 @@
 const Contract = require("@truffle/contract")
 const fs = require("fs")
 
-const {
-  deployFleetOfSafes,
-  fetchTokenInfoFromExchange,
-  buildTransferApproveDepositFromOrders,
-  buildOrders,
-  getSafe,
-  getExchange,
-} = require("../utils/trading_strategy_helpers")(web3, artifacts)
+const { deployFleetOfSafes, buildTransferApproveDepositFromOrders, buildOrders } = require("../utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 const { toErc20Units } = require("../utils/printing_tools")
 const { execTransaction } = require("../utils/internals")(web3, artifacts)
 
