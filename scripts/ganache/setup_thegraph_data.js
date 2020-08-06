@@ -1,10 +1,5 @@
-const Contract = require("@truffle/contract")
-const fs = require("fs")
-
 const { deployNewStrategy } = require("../utils/test_and_script_code")(web3, artifacts)
-
 const BatchExchange = artifacts.require("BatchExchange")
-
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
