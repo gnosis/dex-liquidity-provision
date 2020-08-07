@@ -1,7 +1,6 @@
 const BN = require("bn.js")
 const assertNodejs = require("assert")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
-const Contract = require("@truffle/contract")
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
@@ -10,7 +9,7 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
 
-const { prepareTokenRegistration, deploySafe } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
+const { prepareTokenRegistration, deploySafe } = require("../scripts/utils/process_flows")(web3, artifacts)
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -24,7 +23,7 @@ const {
   isOnlySafeOwner,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { testAutomaticDeposits } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
+const { testAutomaticDeposits } = require("../scripts/utils/process_flows")(web3, artifacts)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")

@@ -1,6 +1,5 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
@@ -8,7 +7,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange, deploySafe } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
+const { addCustomMintableTokenToExchange, deploySafe } = require("../scripts/utils/process_flows")(web3, artifacts)
 
 const { createTokenAndGetData, populatePriceStorage } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)

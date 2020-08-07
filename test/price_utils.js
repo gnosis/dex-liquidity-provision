@@ -1,8 +1,7 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 
-const { addCustomMintableTokenToExchange } = require("../scripts/utils/test_and_script_code")(web3, artifacts)
+const { addCustomMintableTokenToExchange } = require("../scripts/utils/process_flows")(web3, artifacts)
 const {
   isPriceReasonable,
   checkNoProfitableOffer,

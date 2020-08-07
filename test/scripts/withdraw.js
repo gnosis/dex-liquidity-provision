@@ -2,7 +2,6 @@ const BN = require("bn.js")
 const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
-const Contract = require("@truffle/contract")
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
@@ -10,7 +9,7 @@ const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { deploySafe, addCustomMintableTokenToExchange } = require("../../scripts/utils/test_and_script_code")(web3, artifacts)
+const { deploySafe, addCustomMintableTokenToExchange } = require("../../scripts/utils/process_flows")(web3, artifacts)
 const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(
   web3,
   artifacts

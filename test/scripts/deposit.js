@@ -1,10 +1,8 @@
-const Contract = require("@truffle/contract")
-
 const BatchExchange = artifacts.require("BatchExchange")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { addCustomMintableTokenToExchange, deploySafe } = require("../../scripts/utils/test_and_script_code")(web3, artifacts)
+const { addCustomMintableTokenToExchange, deploySafe } = require("../../scripts/utils/process_flows")(web3, artifacts)
 const { deployFleetOfSafes, buildDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 

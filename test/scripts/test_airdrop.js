@@ -5,7 +5,7 @@ const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { deploySafe } = require("../../scripts/utils/test_and_script_code")(web3, artifacts)
+const { deploySafe } = require("../../scripts/utils/process_flows")(web3, artifacts)
 const { buildTransferDataFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 const { toErc20Units } = require("../../scripts/utils/printing_tools")
