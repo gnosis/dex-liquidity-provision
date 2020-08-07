@@ -15,7 +15,8 @@ module.exports = async (callback) => {
     baseTokenInfo: { symbol: "WETH", decimals: 18 },
   }
   try {
-    const safeOwner = await web3.eth.getAccounts().then((accounts) => accounts[0])
+    const accounts = await web3.eth.getAccounts()
+    const safeOwner = accounts[0]
     const proxyFactory = await ProxyFactory.deployed()
     const exchange = await BatchExchange.deployed()
     const gnosisSafeMasterCopy = await GnosisSafe.new()

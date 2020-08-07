@@ -8,6 +8,9 @@ module.exports = function (web3, artifacts) {
   )
   const { ZERO_ADDRESS } = require("./constants")
   const GnosisSafe = artifacts.require("GnosisSafe")
+  const TokenOWL = artifacts.require("TokenOWL")
+  const TestToken = artifacts.require("DetailedMintableToken")
+
   const { toErc20Units } = require("./printing_tools")
 
   const testAutomaticDeposits = async function (
@@ -123,7 +126,6 @@ module.exports = function (web3, artifacts) {
     return { bracketAddresses: bracketAddresses, quoteToken: quoteToken, baseToken: baseToken }
   }
   const prepareTokenRegistration = async function (account, exchange) {
-    const TokenOWL = artifacts.require("TokenOWL")
     const owlToken = await TokenOWL.at(await exchange.feeToken.call())
     await owlToken.setMinter(account)
     await owlToken.mintOWL(account, toErc20Units(10, 18))
@@ -132,7 +134,6 @@ module.exports = function (web3, artifacts) {
   }
 
   const addCustomMintableTokenToExchange = async function (exchange, symbol, decimals, account) {
-    const TestToken = artifacts.require("DetailedMintableToken")
     // TODO: use this function in all tests creating new tokens
     const tokenPromise = TestToken.new(symbol, decimals)
     await prepareTokenRegistration(account, exchange)
