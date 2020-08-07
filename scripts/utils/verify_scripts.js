@@ -1,6 +1,5 @@
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
-  const Contract = require("@truffle/contract")
   const { decodeOrders, Fraction } = require("@gnosis.pm/dex-contracts")
 
   const { isOnlySafeOwner, fetchTokenInfoFromExchange, assertNoAllowances, getSafe } = require("./trading_strategy_helpers")(

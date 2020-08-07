@@ -13,7 +13,6 @@ const BN = require("bn.js")
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const fs = require("fs")
-  const Contract = require("@truffle/contract")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
   const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")

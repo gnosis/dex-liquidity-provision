@@ -5,7 +5,7 @@ const MultiSend = artifacts.require("./MultiSend.sol")
 
 module.exports = async function (deployer, network, accounts) {
   console.log("Migrating Batch Exchange")
-  let artefact = await migrateBatchExchange({
+  const artefact = await migrateBatchExchange({
     artifacts,
     deployer,
     network,
