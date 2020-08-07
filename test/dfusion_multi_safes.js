@@ -1,7 +1,6 @@
 const BN = require("bn.js")
 const assertNodejs = require("assert")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
-const Contract = require("@truffle/contract")
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")

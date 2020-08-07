@@ -2,7 +2,6 @@ const BN = require("bn.js")
 const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
-const Contract = require("@truffle/contract")
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
