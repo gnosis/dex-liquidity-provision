@@ -30,7 +30,6 @@ module.exports = function (web3, artifacts) {
     const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
     const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
 
-    console.log(strategyData.bracketAddresses)
     // Close auction for deposits to be reflected in exchange balance
     await waitForNSeconds(301)
 
