@@ -118,6 +118,7 @@ module.exports = function (web3, artifacts) {
     await execTransaction(masterSafe, safeOwner, batchTransaction)
     return { bracketAddresses: bracketAddresses, quoteToken: quoteToken, baseToken: baseToken }
   }
+
   const prepareTokenRegistration = async function (account, exchange) {
     const owlToken = await TokenOWL.at(await exchange.feeToken.call())
     await owlToken.setMinter(account)
@@ -146,6 +147,7 @@ module.exports = function (web3, artifacts) {
     const transaction = await proxyFactory.createProxy(gnosisSafeMasterCopy.address, initData)
     return getParamFromTxEvent(transaction, "ProxyCreation", "proxy", proxyFactory.address, null)
   }
+
   const getParamFromTxEvent = async function (transaction, eventName, paramName, contractAddress) {
     const assert = require("assert")
     let logs = transaction.logs
@@ -155,6 +157,7 @@ module.exports = function (web3, artifacts) {
     assert.equal(logs.length, 1, "too many logs found!")
     return logs[0].args[paramName]
   }
+
   return {
     deploySafe,
     prepareTokenRegistration,
