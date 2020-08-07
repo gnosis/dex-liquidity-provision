@@ -1,6 +1,5 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const GnosisSafe = artifacts.require("GnosisSafe")

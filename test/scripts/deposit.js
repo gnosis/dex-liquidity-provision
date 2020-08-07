@@ -1,5 +1,3 @@
-const Contract = require("@truffle/contract")
-
 const BatchExchange = artifacts.require("BatchExchange")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
