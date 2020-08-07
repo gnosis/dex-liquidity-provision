@@ -12,4 +12,5 @@ script:
   - yarn lint
   - yarn pretty-check
   - yarn build
+  - yarn migrate
   - yarn test
