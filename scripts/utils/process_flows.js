@@ -70,7 +70,7 @@ module.exports = function (web3, artifacts) {
     const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
     const bracketAddresses = await deployFleetOfSafes(masterSafe.address, numBrackets)
 
-    //Create  quoteToken and add it to the exchange
+    // Create quoteToken and add it to the exchange
     const { id: quoteTokenId, token: quoteToken } = await addCustomMintableTokenToExchange(
       exchange,
       quoteTokenSymbol,
