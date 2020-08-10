@@ -75,8 +75,7 @@ module.exports = function (web3, artifacts) {
       exchange,
       quoteTokenSymbol,
       quoteTokenDecimals,
-      accounts[0],
-      artifacts
+      accounts[0]
     )
     const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
     await quoteToken.mint(masterSafe.address, depositAmountQuoteToken, { from: accounts[0] })
