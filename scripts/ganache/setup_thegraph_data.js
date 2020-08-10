@@ -9,7 +9,7 @@ module.exports = async (callback) => {
     lowestLimit: 100,
     highestLimit: 300,
     currentPrice: 200,
-    amountQuoteToken: 10,
+    amountQuoteToken: 2000,
     amountbaseToken: 10,
     quoteTokenInfo: { symbol: "DAI", decimals: 18 },
     baseTokenInfo: { symbol: "WETH", decimals: 18 },
