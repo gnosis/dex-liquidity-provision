@@ -23,7 +23,6 @@ module.exports = async (callback) => {
     await deployNewStrategy(tradeInfo, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts)
     callback()
   } catch (error) {
-    console.log(error.response)
     callback(error)
   }
 }
