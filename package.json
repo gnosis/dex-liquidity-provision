@@ -19,15 +19,15 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
-    "build": "yarn compile && yarn networks-inject",
+    "build": "yarn compile && yarn copy-artifacts && yarn networks-inject",
     "copy-artifacts": "cp ./node_modules/@gnosis.pm/dex-contracts/build/contracts/BatchExchange.json ./build/contracts",
     "compile": "truffle compile",
     "testnet": "ganache-cli --gasLimit 8e6",
     "migrate": "truffle migrate",
     "verify": "truffle run verify",
     "flatten": "export FLATTENED_DIR=\"./build/flattenedContracts\" && mkdir -p $FLATTENED_DIR && npx sol-merger \"contracts/*.sol\" $FLATTENED_DIR && echo \"Flattened contracts stored in $FLATTENED_DIR\" && unset FLATTENED_DIR",
-    "networks-inject": "CONF_FILE=$(pwd)'/migrations/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js  && CONF_FILE=$(pwd)'/migrations/migration_conf_dex-contracts.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
-    "networks-extract": "CONF_FILE=$(pwd)'/migrations/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
+    "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
+    "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
