@@ -30,7 +30,6 @@
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "devDependencies": {
-    "@gnosis.pm/mock-contract": "^3.0.0",
     "@truffle/artifactor": "^4.0.70",
     "eslint": "^7.6.0",
     "eslint-plugin-jsdoc": "^30.2.1",
