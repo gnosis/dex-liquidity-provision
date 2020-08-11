@@ -8,8 +8,8 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")
 
-const { prepareTokenRegistration, deploySafe } = require("../scripts/utils/process_flows")(web3, artifacts)
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
@@ -23,7 +23,10 @@ const {
   isOnlySafeOwner,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { testAutomaticDeposits } = require("../scripts/utils/process_flows")(web3, artifacts)
+const { deployNewStrategy, prepareTokenRegistration, deploySafe } = require("../scripts/utils/strategy_simulator")(
+  web3,
+  artifacts
+)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
 const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
@@ -63,6 +66,46 @@ const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, 
         .abs()
         .toNumber(),
       2
+    )
+  }
+}
+
+const testAutomaticDeposits = async function (
+  strategyConfig,
+  expectedDistribution,
+  gnosisSafeMasterCopy,
+  proxyFactory,
+  safeOwner,
+  exchange,
+  accounts
+) {
+  const strategyData = await deployNewStrategy(strategyConfig, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts)
+
+  const { numBrackets, currentPrice, amountQuoteToken, amountbaseToken, quoteTokenInfo, baseTokenInfo } = strategyConfig
+  const { decimals: quoteTokenDecimals } = quoteTokenInfo
+  const { decimals: baseTokenDecimals } = baseTokenInfo
+  const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
+  const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
+
+  // Close auction for deposits to be reflected in exchange balance
+  await waitForNSeconds(301)
+
+  const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
+  const assert = require("assert")
+  assert.equal(
+    bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
+    numBrackets,
+    "Malformed test case, sum of expected distribution should be equal to the fleet size"
+  )
+  for (const bracketAddress of strategyData.bracketAddresses) {
+    await checkCorrectnessOfDeposits(
+      currentPrice,
+      bracketAddress,
+      exchange,
+      strategyData.quoteToken,
+      strategyData.baseToken,
+      bracketsWithQuoteTokenDeposit == 0 ? 0 : depositAmountQuoteToken.div(new BN(bracketsWithQuoteTokenDeposit)),
+      bracketsWithbaseTokenDeposit == 0 ? 0 : depositAmountbaseToken.div(new BN(bracketsWithbaseTokenDeposit))
     )
   }
 }
@@ -183,7 +226,7 @@ contract("GnosisSafe", function (accounts) {
     })
 
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 4,
         lowestLimit: 100,
         highestLimit: 121,
@@ -198,7 +241,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -208,7 +251,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 1", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 1,
         lowestLimit: 100,
         highestLimit: 121,
@@ -223,7 +266,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 0,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -233,7 +276,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1, numBrackets = 19", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 19,
         lowestLimit: 100,
         highestLimit: 121,
@@ -248,7 +291,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 1,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -258,7 +301,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p > 1 and wide brackets", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 4,
         lowestLimit: 25,
         highestLimit: 400,
@@ -273,7 +316,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -283,7 +326,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p < 1", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 4,
         lowestLimit: 0.09,
         highestLimit: 0.12,
@@ -298,7 +341,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 2,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -308,7 +351,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic, p<1 && p>1", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
@@ -323,7 +366,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 3,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -333,7 +376,7 @@ contract("GnosisSafe", function (accounts) {
       )
     })
     it("transfers tokens from fund account through trader accounts and into exchange via automatic deposit logic with currentPrice outside of price bounds", async () => {
-      const tradeInfo = {
+      const strategyConfig = {
         numBrackets: 4,
         lowestLimit: 0.8,
         highestLimit: 1.2,
@@ -348,7 +391,7 @@ contract("GnosisSafe", function (accounts) {
         bracketsWithbaseTokenDeposit: 4,
       }
       await testAutomaticDeposits(
-        tradeInfo,
+        strategyConfig,
         expectedDistribution,
         gnosisSafeMasterCopy,
         proxyFactory,
@@ -385,7 +428,7 @@ contract("GnosisSafe", function (accounts) {
         },
       ]
       it("when p is in the middle of the brackets", async () => {
-        const tradeInfoWithoutTokens = {
+        const strategyConfigWithoutTokens = {
           numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 121,
@@ -396,9 +439,12 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 2,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          const strategyConfig = {
+            ...JSON.parse(JSON.stringify(strategyConfigWithoutTokens)),
+            ...JSON.parse(JSON.stringify(tokenSetup)),
+          }
           await testAutomaticDeposits(
-            tradeInfo,
+            strategyConfig,
             expectedDistribution,
             gnosisSafeMasterCopy,
             proxyFactory,
@@ -409,7 +455,7 @@ contract("GnosisSafe", function (accounts) {
         }
       })
       it("when p is in the middle of the brackets and the steps are wide", async () => {
-        const tradeInfoWithoutTokens = {
+        const strategyConfigWithoutTokens = {
           numBrackets: 4,
           lowestLimit: 25,
           highestLimit: 400,
@@ -420,9 +466,12 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 2,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          const strategyConfig = {
+            ...JSON.parse(JSON.stringify(strategyConfigWithoutTokens)),
+            ...JSON.parse(JSON.stringify(tokenSetup)),
+          }
           await testAutomaticDeposits(
-            tradeInfo,
+            strategyConfig,
             expectedDistribution,
             gnosisSafeMasterCopy,
             proxyFactory,
@@ -433,7 +482,7 @@ contract("GnosisSafe", function (accounts) {
         }
       })
       it("when p is not in the middle but still inside the brackets", async () => {
-        const tradeInfoWithoutTokens = {
+        const strategyConfigWithoutTokens = {
           numBrackets: 8,
           lowestLimit: 100,
           highestLimit: 130,
@@ -444,9 +493,12 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 5,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          const strategyConfig = {
+            ...JSON.parse(JSON.stringify(strategyConfigWithoutTokens)),
+            ...JSON.parse(JSON.stringify(tokenSetup)),
+          }
           await testAutomaticDeposits(
-            tradeInfo,
+            strategyConfig,
             expectedDistribution,
             gnosisSafeMasterCopy,
             proxyFactory,
@@ -457,7 +509,7 @@ contract("GnosisSafe", function (accounts) {
         }
       })
       it("when p is outside the brackets and only quote token is deposited", async () => {
-        const tradeInfoWithoutTokens = {
+        const strategyConfigWithoutTokens = {
           numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
@@ -468,9 +520,12 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 0,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          const strategyConfig = {
+            ...JSON.parse(JSON.stringify(strategyConfigWithoutTokens)),
+            ...JSON.parse(JSON.stringify(tokenSetup)),
+          }
           await testAutomaticDeposits(
-            tradeInfo,
+            strategyConfig,
             expectedDistribution,
             gnosisSafeMasterCopy,
             proxyFactory,
@@ -481,7 +536,7 @@ contract("GnosisSafe", function (accounts) {
         }
       })
       it("when p is outside the brackets and only base token is deposited", async () => {
-        const tradeInfoWithoutTokens = {
+        const strategyConfigWithoutTokens = {
           numBrackets: 4,
           lowestLimit: 100,
           highestLimit: 130,
@@ -492,9 +547,12 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 4,
         }
         for (const tokenSetup of tokenSetups) {
-          const tradeInfo = { ...JSON.parse(JSON.stringify(tradeInfoWithoutTokens)), ...JSON.parse(JSON.stringify(tokenSetup)) }
+          const strategyConfig = {
+            ...JSON.parse(JSON.stringify(strategyConfigWithoutTokens)),
+            ...JSON.parse(JSON.stringify(tokenSetup)),
+          }
           await testAutomaticDeposits(
-            tradeInfo,
+            strategyConfig,
             expectedDistribution,
             gnosisSafeMasterCopy,
             proxyFactory,
@@ -505,7 +563,7 @@ contract("GnosisSafe", function (accounts) {
         }
       })
       it("with extreme prices and decimals", async () => {
-        const tradeInfo = {
+        const strategyConfig = {
           numBrackets: 4,
           lowestLimit: 5e194,
           highestLimit: 20e194,
@@ -520,7 +578,7 @@ contract("GnosisSafe", function (accounts) {
           bracketsWithbaseTokenDeposit: 2,
         }
         await testAutomaticDeposits(
-          tradeInfo,
+          strategyConfig,
           expectedDistribution,
           gnosisSafeMasterCopy,
           proxyFactory,

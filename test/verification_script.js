@@ -7,7 +7,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange, deploySafe } = require("../scripts/utils/process_flows")(web3, artifacts)
+const { addCustomMintableTokenToExchange, deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const { createTokenAndGetData, populatePriceStorage } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {

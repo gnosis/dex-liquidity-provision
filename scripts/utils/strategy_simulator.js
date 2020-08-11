@@ -1,7 +1,5 @@
 module.exports = function (web3, artifacts) {
-  const BN = require("bn.js")
-  const { checkCorrectnessOfDeposits } = require("./price_utils")
-  const { waitForNSeconds, execTransaction } = require("./internals")(web3, artifacts)
+  const { execTransaction } = require("./internals")(web3, artifacts)
   const { deployFleetOfSafes, buildOrders, buildTransferApproveDepositFromOrders } = require("./trading_strategy_helpers")(
     web3,
     artifacts
@@ -10,50 +8,11 @@ module.exports = function (web3, artifacts) {
   const GnosisSafe = artifacts.require("GnosisSafe")
   const TokenOWL = artifacts.require("TokenOWL")
   const TestToken = artifacts.require("DetailedMintableToken")
+  const assert = require("assert")
 
   const { toErc20Units } = require("./printing_tools")
 
-  const testAutomaticDeposits = async function (
-    tradeInfo,
-    expectedDistribution,
-    gnosisSafeMasterCopy,
-    proxyFactory,
-    safeOwner,
-    exchange,
-    accounts
-  ) {
-    const strategyData = await deployNewStrategy(tradeInfo, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts)
-
-    const { numBrackets, currentPrice, amountQuoteToken, amountbaseToken, quoteTokenInfo, baseTokenInfo } = tradeInfo
-    const { decimals: quoteTokenDecimals } = quoteTokenInfo
-    const { decimals: baseTokenDecimals } = baseTokenInfo
-    const depositAmountbaseToken = toErc20Units(amountbaseToken, baseTokenDecimals)
-    const depositAmountQuoteToken = toErc20Units(amountQuoteToken, quoteTokenDecimals)
-
-    // Close auction for deposits to be reflected in exchange balance
-    await waitForNSeconds(301)
-
-    const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
-    const assert = require("assert")
-    assert.equal(
-      bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
-      numBrackets,
-      "Malformed test case, sum of expected distribution should be equal to the fleet size"
-    )
-    for (const bracketAddress of strategyData.bracketAddresses) {
-      await checkCorrectnessOfDeposits(
-        currentPrice,
-        bracketAddress,
-        exchange,
-        strategyData.quoteToken,
-        strategyData.baseToken,
-        bracketsWithQuoteTokenDeposit == 0 ? 0 : depositAmountQuoteToken.div(new BN(bracketsWithQuoteTokenDeposit)),
-        bracketsWithbaseTokenDeposit == 0 ? 0 : depositAmountbaseToken.div(new BN(bracketsWithbaseTokenDeposit))
-      )
-    }
-  }
-
-  const deployNewStrategy = async function (tradeInfo, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts) {
+  const deployNewStrategy = async function (strategyConfig, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts) {
     const {
       numBrackets,
       lowestLimit,
@@ -63,7 +22,7 @@ module.exports = function (web3, artifacts) {
       amountbaseToken,
       quoteTokenInfo,
       baseTokenInfo,
-    } = tradeInfo
+    } = strategyConfig
     const { decimals: quoteTokenDecimals, symbol: quoteTokenSymbol } = quoteTokenInfo
     const { decimals: baseTokenDecimals, symbol: baseTokenSymbol } = baseTokenInfo
 
@@ -147,7 +106,6 @@ module.exports = function (web3, artifacts) {
   }
 
   const getParamFromTxEvent = async function (transaction, eventName, paramName, contractAddress) {
-    const assert = require("assert")
     let logs = transaction.logs
     if (eventName != null) {
       logs = logs.filter((l) => l.event === eventName && l.address === contractAddress)
@@ -160,7 +118,6 @@ module.exports = function (web3, artifacts) {
     deploySafe,
     prepareTokenRegistration,
     addCustomMintableTokenToExchange,
-    testAutomaticDeposits,
     deployNewStrategy,
   }
 }
