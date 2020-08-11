@@ -21,7 +21,6 @@ Build Truffle artifacts:
 
 ```sh
 yarn build
-yarn copy-artifacts
 ```
 
 This concludes the setup procedures.
