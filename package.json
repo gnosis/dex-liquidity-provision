@@ -26,8 +26,8 @@
     "migrate": "truffle migrate",
     "verify": "truffle run verify",
     "flatten": "export FLATTENED_DIR=\"./build/flattenedContracts\" && mkdir -p $FLATTENED_DIR && npx sol-merger \"contracts/*.sol\" $FLATTENED_DIR && echo \"Flattened contracts stored in $FLATTENED_DIR\" && unset FLATTENED_DIR",
-    "networks-inject": "CONF_FILE=$(pwd)'/migrations/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js  && CONF_FILE=$(pwd)'/migrations/migration_conf_dex-contracts.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
-    "networks-extract": "CONF_FILE=$(pwd)'/migrations/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
+    "networks-inject": "sh migrations/networks_inject.sh",
+    "networks-extract": "sh migrations/networks_extract.sh"
   },
   "devDependencies": {
     "@gnosis.pm/mock-contract": "^3.0.0",
