@@ -2,7 +2,7 @@ const { deployNewStrategy } = require("../utils/strategy_simulator")(web3, artif
 const BatchExchange = artifacts.require("BatchExchange")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-const { default_yargs } = require("./utils/default_yargs")
+const { default_yargs } = require("../utils/default_yargs")
 const argv = default_yargs.argv
 
 module.exports = async (callback) => {

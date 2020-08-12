@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@truffle/artifactor": "^4.0.70",
-    "@truffle/artifactor": "^4.0.70",
     "eslint": "^7.6.0",
     "eslint-plugin-jsdoc": "^30.2.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
@@ -61,6 +60,6 @@
     "node-fetch": "^2.6.0",
     "synthetix-js": "=2.26.2",
     "truffle": "^5.1.37",
-    "truffle-hdwallet-provider": "^1.0.0-web3one.1"
+    "typescript-logging": "^1.0.0"
   }
 }
