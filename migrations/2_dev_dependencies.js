@@ -4,14 +4,20 @@ const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
 const MultiSend = artifacts.require("./MultiSend.sol")
 
 module.exports = async function (deployer, network, accounts) {
+  console.log("Migrating Batch Exchange")
+  const artefact = await migrateBatchExchange({
+    artifacts,
+    deployer,
+    network,
+    account: accounts[0],
+    web3,
+  })
+
+  const Artifactor = require("@truffle/artifactor")
+  const artifactor = new Artifactor("build/contracts/")
+  await artifactor.save(artefact)
+
   if (network === "development") {
-    await migrateBatchExchange({
-      artifacts,
-      deployer,
-      network,
-      account: accounts[0],
-      web3,
-    })
     await deployer.deploy(GnosisSafe)
     await deployer.deploy(ProxyFactory)
     await deployer.deploy(MultiSend)

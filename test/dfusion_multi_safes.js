@@ -1,9 +1,8 @@
 const BN = require("bn.js")
 const assertNodejs = require("assert")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
-const Contract = require("@truffle/contract")
 
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
@@ -79,7 +78,6 @@ contract("GnosisSafe", function (accounts) {
     proxyFactory = await ProxyFactory.new()
     testToken = await TestToken.new("TEST", 18)
 
-    BatchExchange.setProvider(web3.currentProvider)
     exchange = await BatchExchange.deployed()
   })
 

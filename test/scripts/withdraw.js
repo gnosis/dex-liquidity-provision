@@ -2,9 +2,8 @@ const BN = require("bn.js")
 const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
-const Contract = require("@truffle/contract")
 
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
@@ -36,7 +35,6 @@ contract("Withdraw script", function (accounts) {
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
 
-    BatchExchange.setProvider(web3.currentProvider)
     exchange = await BatchExchange.deployed()
     globalPriceStorage["DAI-USDC"] = { price: 1.0 }
     globalPriceStorage["USDC-USDC"] = { price: 1.0 }

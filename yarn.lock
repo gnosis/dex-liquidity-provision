@@ -191,10 +191,10 @@
     "@ethersproject/constants" ">=5.0.0-beta.133"
     "@ethersproject/logger" ">=5.0.0-beta.137"
 
-"@gnosis.pm/dex-contracts@^0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.4.1.tgz#65ca96b2841e42f8de74220c79b04b6977af3230"
-  integrity sha512-DhMS2lrpBM4N0qC8pT3evzbOQt/DqfwsNbx/bBakPV4copOBLlfiFksNHLpr6G9MfVDOg69CCa6rQhzKcCvUJg==
+"@gnosis.pm/dex-contracts@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/dex-contracts/-/dex-contracts-0.4.2.tgz#a14dea8997c6dfbcd29ac7fa58c2d07d91eb7ab5"
+  integrity sha512-JjcCCEX1Q8bCKezq10xsGVz60eGJ+rmSfidja1vJMwfWKrys2Amld9TTjOFgPReY/B2DlU+odHf2WnNWR/vIpg==
   dependencies:
     bn.js "^5.1.2"
 
@@ -420,6 +420,17 @@
   integrity sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA==
   dependencies:
     defer-to-connect "^1.0.1"
+
+"@truffle/artifactor@^4.0.70":
+  version "4.0.70"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.70.tgz#b288cc0ad467de1676070bd436ccef54da08f89a"
+  integrity sha512-OOBlmwo7ZwcogV1JwUfzB1rqcIeM975gXzFcXvVKPIKoUi6cB85DPErXoI5WQ+N2WARLXJ0z1R/XDl3WF4XvGw==
+  dependencies:
+    "@truffle/contract-schema" "^3.2.3"
+    fs-extra "^8.1.0"
+    lodash.assign "^4.2.0"
+    lodash.merge "^4.6.2"
+    source-map-support "^0.5.19"
 
 "@truffle/blockchain-utils@^0.0.24":
   version "0.0.24"
@@ -4818,6 +4829,11 @@ locate-path@^5.0.0:
   integrity sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==
   dependencies:
     p-locate "^4.1.0"
+
+lodash.assign@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/lodash.assign/-/lodash.assign-4.2.0.tgz#0d99f3ccd7a6d261d19bdaeb9245005d285808e7"
+  integrity sha1-DZnzzNem0mHRm9rrkkUAXShYCOc=
 
 lodash.clonedeep@^4.5.0:
   version "4.5.0"

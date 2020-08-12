@@ -19,7 +19,8 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
-    "build": "yarn compile && yarn networks-inject",
+    "build": "yarn compile && yarn copy-artifacts && yarn networks-inject",
+    "copy-artifacts": "cp ./node_modules/@gnosis.pm/dex-contracts/build/contracts/BatchExchange.json ./build/contracts",
     "compile": "truffle compile",
     "testnet": "ganache-cli --gasLimit 8e6",
     "migrate": "truffle migrate",
@@ -29,6 +30,7 @@
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "devDependencies": {
+    "@truffle/artifactor": "^4.0.70",
     "eslint": "^7.6.0",
     "eslint-plugin-jsdoc": "^30.2.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
@@ -40,7 +42,7 @@
     "truffle-plugin-verify": "^0.3.11"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.4.1",
+    "@gnosis.pm/dex-contracts": "^0.4.2",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "v1.1.1-dev.2",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
