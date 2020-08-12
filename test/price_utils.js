@@ -1,16 +1,19 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 
 const { addCustomMintableTokenToExchange } = require("./test_utils")
-const { isPriceReasonable, checkNoProfitableOffer, amountUSDValue } = require("../scripts/utils/price_utils")
+const {
+  isPriceReasonable,
+  checkNoProfitableOffer,
+  amountUSDValue,
+  orderSellValueInUSD,
+} = require("../scripts/utils/price_utils")
 const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 
 contract("PriceOracle", function (accounts) {
   let exchange
   beforeEach(async function () {
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
+    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
   })
   describe("Price oracle sanity check", async () => {
@@ -20,7 +23,11 @@ contract("PriceOracle", function (accounts) {
       const price = 1000
       const baseTokenData = { symbol: "WETH", decimals: 18 }
       const quoteTokenData = { symbol: "DAI", decimals: 18 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const globalPriceStorage = {}
+      globalPriceStorage["WETH-DAI"] = { price: 250.0 }
+      assert(
+        await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage, globalPriceStorage)
+      )
     })
     it("checks that price is within reasonable range (10 ≤ price ≤ 1990) for tokens with different decimals", async () => {
       //the following test especially checks that the price p is not inverted (1/p) and is not below 1
@@ -28,7 +35,11 @@ contract("PriceOracle", function (accounts) {
       const price = 1000
       const baseTokenData = { symbol: "WETH", decimals: 18 }
       const quoteTokenData = { symbol: "USDC", decimals: 6 }
-      assert(await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage))
+      const globalPriceStorage = {}
+      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
+      assert(
+        await isPriceReasonable(baseTokenData, quoteTokenData, price, acceptedPriceDeviationInPercentage, globalPriceStorage)
+      )
     })
     it("checks that bracket traders does not sell unprofitable for tokens with the same decimals", async () => {
       const WETHtokenId = (await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])).id
@@ -57,8 +68,8 @@ contract("PriceOracle", function (accounts) {
 
       const globalPriceStorage = {}
       globalPriceStorage["DAI-USDC"] = { price: 1.0 }
-      globalPriceStorage["WETH-DAI"] = { price: 1 / 120.0 }
-      globalPriceStorage["WETH-USDC"] = { price: 1 / 120.0 }
+      globalPriceStorage["WETH-DAI"] = { price: 120.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 120.0 }
 
       const tokenInfo = fetchTokenInfoFromExchange(exchange, [DAItokenId, WETHtokenId])
       assert.equal(
@@ -168,6 +179,41 @@ contract("PriceOracle", function (accounts) {
       assert(XYZvalue.eq(new BN(250)))
       // Note that it should really be 3.5, but BN only works with integers.
       assert(GEMvalue.eq(new BN(3)))
+    })
+  })
+  describe("orderSellValueInUSD()", async () => {
+    it("Ensures function returns expected values", async () => {
+      const ETHtokenId = (await addCustomMintableTokenToExchange(exchange, "ETH", 18, accounts[0])).id
+      const DAItokenId = (await addCustomMintableTokenToExchange(exchange, "DAI", 18, accounts[0])).id
+      const GEMtokenId = (await addCustomMintableTokenToExchange(exchange, "GEM", 2, accounts[0])).id
+
+      const tokenInfo = fetchTokenInfoFromExchange(exchange, [ETHtokenId, DAItokenId, GEMtokenId])
+      const globalPriceStorage = {}
+      globalPriceStorage["ETH-USDC"] = { price: 250.0 }
+      globalPriceStorage["DAI-USDC"] = { price: 1.02 }
+      globalPriceStorage["GEM-USDC"] = { price: 0.99 }
+
+      const orders = [
+        {
+          sellTokenBalance: "1000000000000000000",
+          sellToken: ETHtokenId,
+          expectedValue: "250",
+        },
+        {
+          sellTokenBalance: "100000000000000000000",
+          sellToken: DAItokenId,
+          expectedValue: "102",
+        },
+        {
+          sellTokenBalance: "1000",
+          sellToken: GEMtokenId,
+          expectedValue: "9", // Note that orderSellValueInUSD returns truncated integers so 9.9 becomes 9!
+        },
+      ]
+      for (const order of orders) {
+        const value = await orderSellValueInUSD(order, tokenInfo, globalPriceStorage)
+        assert.equal(value.toString(10), order.expectedValue)
+      }
     })
   })
 })

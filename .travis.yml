@@ -12,6 +12,7 @@ script:
   - yarn lint
   - yarn pretty-check
   - yarn build
+  - yarn migrate
   - yarn test
 before_deploy:
   - export PACKAGE_VERSION=$(jq -r '.version' package.json)

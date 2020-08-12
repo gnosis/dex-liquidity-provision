@@ -1,6 +1,5 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
@@ -115,8 +114,7 @@ contract("Verification checks", function (accounts) {
     safeOwner = accounts[0]
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
+    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
 
     // TODO: this is needed as fetching the orderbook on an empty orderbook throws. This can be fixed in the future
@@ -385,16 +383,16 @@ contract("Verification checks", function (accounts) {
       const globalPriceStorage = {}
       globalPriceStorage["DAI-USDC"] = { price: 1.0 }
       globalPriceStorage["WETH-USDC"] = { price: 1 }
-      globalPriceStorage["DAI-WETH"] = { price: 100 } //<-- price is correct
+      globalPriceStorage["WETH-DAI"] = { price: 100 } //<-- price is correct
       await verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage)
       await verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage)
 
-      globalPriceStorage["DAI-WETH"] = { price: 121 } //<-- price is off, hence orders are profitable
+      globalPriceStorage["WETH-DAI"] = { price: 121 } //<-- price is off, hence orders are profitable
       await assert.rejects(verifyCorrectSetup([bracketAddresses[1]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[1].toLowerCase()} is profitable`,
       })
 
-      globalPriceStorage["DAI-WETH"] = { price: 70 } //<-- price is off, hence orders are profitable
+      globalPriceStorage["WETH-DAI"] = { price: 70 } //<-- price is off, hence orders are profitable
       await assert.rejects(verifyCorrectSetup([bracketAddresses[0]], masterSafe.address, null, null, [], globalPriceStorage), {
         message: `The order of the bracket ${bracketAddresses[0].toLowerCase()} is profitable`,
       })
