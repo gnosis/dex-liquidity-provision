@@ -421,10 +421,10 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@truffle/artifactor@^4.0.70":
-  version "4.0.70"
-  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.70.tgz#b288cc0ad467de1676070bd436ccef54da08f89a"
-  integrity sha512-OOBlmwo7ZwcogV1JwUfzB1rqcIeM975gXzFcXvVKPIKoUi6cB85DPErXoI5WQ+N2WARLXJ0z1R/XDl3WF4XvGw==
+"@truffle/artifactor@^4.0.72":
+  version "4.0.72"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.72.tgz#da02899e9158c61ca7eb8b202b8fa94a08a77eaa"
+  integrity sha512-mf6sOwi+LSb0H0WqK+6aYi9H2mkxEAK9TGx6kK5XcW2Jn8+8IrV/mJogk0C6+MK1yRDC5tBi06RjaEsGpsr3nA==
   dependencies:
     "@truffle/contract-schema" "^3.2.3"
     fs-extra "^8.1.0"
