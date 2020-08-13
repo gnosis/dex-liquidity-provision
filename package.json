@@ -1,7 +1,7 @@
 {
-  "name": "liquidity-provision-scripts",
+  "name": "@gnosis.pm/dex-liquidity-provision",
+  "version": "0.0.1",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
-  "private": true,
   "keywords": [
     "Gnosis Protocol",
     "liquidity",
@@ -30,11 +30,11 @@
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "devDependencies": {
-    "@truffle/artifactor": "^4.0.70",
+    "@truffle/artifactor": "^4.0.72",
     "eslint": "^7.6.0",
     "eslint-plugin-jsdoc": "^30.2.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.20.5",
+    "eslint-plugin-react": "^7.20.6",
     "ganache-cli": "6.10.1",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
@@ -59,7 +59,7 @@
     "eth-gas-reporter": "^0.2.17",
     "node-fetch": "^2.6.0",
     "synthetix-js": "=2.26.2",
-    "truffle": "^5.1.37",
+    "truffle": "^5.1.39",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1",
     "typescript-logging": "^1.0.0"
   }
