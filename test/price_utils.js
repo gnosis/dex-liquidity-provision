@@ -1,7 +1,7 @@
 const BN = require("bn.js")
 const assert = require("assert")
 
-const { addCustomMintableTokenToExchange } = require("./test_utils")
+const { addCustomMintableTokenToExchange } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const {
   isPriceReasonable,
   checkNoProfitableOffer,

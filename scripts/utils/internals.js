@@ -3,7 +3,7 @@
  * @typedef {import('../typedef.js').Transaction} Transaction
  */
 
-module.exports = function (web3 = web3, artifacts = artifacts) {
+module.exports = function (web3, artifacts) {
   const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
 
   const IProxy = artifacts.require("IProxy")

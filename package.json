@@ -60,6 +60,7 @@
     "node-fetch": "^2.6.0",
     "synthetix-js": "=2.26.2",
     "truffle": "^5.1.39",
-    "truffle-hdwallet-provider": "^1.0.0-web3one.1"
+    "truffle-hdwallet-provider": "^1.0.0-web3one.1",
+    "typescript-logging": "^1.0.0"
   }
 }
