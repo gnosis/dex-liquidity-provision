@@ -21,6 +21,8 @@ const argv = default_yargs
     demandOption: false,
   }).argv
 
+let debugTotalErrors = 0
+
 const findOwnedBracketsAmong = async function (proxies, debug = false) {
   const log = debug ? (...a) => console.log(...a) : () => {}
   const errorLog = debug ? (...a) => console.error(...a) : () => {}
@@ -52,13 +54,14 @@ const findOwnedBracketsAmong = async function (proxies, debug = false) {
       }
     } else {
       errorCount += 1
-      console.error(responses[i].reason)
+      errorLog(responses[i].reason)
     }
   }
 
-  if (errorCount !== 0) {
-    errorLog("Error count:", errorCount)
-  }
+  debugTotalErrors += errorCount
+  console.log(
+    `Number of errors encountered when determining the owners of deployed safes in a batch of size ${proxies.length}: ${errorCount}`
+  )
 
   return bracketAddresses
 }
@@ -105,11 +108,11 @@ module.exports = async (callback) => {
     const bracketAddresses = []
 
     // Infura can't handle too many bundled requests
-    let bundleSize = 500
+    let bundleSize = 100
     let bundleStart = 0
     // Intentionally inefficient to pound less harshly on Infura
     while (bundleStart < allDeployedGnosisProxies.length) {
-      sleep(10000)
+      await sleep(10000)
       bracketAddresses.push(
         ...(await findOwnedBracketsAmong(allDeployedGnosisProxies.slice(bundleStart, bundleStart + bundleSize)))
       )
@@ -147,17 +150,16 @@ module.exports = async (callback) => {
       }
     })
     tokensInvolved = uniqueItems(tokensInvolved)
-    console.log("Tokens used in some brackets:", tokensInvolved)
 
-    sleep(10000)
+    await sleep(10000)
     fetchTokenInfoFromExchange(exchange, tokensInvolved)
 
     const records = []
     const totalBrackets = bracketAddresses.length
-    let step = 0
+    //let step = 0
     for (const [i, bracketAddress] of Object.entries(bracketAddresses)) {
-      step++
-      console.log("Reading orders of bracket", step, "out of", totalBrackets)
+      //step++
+      //console.log("Reading orders of bracket", step, "out of", totalBrackets)
       const orders = bracketOrders[i]
       let tradingPair
       if (orders.length > 0) {
@@ -176,6 +178,12 @@ module.exports = async (callback) => {
     }
 
     await csvWriter.writeRecords(records)
+    console.log("Records written to file.")
+    console.log(`Number of owned brackets: ${totalBrackets}.`)
+    console.log(
+      `Number of errors when retrieving proxy owner info: ${debugTotalErrors} out of a total of ${allDeployedGnosisProxies.length}.`
+    )
+    console.log("Tokens traded by the brackets:", tokensInvolved)
 
     callback()
   } catch (error) {
