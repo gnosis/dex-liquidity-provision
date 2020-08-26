@@ -56,16 +56,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {boolean} whether owned is indeed owned only by master
    */
   const isOnlySafeOwner = async function (masterAddress, owned) {
-    let ownedSafeInstance;
+    let ownedSafeInstance
     try {
       ownedSafeInstance = typeof owned === "string" ? await getSafe(owned) : owned
     } catch (err) {
-      if (!err.message.includes('no code at address')) {
+      if (!err.message.includes("no code at address")) {
         // Only catch the issue indicating the safe is not deployed
-        throw err;
+        throw err
       }
-      console.warn('Safe seems to not be deployed. Assuming it was created correctly.');
-      return true;
+      console.warn("Safe seems to not be deployed. Assuming it was created correctly.")
+      return true
     }
     const ownerAddresses = await ownedSafeInstance.getOwners()
     return ownerAddresses.length === 1 && ownerAddresses[0].toLowerCase() === masterAddress.toLowerCase()
