@@ -22,12 +22,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
-  const FleetFactory = artifacts.require("FleetFactory")
+  const FleetFactory = artifacts.require("FleetFactoryDeterministic")
 
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
-  const hardcodedTokensByNetwork = require("./hardcoded_tokens")
+  const hardcodedTokensByNetwork = require("./hardcoded_tokens.json")
 
   /**
    * Returns an instance of the exchange contract
@@ -56,8 +56,18 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {boolean} whether owned is indeed owned only by master
    */
   const isOnlySafeOwner = async function (masterAddress, owned) {
-    const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
-    const ownerAddresses = await ownedSafe.getOwners()
+    let ownedSafeInstance;
+    try {
+      ownedSafeInstance = typeof owned === "string" ? await getSafe(owned) : owned
+    } catch (err) {
+      if (!err.message.includes('no code at address')) {
+        // Only catch the issue indicating the safe is not deployed
+        throw err;
+      }
+      console.warn('Safe seems to not be deployed. Assuming it was created correctly.');
+      return true;
+    }
+    const ownerAddresses = await ownedSafeInstance.getOwners()
     return ownerAddresses.length === 1 && ownerAddresses[0].toLowerCase() === masterAddress.toLowerCase()
   }
 
@@ -288,7 +298,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
     const transactions = await Promise.all([].concat(...buyAndSellOrderPromises))
     log("Transaction bundle size", transactions.length)
-    return buildBundledTransaction(transactions)
+    return transactions
   }
 
   const checkSufficiencyOfBalance = async function (token, owner, amount) {
@@ -386,7 +396,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     let transactions = []
     for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
-    return buildBundledTransaction(transactions)
+    return transactions
   }
 
   /**
@@ -506,9 +516,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {Address[]} List of bracket (Safe) addresses
    **/
   const getDeployedBrackets = async function (masterSafe) {
-    const FleetFactory = artifacts.require("FleetFactory")
+    const FleetFactory = artifacts.require("FleetFactoryDeterministic")
     const fleetFactory = await FleetFactory.deployed()
-    const events = await fleetFactory.getPastEvents("FleetDeployed", {
+    const events = await fleetFactory.getPastEvents("FleetFactoryDeterministic", {
       filter: { owner: masterSafe },
       fromBlock: 0,
       toBlock: "latest",
