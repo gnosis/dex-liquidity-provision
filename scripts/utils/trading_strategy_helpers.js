@@ -22,7 +22,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
-  const FleetFactory = artifacts.require("FleetFactoryDeterministic")
+  const FleetFactory = artifacts.require("FleetFactory")
 
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
