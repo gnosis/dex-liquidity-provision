@@ -30,6 +30,7 @@ contract FleetFactoryDeterministic {
         )
       );
       fleet[i] = proxy;
+      require(fleet[i] != address(0), "fleet deployment failed");
       GnosisSafe safe = GnosisSafe(proxy);
       // safe is set up to have a single owner
       safe.setup(
