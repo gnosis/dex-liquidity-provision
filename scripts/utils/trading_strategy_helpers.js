@@ -62,6 +62,20 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
+   * Checks that the address used as the first argument is the only owner of all the Safes
+   * specified in the given array.
+   *
+   * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
+   * @param {(SmartContract|Address)[]} fleet array of Safes that might be owned by master
+   * @returns {boolean} whether the fleet is indeed owned only by master
+   */
+  const isOnlyFleetOwner = async function (masterAddress, fleet) {
+    return (await Promise.all(uniqueItems(fleet).map((bracketAddress) => isOnlySafeOwner(masterAddress, bracketAddress)))).every(
+      (isOnlyOwner) => isOnlyOwner
+    )
+  }
+
+  /**
    * Checks that a bracket has not yet made any orders
    *
    * @param {Address} bracket for trader account
@@ -362,10 +376,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     const transactionLists = await Promise.all(
       depositList.map(async (deposit) => {
-        assert(
-          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-          "All depositors must be owned only by the master Safe"
-        )
         const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
         const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
         log(
@@ -406,10 +416,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     const transactions = await Promise.all(
       depositList.map(async (deposit) => {
-        assert(
-          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-          "All depositors must be owned only by the master Safe"
-        )
         const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
         const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
         log(`Safe ${deposit.bracketAddress} depositing ${unitAmount} ${tokenInfo.symbol} into BatchExchange`)
@@ -771,6 +777,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     getSafe,
     hasExistingOrders,
     isOnlySafeOwner,
+    isOnlyFleetOwner,
     tokenDetail,
   }
 }
