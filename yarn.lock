@@ -422,11 +422,11 @@
     defer-to-connect "^1.0.1"
 
 "@truffle/artifactor@^4.0.72":
-  version "4.0.74"
-  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.74.tgz#cafb83ec1acc8a02d80e9f50dbd424208e496b5f"
-  integrity sha512-kYZ3NIoD4PnfZL1zDE5dO71rkRJqF/EPC9o1d2P0UFnmnfbm0PeYllspuwb91OQE6nLtM/Kx7xznUjh9nQSY+w==
+  version "4.0.75"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.75.tgz#840d99880abd74c2c623a532625bb2b126acf9d4"
+  integrity sha512-4jF6zHMsrgvElbX9QJjIjewfE8wgxj0i5Ie0/mtWDXJxZ5XJhhoK0XzCf2o/QP4DL/ookrGkH2I1AutSjEKaWg==
   dependencies:
-    "@truffle/contract-schema" "^3.2.3"
+    "@truffle/contract-schema" "^3.2.4"
     fs-extra "^8.1.0"
     lodash.assign "^4.2.0"
     lodash.merge "^4.6.2"
@@ -457,10 +457,10 @@
     utf8 "^3.0.0"
     web3-utils "1.2.1"
 
-"@truffle/contract-schema@^3.2.3":
-  version "3.2.3"
-  resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.2.3.tgz#f7d940c0187918083fe5a605ee81ac17efe287a8"
-  integrity sha512-dnR5wtqCBKVfJDX5g+sCUiDF1WDucpxoWsr6ZOwq9JqgyS4Gz7iJi1wMegMmcDctOykoKjsju6iAOi+HObrkfg==
+"@truffle/contract-schema@^3.2.3", "@truffle/contract-schema@^3.2.4":
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.2.4.tgz#4e1227cfdecd31919f771c05fc845b1da4d1332d"
+  integrity sha512-CkacOyA7WE71nOJ7vHjlY3gqyeM++SplVJcTNc91BaLTh7TNhMa8Qr6pyNNiQJCZ8V7HNiMAlNw7wqQKNTpyBQ==
   dependencies:
     ajv "^6.10.0"
     crypto-js "^3.1.9-1"
