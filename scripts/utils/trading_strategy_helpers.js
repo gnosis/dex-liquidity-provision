@@ -199,7 +199,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of order placements on BatchExchange
+   * Returns a collection of order placements on BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
@@ -210,9 +210,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} highestLimit upper price bound
    * @param {boolean} [debug=false] prints log statements when true
    * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
-   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @returns {Transaction} all the relevant transactions to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildOrders = async function (
+  const transactionsForOrders = async function (
     masterAddress,
     bracketAddresses,
     baseTokenId,
@@ -288,7 +288,34 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
     const transactions = await Promise.all([].concat(...buyAndSellOrderPromises))
     log("Transaction bundle size", transactions.length)
-    return buildBundledTransaction(transactions)
+    return transactions
+  }
+
+  /**
+   * Batches together a collection of order placements on BatchExchange
+   * on behalf of a fleet of brackets owned by a single "Master Safe"
+   *
+   * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
+   * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
+   * @param {number} baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
+   * @param {number} quoteTokenId ID of "Quote Token" for which trade with base token (i.e. DAI)
+   * @param {number} lowestLimit lower price bound
+   * @param {number} highestLimit upper price bound
+   * @param {boolean} [debug=false] prints log statements when true
+   * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
+   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   */
+  const buildOrders = async function (
+    masterAddress,
+    bracketAddresses,
+    baseTokenId,
+    quoteTokenId,
+    lowestLimit,
+    highestLimit,
+    debug = false,
+    expiry = DEFAULT_ORDER_EXPIRY
+  ) {
+    return buildBundledTransaction(await transactionsForOrders(...arguments, debug, expiry))
   }
 
   const checkSufficiencyOfBalance = async function (token, owner, amount) {
@@ -345,16 +372,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of transfer-related transaction information. Particularily,
+   * Returns a collection of transfer-related transaction information. Particularily,
    * the resulting transaction is that of transfering all specified funds from master through its brackets
    * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
    *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   * @returns {Transaction} all the relevant transactions that need to be bundled for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
+  const transactionsForTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
@@ -386,7 +413,21 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     let transactions = []
     for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
-    return buildBundledTransaction(transactions)
+    return transactions
+  }
+
+  /**
+   * Batches together a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   */
+  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
+    return buildBundledTransaction(await transactionsForTransferApproveDepositFromList(...arguments, debug))
   }
 
   /**
@@ -760,6 +801,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildWithdrawAndTransferFundsToMaster,
     buildWithdrawClaim,
     buildWithdrawRequest,
+    transactionsForOrders,
+    transactionsForTransferApproveDepositFromList,
     checkSufficiencyOfBalance,
     deployFleetOfSafes,
     fetchTokenInfoAtAddresses,
