@@ -12,10 +12,15 @@
     }
   },
   "FleetFactoryDeterministic": {
+    "1": {
+      "links": {},
+      "address": "0xb1e1ae60607f24a6647d0339050cb69c312f43ee",
+      "transactionHash": "0xd837747066c20a7162cdd72d950ddba6e4f3e6f22b2ffce9fe97a0404482a98c"
+    },
     "4": {
       "links": {},
-      "address": "0xa8ECf90603AD40a1bB009FB58540d5A9A6db7d5B",
-      "transactionHash": "0xa7dad010d6dff58d0bea66c6e67518b9d95d7d7004686ba898f641cb613f78d2"
+      "address": "0xf02419728f01566b3e9173c6b5c652670105dd96",
+      "transactionHash": "0xeb2e70e947891a519a8a10d1d68ac2d00b99e87be8d714bad9c06ab8fa4a2864"
     }
   },
   "GnosisSafe": {
