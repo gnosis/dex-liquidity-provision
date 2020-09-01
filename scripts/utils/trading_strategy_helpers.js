@@ -22,11 +22,13 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
-  const FleetFactory = artifacts.require("FleetFactoryDeterministic")
+  const FleetFactory = artifacts.require("FleetFactory")
+  const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
+  const fleetFactoryDeterministicPromise = FleetFactoryDeterministic.deployed()
   const hardcodedTokensByNetwork = require("./hardcoded_tokens.json")
 
   /**
@@ -206,6 +208,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
     return transcript.logs[0].args.fleet
+  }
+
+  const deployfleetOfSafesWithNonce = async function (masterAddress, fleetSize, nonce) {
+    const deployFleetOfSafes = await fleetFactoryDeterministicPromise
   }
 
   /**
@@ -516,9 +522,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {Address[]} List of bracket (Safe) addresses
    **/
   const getDeployedBrackets = async function (masterSafe) {
-    const FleetFactory = artifacts.require("FleetFactoryDeterministic")
+    const FleetFactory = artifacts.require("FleetFactory")
     const fleetFactory = await FleetFactory.deployed()
-    const events = await fleetFactory.getPastEvents("FleetFactoryDeterministic", {
+    const events = await fleetFactory.getPastEvents("FleetFactory", {
       filter: { owner: masterSafe },
       fromBlock: 0,
       toBlock: "latest",
@@ -526,6 +532,26 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
     return [].concat(...bracketsAsObjects)
   }
+
+  /**
+   * Fetches the brackets deployed with the deterministic fleet factory by a given masterSafe
+   * from the blockchaiin via events.
+   * 
+   * @param {Address} masterSafe 
+   * @returns {Address[]} List of bracket (Safe) addresses
+   */
+  const getDeployedDeterministicBrackets = async function (masterSafe) {
+    const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
+    const fleetFactoryDeterministic = await FleetFactoryDeterministic.deployed()
+    const events = await fleetFactoryDeterministic.getPastEvents("FleetFactoryDeterministic", {
+      filter: { owner: masterSafe },
+      fromBlock: 0,
+      toBlock: "latest",
+    })
+    const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
+    return [].concat(...bracketsAsObjects)
+  }
+
   /**
    * Batches together a collection of transfer-related transaction information.
    * Particularly, the resulting transaction is that of transfering all sufficient funds from master
