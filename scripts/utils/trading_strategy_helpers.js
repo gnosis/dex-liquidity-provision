@@ -199,7 +199,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Returns a collection of order placements on BatchExchange
+   * Returns a list of order placement transaction data for BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
@@ -210,7 +210,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} highestLimit upper price bound
    * @param {boolean} [debug=false] prints log statements when true
    * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
-   * @returns {Transaction} all the relevant transactions to be used when submitting to the Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the relevant transactions to be used when submitting to the Gnosis Safe Multi-Sig
    */
   const transactionsForOrders = async function (
     masterAddress,
@@ -372,14 +372,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Returns a collection of transfer-related transaction information. Particularily,
+   * Returns a list of transfer-related transaction information. Particularly,
    * the resulting transaction is that of transfering all specified funds from master through its brackets
    * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
    *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Transaction} all the relevant transactions that need to be bundled for submission to a Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the relevant transactions required to be bundled for submission to a Gnosis Safe Multi-Sig
    */
   const transactionsForTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
