@@ -1,8 +1,7 @@
 const fs = require("fs").promises
-const assert = require("assert")
 
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
-const { buildDepositFromList, isOnlyFleetOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { buildDepositFromList, assertIsOnlyFleetOwner } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
 const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
@@ -32,12 +31,9 @@ module.exports = async (callback) => {
     console.log("Preparing transaction data...")
     const transaction = await buildDepositFromList(masterSafe.address, deposits, true)
 
-    assert(
-      await isOnlyFleetOwner(
-        masterSafe.address,
-        deposits.map(({ bracketAddress }) => bracketAddress)
-      ),
-      "All depositors must be owned only by the master Safe"
+    await assertIsOnlyFleetOwner(
+      masterSafe.address,
+      deposits.map(({ bracketAddress }) => bracketAddress)
     )
 
     if (!argv.verify) {

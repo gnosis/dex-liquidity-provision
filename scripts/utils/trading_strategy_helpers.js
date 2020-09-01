@@ -62,6 +62,17 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
+   * Fail if the address used as the first argument is not the only owner of all the Safes
+   * specified in the given array.
+   *
+   * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
+   * @param {(SmartContract|Address)[]} fleet array of Safes that might be owned by master
+   */
+  const assertIsOnlyFleetOwner = async function (masterAddress, fleet) {
+    assert(await isOnlyFleetOwner(masterAddress, fleet), "All depositors must be owned only by the master Safe")
+  }
+
+  /**
    * Checks that the address used as the first argument is the only owner of all the Safes
    * specified in the given array.
    *
@@ -756,6 +767,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   return {
     assertNoAllowances,
+    assertIsOnlyFleetOwner,
     buildBracketTransactionForTransferApproveDeposit,
     buildDepositFromList,
     buildOrders,
