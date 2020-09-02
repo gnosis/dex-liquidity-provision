@@ -28,7 +28,11 @@ module.exports = function (web3) {
     const byteCode = `0x${hexCreationCode}${hexSafeAddrEncoded}`
 
     // calculate the address that will be used for this index
-    const safeAddress = generateAddress2(toBuffer(proxyFactory.address), toBuffer("0x"+uint256Encode(salt)), toBuffer(byteCode))
+    const safeAddress = generateAddress2(
+      toBuffer(proxyFactory.address),
+      toBuffer("0x" + uint256Encode(salt)),
+      toBuffer(byteCode)
+    )
     return bufferToHex(safeAddress)
   }
 
