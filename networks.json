@@ -12,6 +12,11 @@
     }
   },
   "FleetFactoryDeterministic": {
+    "1": {
+      "links": {},
+      "address": "0xb1e1ae60607f24a6647d0339050cb69c312f43ee",
+      "transactionHash": "0xd837747066c20a7162cdd72d950ddba6e4f3e6f22b2ffce9fe97a0404482a98c"
+    },
     "4": {
       "links": {},
       "address": "0xa8ECf90603AD40a1bB009FB58540d5A9A6db7d5B",
