@@ -41,12 +41,7 @@ contract("FleetFactoryDeterministic", function (accounts) {
           gnosisSafeMasterCopy.address,
           nonce
         )
-        const fleetCalculated = await calcSafeAddresses(
-          fleetFactory,
-          numberOfSafes,
-          gnosisSafeMasterCopy.address,
-          nonce
-        )
+        const fleetCalculated = await calcSafeAddresses(fleetFactory, numberOfSafes, gnosisSafeMasterCopy.address, nonce)
         // the last event lists all created proxy, and is the only event decoded by Truffle
         assert.equal(transcript.receipt.rawLogs.length, numberOfSafes + 1, "More events than expected")
         assert.equal(transcript.logs.length, 1, "More events than expected")
