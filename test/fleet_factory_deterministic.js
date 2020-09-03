@@ -7,7 +7,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
 const FleetFactory = artifacts.require("FleetFactoryDeterministic")
 const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
-const { calcSafeAddresses } = require("../scripts/utils/calculateFleetAddresses")(web3)
+const { calcSafeAddresses } = require("../scripts/utils/calculate-fleet-addresses")(web3)
 
 contract("FleetFactoryDeterministic", function (accounts) {
   let gnosisSafeMasterCopy
