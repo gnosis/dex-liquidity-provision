@@ -14,13 +14,13 @@
   "FleetFactoryDeterministic": {
     "1": {
       "links": {},
-      "address": "0xb1e1ae60607f24a6647d0339050cb69c312f43ee",
-      "transactionHash": "0xd837747066c20a7162cdd72d950ddba6e4f3e6f22b2ffce9fe97a0404482a98c"
+      "address": "0xee2b6935986B32F937BedED7f056CDDa1144132B",
+      "transactionHash": "0xf55ac01a94d64fa6746ce0dfc1201c62924d8dacba2c5fc7b6dbdefaa860c417"
     },
     "4": {
       "links": {},
-      "address": "0xa8ECf90603AD40a1bB009FB58540d5A9A6db7d5B",
-      "transactionHash": "0xa7dad010d6dff58d0bea66c6e67518b9d95d7d7004686ba898f641cb613f78d2"
+      "address": "0x6b7aaDEE3F3060c52F1c5Afcfc2F4d25554af3e5",
+      "transactionHash": "0x2d5d771058550950b8675fae4e2f09f2e39d0056bd9a831a597ac7b4a72fbed9"
     }
   },
   "GnosisSafe": {
