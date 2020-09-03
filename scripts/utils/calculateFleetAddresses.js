@@ -9,7 +9,7 @@ module.exports = function (web3) {
     return `${"0".repeat(64 - bnHex.length)}${bnHex}`
   }
 
-  const generateSafeAddress = (deployedByteCode, masterSafeAddress, proxyFactory, saltNonce, safeIndex) => {
+  const generateSafeAddress = (deployedByteCode, gnosisSafeTemplateAddress, proxyFactory, saltNonce, safeIndex) => {
     // Encode salt and safe index as padded uint256, the hashed result will be one part of the salt
     // used in the final address calculation
     const hexSaltNonceEncoded = uint256Encode(saltNonce)
@@ -24,8 +24,8 @@ module.exports = function (web3) {
 
     // bytecode is "creation code" + left padded uint256 encoded address for the master safe template
     const hexCreationCode = deployedByteCode.slice(2)
-    const hexSafeAddrEncoded = uint256Encode(masterSafeAddress)
-    const byteCode = `0x${hexCreationCode}${hexSafeAddrEncoded}`
+    const hexSafeTemplateAddrEncoded = uint256Encode(gnosisSafeTemplateAddress)
+    const byteCode = `0x${hexCreationCode}${hexSafeTemplateAddrEncoded}`
 
     // calculate the address that will be used for this index
     const safeAddress = generateAddress2(
@@ -36,15 +36,16 @@ module.exports = function (web3) {
     return bufferToHex(safeAddress)
   }
 
-  const calcSafeAddresses = async (GnosisSafeProxyFactoryArtifact, fleetFactory, bracketCount, masterSafeAddress, saltNonce) => {
-    const proxyFactory = await GnosisSafeProxyFactoryArtifact.at(await fleetFactory.proxyFactory())
+  const calcSafeAddresses = async (fleetFactoryDeterministic, bracketCount, gnosisSafeTemplateAddress, saltNonce) => {
+    const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+    const proxyFactory = await GnosisSafeProxyFactory.at(await fleetFactoryDeterministic.proxyFactory())
 
     // Retrieve the "creation code" of the proxy factory - needed in order to calculate the create2 addresses
     const deployedBytecode = await proxyFactory.proxyCreationCode()
 
     const safeAddresses = []
     for (let bracketIndex = 0; bracketIndex < bracketCount; bracketIndex++) {
-      const safeAddress = generateSafeAddress(deployedBytecode, masterSafeAddress, proxyFactory, saltNonce, bracketIndex)
+      const safeAddress = generateSafeAddress(deployedBytecode, gnosisSafeTemplateAddress, proxyFactory, saltNonce, bracketIndex)
       safeAddresses.push(safeAddress)
     }
     return safeAddresses
