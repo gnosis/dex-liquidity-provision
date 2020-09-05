@@ -61,7 +61,7 @@ contract("FleetFactoryDeterministic", function (accounts) {
 
     it("are owned by master", async () => {
       const numberOfSafes = 13
-      const randomInt = Math.round(Math.random() * 1e12)
+      const randomInt = 12345
       const transcript = await fleetFactory.deployFleetWithNonce(
         master.address,
         numberOfSafes,
@@ -81,7 +81,7 @@ contract("FleetFactoryDeterministic", function (accounts) {
     it("have the right template", async () => {
       const numberOfSafes = 13
       const templateAddress = gnosisSafeMasterCopy.address
-      const randomInt = Math.round(Math.random() * 1e12)
+      const randomInt = 12345
       const transcript = await fleetFactory.deployFleetWithNonce(
         master.address,
         numberOfSafes,
