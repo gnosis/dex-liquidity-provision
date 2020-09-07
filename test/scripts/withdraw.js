@@ -343,6 +343,7 @@ contract("Withdraw script", function (accounts) {
       const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
+        noBalanceCheck: true,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
       const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)

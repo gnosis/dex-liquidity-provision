@@ -3,7 +3,12 @@ const { getSafe } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { defaultWithdrawYargs, prepareWithdrawRequest } = require("./wrapper/withdraw")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
 
-const argv = defaultWithdrawYargs.argv
+const argv = defaultWithdrawYargs.option("noBalanceCheck", {
+  type: "boolean",
+  default: false,
+  describe:
+    "Request withdraw for tokens without checking if the token has no balance. Useful to account for trading that might be happening during the withdraw request",
+}).argv
 
 module.exports = async (callback) => {
   try {
