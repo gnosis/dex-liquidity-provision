@@ -1,5 +1,5 @@
 const BN = require("bn.js")
-const { getWithdrawableAmount, decodeOrders } = require("@gnosis.pm/dex-contracts")
+const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
 
 const {
   getExchange,
@@ -9,7 +9,6 @@ const {
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
 const { fromErc20Units } = require("./utils/printing_tools")
-const { uniqueItems } = require("./utils/js_helpers")
 
 const noMasterSafeAndBracketsTogether = function (argv) {
   if (!argv.masterSafe === !argv.brackets) {

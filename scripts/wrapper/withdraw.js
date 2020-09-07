@@ -97,11 +97,15 @@ module.exports = function (web3, artifacts) {
     const tokenInfoPromises = fetchTokenInfoAtAddresses(tradedAddressesses)
     log("Retrieving amount of tokens to withdraw.")
     await Promise.all(
-      bracketsWithTradedTokenAddresses.map(async ({ bracketAddress, tokenAddresses }) => {
-        await Promise.all(
+      bracketsWithTradedTokenAddresses.map(({ bracketAddress, tokenAddresses }) =>
+        Promise.all(
           tokenAddresses.map(async (tokenAddress) => {
             const tokenData = await tokenInfoPromises[tokenAddress]
             const amount = await amountFunction(bracketAddress, tokenData, await exchangePromise)
+            // skip costly network request if amount is zero
+            if (amount === "0") {
+              return
+            }
             const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
 
             if (usdValue.gte(ONE)) {
@@ -115,7 +119,7 @@ module.exports = function (web3, artifacts) {
             }
           })
         )
-      })
+      )
     )
 
     return {
@@ -129,8 +133,21 @@ module.exports = function (web3, artifacts) {
 
     assertGoodArguments(argv)
 
-    const amountFunction = function () {
-      return MAXUINT256.toString()
+    let amountFunction
+    if (argv.noBalanceCheck) {
+      amountFunction = function () {
+        return MAXUINT256.toString()
+      }
+    } else {
+      amountFunction = async function (bracketAddress, tokenData, exchange) {
+        const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
+        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
+        if (usdValue.gte(ONE)) {
+          return MAXUINT256.toString()
+        } else {
+          return "0"
+        }
+      }
     }
     const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
       amountFunction,

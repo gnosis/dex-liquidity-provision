@@ -248,6 +248,7 @@ contract("Withdraw script", function (accounts) {
         exchange,
         accounts
       )
+      await waitForNSeconds(301)
 
       const argv = {
         masterSafe: masterSafe.address,
@@ -260,14 +261,25 @@ contract("Withdraw script", function (accounts) {
 
       const transaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, transaction)
+      await waitForNSeconds(301)
 
-      for (const bracketAddress of bracketAddresses) {
-        for (const tokenAddress of [quoteToken.address, baseToken.address]) {
-          const requestedWithdrawal = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0].toString()
-          assert.notEqual(requestedWithdrawal, "0", "Withdrawal was not requested")
-          assert.equal(requestedWithdrawal, bnMaxUint256.toString(), "Bad amount requested to withdraw")
-        }
-      }
+      const requestedWithdrawalQuote = (await exchange.getPendingWithdraw(bracketAddresses[0], quoteToken.address))[0].toString()
+      assert.notEqual(requestedWithdrawalQuote, "0", "Withdrawal was not requested")
+      assert.equal(requestedWithdrawalQuote, bnMaxUint256.toString(), "Bad amount requested to withdraw")
+
+      const notRequestedWithdrawalQuote = (
+        await exchange.getPendingWithdraw(bracketAddresses[1], quoteToken.address)
+      )[0].toString()
+      assert.equal(notRequestedWithdrawalQuote, "0", "Zero quote withdrawal was requested")
+
+      const requestedWithdrawalBase = (await exchange.getPendingWithdraw(bracketAddresses[1], baseToken.address))[0].toString()
+      assert.notEqual(requestedWithdrawalBase, "0", "Withdrawal was not requested")
+      assert.equal(requestedWithdrawalBase, bnMaxUint256.toString(), "Bad amount requested to withdraw")
+
+      const notRequestedWithdrawalBase = (
+        await exchange.getPendingWithdraw(bracketAddresses[0], baseToken.address)
+      )[0].toString()
+      assert.equal(notRequestedWithdrawalBase, "0", "Zero base withdrawal was requested")
     })
     it("requests withdrawals with addresses", async () => {
       const amounts = [
@@ -386,6 +398,7 @@ contract("Withdraw script", function (accounts) {
       const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
+        noBalanceCheck: true,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
       const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
