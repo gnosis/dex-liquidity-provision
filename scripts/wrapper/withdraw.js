@@ -70,20 +70,26 @@ module.exports = function (web3, artifacts) {
         tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
       )
       withdrawals = []
-      for (const [index, amount] of maxWithdrawableAmounts.entries()) {
-        const token = tokenBracketPairs[index][1]
-        const bracketAddress = tokenBracketPairs[index][0]
-        const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
-        if (usdValue.gte(ONE)) {
-          withdrawals.push({
-            bracketAddress,
-            tokenAddress: token.address,
-            amount,
-          })
-        } else {
-          log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
-        }
-      }
+      await Promise.all(
+        Array.from(maxWithdrawableAmounts.entries()).map(async ([index, amount]) => {
+          // skip costly network request if amount is zero
+          if (amount === "0") {
+            return
+          }
+          const token = tokenBracketPairs[index][1]
+          const bracketAddress = tokenBracketPairs[index][0]
+          const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
+          if (usdValue.gte(ONE)) {
+            withdrawals.push({
+              bracketAddress,
+              tokenAddress: token.address,
+              amount,
+            })
+          } else {
+            log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
+          }
+        })
+      )
     }
 
     return {
@@ -97,8 +103,21 @@ module.exports = function (web3, artifacts) {
 
     assertGoodArguments(argv)
 
-    const amountFunction = function () {
-      return MAXUINT256.toString()
+    let amountFunction
+    if (argv.noBalanceCheck) {
+      amountFunction = function () {
+        return MAXUINT256.toString()
+      }
+    } else {
+      amountFunction = async function (bracketAddress, tokenData, exchange) {
+        const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
+        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
+        if (usdValue.gte(ONE)) {
+          return MAXUINT256.toString()
+        } else {
+          return "0"
+        }
+      }
     }
     const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
       amountFunction,
