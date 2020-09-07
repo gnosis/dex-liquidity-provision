@@ -1,4 +1,5 @@
 const BN = require("bn.js")
+const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 
 /**
  * @typedef {import('../typedef.js').Address} Address
@@ -70,6 +71,32 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    */
   const assertIsOnlyFleetOwner = async function (masterAddress, fleet) {
     assert(await isOnlyFleetOwner(masterAddress, fleet), "All depositors must be owned only by the master Safe")
+  }
+
+  /**
+   * Returns the tokens traded by the brackets.
+   *
+   * @param {Address[]} bracketAddresses breackets for which to retrieve the traded tokens
+   * @returns {Promise<object>[]} A vector of objects containing the relevant bracket, its
+   * traded token ids, and a promise with the relevant token info.
+   */
+  const retrieveTradedTokensPerBracket = async function (bracketAddresses) {
+    const exchange = await exchangePromise
+
+    return Promise.all(
+      bracketAddresses.map(async (bracketAddress) => {
+        const orders = decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
+        let tradedTokenIds = []
+        for (const order of orders) {
+          tradedTokenIds.push(order.buyToken, order.sellToken)
+        }
+        tradedTokenIds = uniqueItems(tradedTokenIds)
+        return {
+          bracketAddress,
+          tokenIds: tradedTokenIds,
+        }
+      })
+    )
   }
 
   /**
@@ -833,6 +860,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     hasExistingOrders,
     isOnlySafeOwner,
     isOnlyFleetOwner,
+    retrieveTradedTokensPerBracket,
     tokenDetail,
   }
 }
