@@ -1,13 +1,14 @@
 const BN = require("bn.js")
-const { getWithdrawableAmount, decodeOrders } = require("@gnosis.pm/dex-contracts")
+const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
 
-const { getExchange, getDeployedBrackets, fetchTokenInfoFromExchange } = require("./utils/trading_strategy_helpers")(
-  web3,
-  artifacts
-)
+const {
+  getExchange,
+  getDeployedBrackets,
+  fetchTokenInfoFromExchange,
+  retrieveTradedTokensPerBracket,
+} = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
 const { fromErc20Units } = require("./utils/printing_tools")
-const { uniqueItems } = require("./utils/js_helpers")
 
 const noMasterSafeAndBracketsTogether = function (argv) {
   if (!argv.masterSafe === !argv.brackets) {
@@ -61,25 +62,17 @@ module.exports = async (callback) => {
     }
     const exchange = await exchangePromise
 
-    const detailedBrackets = await Promise.all(
-      bracketAddresses.map(async (bracketAddress) => {
-        const orders = decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
-        let tradedTokenIds = []
-        for (const order of orders) {
-          tradedTokenIds.push(order.buyToken, order.sellToken)
-        }
-        tradedTokenIds = uniqueItems(tradedTokenIds)
-        const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, tradedTokenIds)
-        return {
-          bracketAddress,
-          tokenIds: tradedTokenIds,
-          tokenInfoPromises,
-        }
-      })
-    )
+    const detailedBrackets = await retrieveTradedTokensPerBracket(bracketAddresses)
+
+    const tradedTokenIds = []
+    for (const { tokenIds } of detailedBrackets) {
+      tradedTokenIds.push(...tokenIds)
+    }
+    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, tradedTokenIds)
+
     console.log("Recovering token balances per bracket...")
     const tokenBalancesPerUser = await Promise.all(
-      detailedBrackets.map(async ({ bracketAddress, tokenIds, tokenInfoPromises }) => {
+      detailedBrackets.map(async ({ bracketAddress, tokenIds }) => {
         const tokenBalances = []
         for (const tokenId of tokenIds) {
           const tokenData = await tokenInfoPromises[tokenId]

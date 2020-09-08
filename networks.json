@@ -11,6 +11,18 @@
       "transactionHash": "0xf8256a6b6c92a95f9342d0dbb8afee83d1dd6bec8510278893f568ae0114ee3f"
     }
   },
+  "FleetFactoryDeterministic": {
+    "1": {
+      "links": {},
+      "address": "0xee2b6935986B32F937BedED7f056CDDa1144132B",
+      "transactionHash": "0xf55ac01a94d64fa6746ce0dfc1201c62924d8dacba2c5fc7b6dbdefaa860c417"
+    },
+    "4": {
+      "links": {},
+      "address": "0x6b7aaDEE3F3060c52F1c5Afcfc2F4d25554af3e5",
+      "transactionHash": "0x2d5d771058550950b8675fae4e2f09f2e39d0056bd9a831a597ac7b4a72fbed9"
+    }
+  },
   "GnosisSafe": {
     "1": {
       "links": {},
@@ -40,8 +52,8 @@
     },
     "4": {
       "links": {},
-      "address": "0xca39A48b3b0C8284bfF8f2299539e2BbaBE714de",
-      "transactionHash": "0x3120664b4b966dc5fa1e13016856d6ef6d39819ed53706a6abee3665f488017b"
+      "address": "0xAd0B040edF19bB81BDb2f14B26c7ba5F7ec263C2",
+      "transactionHash": "0x34f548082b798f50d41ddd036c7fdf15cafda442c7f55947a1a46db8f5632924"
     }
   },
   "MultiSend": {

@@ -73,7 +73,7 @@ module.exports = function (web3, artifacts) {
       depositAmountbaseToken
     )
     await execTransaction(masterSafe, safeOwner, batchTransaction)
-    return { bracketAddresses: bracketAddresses, quoteToken: quoteToken, baseToken: baseToken }
+    return { bracketAddresses, quoteToken, baseToken, masterSafe }
   }
 
   const prepareTokenRegistration = async function (account, exchange) {

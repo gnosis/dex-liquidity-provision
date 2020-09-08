@@ -1,4 +1,5 @@
 const BN = require("bn.js")
+const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 
 /**
  * @typedef {import('../typedef.js').Address} Address
@@ -59,6 +60,57 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const ownedSafe = typeof owned === "string" ? await getSafe(owned) : owned
     const ownerAddresses = await ownedSafe.getOwners()
     return ownerAddresses.length === 1 && ownerAddresses[0].toLowerCase() === masterAddress.toLowerCase()
+  }
+
+  /**
+   * Fail if the address used as the first argument is not the only owner of all the Safes
+   * specified in the given array.
+   *
+   * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
+   * @param {(SmartContract|Address)[]} fleet array of Safes that might be owned by master
+   */
+  const assertIsOnlyFleetOwner = async function (masterAddress, fleet) {
+    assert(await isOnlyFleetOwner(masterAddress, fleet), "All depositors must be owned only by the master Safe")
+  }
+
+  /**
+   * Returns the tokens traded by the brackets.
+   *
+   * @param {Address[]} bracketAddresses breackets for which to retrieve the traded tokens
+   * @returns {Promise<object>[]} A vector of objects containing the relevant bracket, its
+   * traded token ids, and a promise with the relevant token info.
+   */
+  const retrieveTradedTokensPerBracket = async function (bracketAddresses) {
+    const exchange = await exchangePromise
+
+    return Promise.all(
+      bracketAddresses.map(async (bracketAddress) => {
+        const orders = decodeOrders(await exchange.getEncodedUserOrders.call(bracketAddress))
+        let tradedTokenIds = []
+        for (const order of orders) {
+          tradedTokenIds.push(order.buyToken, order.sellToken)
+        }
+        tradedTokenIds = uniqueItems(tradedTokenIds)
+        return {
+          bracketAddress,
+          tokenIds: tradedTokenIds,
+        }
+      })
+    )
+  }
+
+  /**
+   * Checks that the address used as the first argument is the only owner of all the Safes
+   * specified in the given array.
+   *
+   * @param {Address} masterAddress address pointing to the candidate only owner of the Safe
+   * @param {(SmartContract|Address)[]} fleet array of Safes that might be owned by master
+   * @returns {boolean} whether the fleet is indeed owned only by master
+   */
+  const isOnlyFleetOwner = async function (masterAddress, fleet) {
+    return (await Promise.all(uniqueItems(fleet).map((bracketAddress) => isOnlySafeOwner(masterAddress, bracketAddress)))).every(
+      (isOnlyOwner) => isOnlyOwner
+    )
   }
 
   /**
@@ -199,7 +251,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of order placements on BatchExchange
+   * Returns a list of order placement transaction data for BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
@@ -210,9 +262,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} highestLimit upper price bound
    * @param {boolean} [debug=false] prints log statements when true
    * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
-   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the relevant transactions to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildOrders = async function (
+  const transactionsForOrders = async function (
     masterAddress,
     bracketAddresses,
     baseTokenId,
@@ -288,7 +340,34 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     )
     const transactions = await Promise.all([].concat(...buyAndSellOrderPromises))
     log("Transaction bundle size", transactions.length)
-    return buildBundledTransaction(transactions)
+    return transactions
+  }
+
+  /**
+   * Batches together a collection of order placements on BatchExchange
+   * on behalf of a fleet of brackets owned by a single "Master Safe"
+   *
+   * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig) owning all brackets
+   * @param {Address[]} bracketAddresses List of addresses with the brackets sending the orders
+   * @param {number} baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
+   * @param {number} quoteTokenId ID of "Quote Token" for which trade with base token (i.e. DAI)
+   * @param {number} lowestLimit lower price bound
+   * @param {number} highestLimit upper price bound
+   * @param {boolean} [debug=false] prints log statements when true
+   * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
+   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   */
+  const buildOrders = async function (
+    masterAddress,
+    bracketAddresses,
+    baseTokenId,
+    quoteTokenId,
+    lowestLimit,
+    highestLimit,
+    debug = false,
+    expiry = DEFAULT_ORDER_EXPIRY
+  ) {
+    return buildBundledTransaction(await transactionsForOrders(...arguments, debug, expiry))
   }
 
   const checkSufficiencyOfBalance = async function (token, owner, amount) {
@@ -345,16 +424,16 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of transfer-related transaction information. Particularily,
+   * Returns a list of transfer-related transaction information. Particularly,
    * the resulting transaction is that of transfering all specified funds from master through its brackets
    * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
    *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the relevant transactions required to be bundled for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
+  const transactionsForTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
@@ -362,10 +441,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     const transactionLists = await Promise.all(
       depositList.map(async (deposit) => {
-        assert(
-          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-          "All depositors must be owned only by the master Safe"
-        )
         const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
         const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
         log(
@@ -386,7 +461,21 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     let transactions = []
     for (const transactionList of transactionLists) transactions = transactions.concat(transactionList)
 
-    return buildBundledTransaction(transactions)
+    return transactions
+  }
+
+  /**
+   * Batches together a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   */
+  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
+    return buildBundledTransaction(await transactionsForTransferApproveDepositFromList(...arguments, debug))
   }
 
   /**
@@ -406,10 +495,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // TODO - make cumulative sum of deposits by token and assert that masterSafe has enough for the tranfer
     const transactions = await Promise.all(
       depositList.map(async (deposit) => {
-        assert(
-          await isOnlySafeOwner(masterAddress, deposit.bracketAddress),
-          "All depositors must be owned only by the master Safe"
-        )
         const tokenInfo = await tokenInfoPromises[deposit.tokenAddress]
         const unitAmount = fromErc20Units(deposit.amount, tokenInfo.decimals)
         log(`Safe ${deposit.bracketAddress} depositing ${unitAmount} ${tokenInfo.symbol} into BatchExchange`)
@@ -750,6 +835,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
   return {
     assertNoAllowances,
+    assertIsOnlyFleetOwner,
     buildBracketTransactionForTransferApproveDeposit,
     buildDepositFromList,
     buildOrders,
@@ -760,6 +846,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildWithdrawAndTransferFundsToMaster,
     buildWithdrawClaim,
     buildWithdrawRequest,
+    transactionsForOrders,
+    transactionsForTransferApproveDepositFromList,
     checkSufficiencyOfBalance,
     deployFleetOfSafes,
     fetchTokenInfoAtAddresses,
@@ -771,6 +859,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     getSafe,
     hasExistingOrders,
     isOnlySafeOwner,
+    isOnlyFleetOwner,
+    retrieveTradedTokensPerBracket,
     tokenDetail,
   }
 }
