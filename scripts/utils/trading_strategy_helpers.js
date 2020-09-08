@@ -357,17 +357,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} [expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
    * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
-  const buildOrders = async function (
-    masterAddress,
-    bracketAddresses,
-    baseTokenId,
-    quoteTokenId,
-    lowestLimit,
-    highestLimit,
-    debug = false,
-    expiry = DEFAULT_ORDER_EXPIRY
-  ) {
-    return buildBundledTransaction(await transactionsForOrders(...arguments, debug, expiry))
+  const buildOrders = async function () {
+    return buildBundledTransaction(await transactionsForOrders(...arguments))
   }
 
   const checkSufficiencyOfBalance = async function (token, owner, amount) {
