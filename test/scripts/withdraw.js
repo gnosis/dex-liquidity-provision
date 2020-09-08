@@ -270,7 +270,7 @@ contract("Withdraw script", function (accounts) {
       const notRequestedWithdrawalQuote = (
         await exchange.getPendingWithdraw(bracketAddresses[1], quoteToken.address)
       )[0].toString()
-      assert.equal(notRequestedWithdrawalQuote, "0", "Zero quote withdrawal was requested")
+      assert.equal(notRequestedWithdrawalQuote, "0", "Quote withdrawal was requested")
 
       const requestedWithdrawalBase = (await exchange.getPendingWithdraw(bracketAddresses[1], baseToken.address))[0].toString()
       assert.notEqual(requestedWithdrawalBase, "0", "Withdrawal was not requested")
@@ -279,7 +279,7 @@ contract("Withdraw script", function (accounts) {
       const notRequestedWithdrawalBase = (
         await exchange.getPendingWithdraw(bracketAddresses[0], baseToken.address)
       )[0].toString()
-      assert.equal(notRequestedWithdrawalBase, "0", "Zero base withdrawal was requested")
+      assert.equal(notRequestedWithdrawalBase, "0", "Base withdrawal was requested")
     })
     it("requests withdrawals with addresses", async () => {
       const amounts = [
