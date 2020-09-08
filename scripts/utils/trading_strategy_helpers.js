@@ -274,6 +274,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     debug = false,
     expiry = DEFAULT_ORDER_EXPIRY
   ) {
+    console.log(debug)
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     assert(lowestLimit < highestLimit, "Lowest limit must be lower than highest limit")
@@ -465,8 +466,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferApproveDepositFromList = async function (masterAddress, depositList, debug = false) {
-    return buildBundledTransaction(await transactionsForTransferApproveDepositFromList(...arguments, debug))
+  const buildTransferApproveDepositFromList = async function () {
+    return buildBundledTransaction(await transactionsForTransferApproveDepositFromList(...arguments))
   }
 
   /**
