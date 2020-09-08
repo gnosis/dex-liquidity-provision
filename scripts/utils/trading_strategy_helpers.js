@@ -593,6 +593,25 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return [].concat(...bracketsAsObjects)
   }
   /**
+   * Fetches the brackets deployed with the deterministic fleet factory by a given masterSafe
+   * from the blockchaiin via events.
+   *
+   * @param {Address} masterSafe
+   * @returns {Address[]} List of bracket (Safe) addresses
+   */
+  const getDeployedDeterministicBrackets = async function (masterSafe) {
+    const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
+    const fleetFactoryDeterministic = await FleetFactoryDeterministic.deployed()
+    const events = await fleetFactoryDeterministic.getPastEvents("FleetDeployed", {
+      filter: { owner: masterSafe },
+      fromBlock: 0,
+      toBlock: "latest",
+    })
+    const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
+    return [].concat(...bracketsAsObjects)
+  }
+
+  /**
    * Batches together a collection of transfer-related transaction information.
    * Particularly, the resulting transaction is that of transfering all sufficient funds from master
    * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
@@ -846,6 +865,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     fetchTokenInfoForFlux,
     getAllowances,
     getDeployedBrackets,
+    getDeployedDeterministicBrackets,
     getExchange,
     getSafe,
     hasExistingOrders,
