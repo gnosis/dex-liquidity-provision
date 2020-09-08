@@ -9,7 +9,10 @@ const MintableToken = artifacts.require("DetailedMintableToken")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { deploySafe, addCustomMintableTokenToExchange } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)
+const { deploySafe, addCustomMintableTokenToExchange, deployNewStrategy } = require("../../scripts/utils/strategy_simulator")(
+  web3,
+  artifacts
+)
 const { deployFleetOfSafes, buildTransferApproveDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(
   web3,
   artifacts
@@ -226,7 +229,59 @@ contract("Withdraw script", function (accounts) {
     })
   })
   describe("using explicit from addresses", () => {
-    it("requests withdrawals", async () => {
+    it("requests withdrawals with automatic token detection", async () => {
+      // tokens are detected based on posted orders
+      const { bracketAddresses, quoteToken, baseToken, masterSafe } = await deployNewStrategy(
+        {
+          numBrackets: 2,
+          lowestLimit: 300,
+          highestLimit: 500,
+          currentPrice: 400,
+          amountQuoteToken: "10000",
+          amountbaseToken: "50",
+          quoteTokenInfo: { decimals: 6, symbol: "USDC" },
+          baseTokenInfo: { decimals: 18, symbol: "WETH" },
+        },
+        gnosisSafeMasterCopy,
+        proxyFactory,
+        safeOwner,
+        exchange,
+        accounts
+      )
+      await waitForNSeconds(301)
+
+      const argv = {
+        masterSafe: masterSafe.address,
+        brackets: bracketAddresses,
+      }
+
+      const globalPriceStorage = {}
+      globalPriceStorage["USDC-USDC"] = { price: 1.0 }
+      globalPriceStorage["WETH-USDC"] = { price: 400.0 }
+
+      const transaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
+      await execTransaction(masterSafe, safeOwner, transaction)
+      await waitForNSeconds(301)
+
+      const requestedWithdrawalQuote = (await exchange.getPendingWithdraw(bracketAddresses[0], quoteToken.address))[0].toString()
+      assert.notEqual(requestedWithdrawalQuote, "0", "Withdrawal was not requested")
+      assert.equal(requestedWithdrawalQuote, bnMaxUint256.toString(), "Bad amount requested to withdraw")
+
+      const notRequestedWithdrawalQuote = (
+        await exchange.getPendingWithdraw(bracketAddresses[1], quoteToken.address)
+      )[0].toString()
+      assert.equal(notRequestedWithdrawalQuote, "0", "Quote withdrawal was requested")
+
+      const requestedWithdrawalBase = (await exchange.getPendingWithdraw(bracketAddresses[1], baseToken.address))[0].toString()
+      assert.notEqual(requestedWithdrawalBase, "0", "Withdrawal was not requested")
+      assert.equal(requestedWithdrawalBase, bnMaxUint256.toString(), "Bad amount requested to withdraw")
+
+      const notRequestedWithdrawalBase = (
+        await exchange.getPendingWithdraw(bracketAddresses[0], baseToken.address)
+      )[0].toString()
+      assert.equal(notRequestedWithdrawalBase, "0", "Base withdrawal was requested")
+    })
+    it("requests withdrawals with addresses", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
@@ -493,14 +548,6 @@ contract("Withdraw script", function (accounts) {
           requestWithdraw: true,
         },
         error: "Argument error: one of --withdrawalFile, --brackets must be given",
-      },
-      {
-        argv: {
-          masterSafe: masterSafe.address,
-          requestWithdraw: true,
-          brackets: "0x0,0x1",
-        },
-        error: "Argument error: one of --tokens, --tokenIds must be given when using --brackets",
       },
       {
         argv: {

@@ -10,10 +10,12 @@ module.exports = function (web3, artifacts) {
     buildWithdrawClaim,
     buildTransferFundsToMaster,
     buildWithdrawAndTransferFundsToMaster,
+    retrieveTradedTokensPerBracket,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
   const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const { MAXUINT256, ONE } = require("../utils/constants")
+  const { uniqueItems } = require("../utils/js_helpers")
 
   const assertGoodArguments = function (argv) {
     if (!argv.masterSafe) throw new Error("Argument error: --masterSafe is required")
@@ -25,9 +27,7 @@ module.exports = function (web3, artifacts) {
     }
 
     if (argv.brackets) {
-      if (!argv.tokens && !argv.tokenIds) {
-        throw new Error("Argument error: one of --tokens, --tokenIds must be given when using --brackets")
-      } else if (argv.tokens && argv.tokenIds) {
+      if (argv.tokens && argv.tokenIds) {
         throw new Error("Argument error: only one of --tokens, --tokenIds is required when using --brackets")
       }
     } else {
@@ -48,49 +48,79 @@ module.exports = function (web3, artifacts) {
   ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
-    let withdrawals
-    let tokenInfoPromises
     if (withdrawalFile) {
-      withdrawals = JSON.parse(await fs.readFile(withdrawalFile, "utf8"))
-      tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
-    } else {
-      const exchangePromise = getExchange(web3)
-      const tokenAddresses =
-        tokens || (await Promise.all(tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id))))
-      tokenInfoPromises = fetchTokenInfoAtAddresses(tokenAddresses)
-      const exchange = await exchangePromise
+      const withdrawals = JSON.parse(await fs.readFile(withdrawalFile, "utf8"))
+      const tokenInfoPromises = fetchTokenInfoForFlux(withdrawals)
+      return {
+        withdrawals,
+        tokenInfoPromises,
+      }
+    }
 
-      log("Retrieving amount of tokens to withdraw.")
-      const tokenDataList = await Promise.all(Object.entries(tokenInfoPromises).map(([, tokenDataPromise]) => tokenDataPromise))
-      const tokenBracketPairs = []
-      for (const tokenData of tokenDataList)
-        for (const bracketAddress of brackets) tokenBracketPairs.push([bracketAddress, tokenData])
+    const exchangePromise = getExchange(web3)
 
-      const maxWithdrawableAmounts = await Promise.all(
-        tokenBracketPairs.map(([bracketAddress, tokenData]) => amountFunction(bracketAddress, tokenData, exchange))
-      )
-      withdrawals = []
+    let bracketsWithTradedTokenAddresses = []
+    let tradedAddressesses = []
+    if (!tokens && !tokenIds) {
+      const bracketsWithTradedTokenIds = await retrieveTradedTokensPerBracket(brackets)
+      const tradedTokenIds = []
+      for (const { tokenIds } of bracketsWithTradedTokenIds) {
+        tradedTokenIds.push(...tokenIds)
+      }
+      const idToAddress = {}
       await Promise.all(
-        Array.from(maxWithdrawableAmounts.entries()).map(async ([index, amount]) => {
-          // skip costly network request if amount is zero
-          if (amount === "0") {
-            return
-          }
-          const token = tokenBracketPairs[index][1]
-          const bracketAddress = tokenBracketPairs[index][0]
-          const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
-          if (usdValue.gte(ONE)) {
-            withdrawals.push({
-              bracketAddress,
-              tokenAddress: token.address,
-              amount,
-            })
-          } else {
-            log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
-          }
+        uniqueItems(tradedTokenIds).map(async (tokenId) => {
+          idToAddress[tokenId] = await (await exchangePromise).tokenIdToAddressMap(tokenId)
         })
       )
+      tradedAddressesses = Object.values(idToAddress)
+
+      bracketsWithTradedTokenAddresses = bracketsWithTradedTokenIds.map(({ bracketAddress, tokenIds }) => ({
+        bracketAddress,
+        tokenAddresses: tokenIds.map((id) => idToAddress[id]),
+      }))
+    } else {
+      if (!tokens) {
+        tradedAddressesses = await Promise.all(tokenIds.map(async (id) => (await exchangePromise).tokenIdToAddressMap(id)))
+      } else {
+        tradedAddressesses = tokens
+      }
+      for (const bracketAddress of brackets) {
+        bracketsWithTradedTokenAddresses.push({
+          bracketAddress,
+          tokenAddresses: tradedAddressesses,
+        })
+      }
     }
+
+    const withdrawals = []
+    const tokenInfoPromises = fetchTokenInfoAtAddresses(tradedAddressesses)
+    log("Retrieving amount of tokens to withdraw.")
+    await Promise.all(
+      bracketsWithTradedTokenAddresses.map(({ bracketAddress, tokenAddresses }) =>
+        Promise.all(
+          tokenAddresses.map(async (tokenAddress) => {
+            const tokenData = await tokenInfoPromises[tokenAddress]
+            const amount = await amountFunction(bracketAddress, tokenData, await exchangePromise)
+            // skip costly network request if amount is zero
+            if (amount === "0") {
+              return
+            }
+            const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
+
+            if (usdValue.gte(ONE)) {
+              withdrawals.push({
+                bracketAddress,
+                tokenAddress,
+                amount,
+              })
+            } else {
+              log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
+            }
+          })
+        )
+      )
+    )
 
     return {
       withdrawals,
