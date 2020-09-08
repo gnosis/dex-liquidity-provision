@@ -274,7 +274,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     debug = false,
     expiry = DEFAULT_ORDER_EXPIRY
   ) {
-    console.log(debug)
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     assert(lowestLimit < highestLimit, "Lowest limit must be lower than highest limit")
