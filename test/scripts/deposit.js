@@ -1,10 +1,8 @@
-const Contract = require("@truffle/contract")
-
-const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+const BatchExchange = artifacts.require("BatchExchange")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
-const { addCustomMintableTokenToExchange, deploySafe } = require("../test_utils")
+const { addCustomMintableTokenToExchange, deploySafe } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)
 const { deployFleetOfSafes, buildDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../../scripts/utils/internals")(web3, artifacts)
 
@@ -17,7 +15,6 @@ contract("Deposit scripts", function (accounts) {
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
 
-    BatchExchange.setProvider(web3.currentProvider)
     exchange = await BatchExchange.deployed()
   })
 

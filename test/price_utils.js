@@ -1,8 +1,7 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 
-const { addCustomMintableTokenToExchange } = require("./test_utils")
+const { addCustomMintableTokenToExchange } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const {
   isPriceReasonable,
   checkNoProfitableOffer,
@@ -14,8 +13,7 @@ const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strateg
 contract("PriceOracle", function (accounts) {
   let exchange
   beforeEach(async function () {
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
+    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
   })
   describe("Price oracle sanity check", async () => {

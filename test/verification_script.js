@@ -1,6 +1,5 @@
 const BN = require("bn.js")
 const assert = require("assert")
-const Contract = require("@truffle/contract")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
 const GnosisSafe = artifacts.require("GnosisSafe")
@@ -8,7 +7,8 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
-const { addCustomMintableTokenToExchange, createTokenAndGetData, deploySafe, populatePriceStorage } = require("./test_utils")
+const { addCustomMintableTokenToExchange, deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
+const { createTokenAndGetData, populatePriceStorage } = require("./test_utils")
 const { execTransaction, waitForNSeconds } = require("../scripts/utils/internals")(web3, artifacts)
 const {
   getAllowances,
@@ -115,8 +115,7 @@ contract("Verification checks", function (accounts) {
     safeOwner = accounts[0]
     gnosisSafeMasterCopy = await GnosisSafe.new()
     proxyFactory = await ProxyFactory.new()
-    const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
-    BatchExchange.setProvider(web3.currentProvider)
+    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
 
     // TODO: this is needed as fetching the orderbook on an empty orderbook throws. This can be fixed in the future

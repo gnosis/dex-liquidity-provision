@@ -17,9 +17,12 @@ const argv = default_yargs
     type: "float",
     describe: "Scale used as a multiplier to the gas price",
     default: 1.0,
+  })
+  .option("minTrade", {
+    type: "number",
+    describe: "minimum USD value to be sold in an order",
+    default: 500,
   }).argv
-
-const MIN_SELL_USD = 100
 
 /* All prices, except those explicitly named with "inverted" refer to the price of sETH in sUSD.
  * The term "our" is with regards to prices we, the synthetix bot, are buying and selling for while
@@ -48,12 +51,12 @@ module.exports = async (callback) => {
     const formatedRate = snxjs.utils.formatEther(exchangeRate)
     console.log("Oracle sETH Price (in sUSD)", formatedRate)
 
-    const minSellsUSD = floatToErc20Units(MIN_SELL_USD, sUSD.decimals)
+    const minSellsUSD = floatToErc20Units(argv.minTrade, sUSD.decimals)
     const theirSellPriceInverted = await estimatePrice(sETH.exchangeId, sUSD.exchangeId, minSellsUSD, networkId)
     const theirSellPrice = 1 / theirSellPriceInverted
     console.log("Gnosis Protocol sell sETH price (in sUSD)", theirSellPrice)
 
-    const minSellsETH = floatToErc20Units(MIN_SELL_USD / formatedRate, sETH.decimals)
+    const minSellsETH = floatToErc20Units(argv.minTrade / formatedRate, sETH.decimals)
     const theirBuyPrice = await estimatePrice(sUSD.exchangeId, sETH.exchangeId, minSellsETH, networkId)
     console.log("Gnosis Protocol buy  sETH price (in sUSD)", theirBuyPrice)
 

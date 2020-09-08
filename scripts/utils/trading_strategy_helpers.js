@@ -13,7 +13,6 @@ const BN = require("bn.js")
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const assert = require("assert")
   const fs = require("fs")
-  const Contract = require("@truffle/contract")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
   const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
@@ -21,11 +20,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
 
   const ERC20 = artifacts.require("ERC20Detailed")
-  const BatchExchange = Contract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange"))
+  const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
 
-  BatchExchange.setProvider(web3.currentProvider)
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
@@ -37,7 +35,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {SmartContract} An instance of BatchExchange
    */
   const getExchange = function () {
-    BatchExchange.setProvider(web3.currentProvider)
     return BatchExchange.deployed()
   }
 

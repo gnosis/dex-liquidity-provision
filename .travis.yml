@@ -12,4 +12,27 @@ script:
   - yarn lint
   - yarn pretty-check
   - yarn build
+  - yarn migrate
   - yarn test
+before_deploy:
+  - export PACKAGE_VERSION=$(jq -r '.version' package.json)
+  - test "v$PACKAGE_VERSION" = "$TRAVIS_TAG"
+  - mkdir -p deploy
+  - yarn pack --filename deploy/dex-liquidity-provision-$PACKAGE_VERSION.tgz
+deploy:
+  provider: s3
+  bucket: $BUCKET_NAME
+  access_key_id: $AWS_ACCESS_KEY_ID
+  secret_access_key: $AWS_SECRET_ACCESS_KEY
+  local_dir: deploy
+  skip_cleanup: true
+  region: $AWS_REGION
+  on:
+    tags: true
+after_deploy:
+  - >
+    curl -X POST
+    -F "token=$GITLAB_TOKEN"
+    -F "ref=master"
+    -F "variables[PACKAGE_VERSION]=$PACKAGE_VERSION"
+    https://gitlab.gnosisdev.com/api/v4/projects/$GITLAB_PROJECT/trigger/pipeline

@@ -1,7 +1,7 @@
 {
-  "name": "liquidity-provision-scripts",
+  "name": "@gnosis.pm/dex-liquidity-provision",
+  "version": "0.0.1",
   "description": "Scripts to deploy and manage automated traders on the Gnosis Protocol exchange",
-  "private": true,
   "keywords": [
     "Gnosis Protocol",
     "liquidity",
@@ -19,7 +19,8 @@
     "prettier": "prettier --write './**/*.js'",
     "pretty-check": "prettier --check './**/*.js'",
     "test": "truffle test",
-    "build": "yarn compile && yarn networks-inject",
+    "build": "yarn compile && yarn copy-artifacts && yarn networks-inject",
+    "copy-artifacts": "cp ./node_modules/@gnosis.pm/dex-contracts/build/contracts/BatchExchange.json ./build/contracts",
     "compile": "truffle compile",
     "testnet": "ganache-cli --gasLimit 8e6",
     "migrate": "truffle migrate",
@@ -29,25 +30,25 @@
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
   "devDependencies": {
-    "@gnosis.pm/mock-contract": "^3.0.0",
-    "eslint": "^7.5.0",
-    "eslint-plugin-jsdoc": "^30.0.3",
+    "@truffle/artifactor": "^4.0.72",
+    "eslint": "^7.6.0",
+    "eslint-plugin-jsdoc": "^30.2.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-react": "^7.20.5",
-    "ganache-cli": "6.9.1",
+    "eslint-plugin-react": "^7.20.6",
+    "ganache-cli": "6.10.1",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
     "tmp-promise": "^3.0.2",
     "truffle-plugin-verify": "^0.3.11"
   },
   "dependencies": {
-    "@gnosis.pm/dex-contracts": "^0.4.1",
+    "@gnosis.pm/dex-contracts": "^0.4.2",
     "@gnosis.pm/owl-token": "^3.1.0",
     "@gnosis.pm/safe-contracts": "v1.1.1-dev.2",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
     "@gnosis.pm/util-contracts": "^2.0.6",
     "@openzeppelin/contracts": "=2.5.1",
-    "@truffle/contract": "4.2.15",
+    "@truffle/contract": "4.2.19",
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "bn.js": "^5.1.2",
@@ -57,8 +58,9 @@
     "dotenv": "^8.0.0",
     "eth-gas-reporter": "^0.2.17",
     "node-fetch": "^2.6.0",
-    "synthetix-js": "=2.26.2",
-    "truffle": "^5.1.37",
-    "truffle-hdwallet-provider": "^1.0.0-web3one.1"
+    "synthetix-js": "=2.26.3",
+    "truffle": "^5.1.39",
+    "truffle-hdwallet-provider": "^1.0.0-web3one.1",
+    "typescript-logging": "^1.0.0"
   }
 }
