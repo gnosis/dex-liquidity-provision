@@ -8,12 +8,13 @@ const TokenOWL = artifacts.require("TokenOWL")
 const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
-const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")
 
 const {
   fetchTokenInfoFromExchange,
   fetchTokenInfoAtAddresses,
   deployFleetOfSafes,
+  buildDeterministicFleetOfSafes,
+  buildFullLiquidityProvision,
   buildOrders,
   buildTransferApproveDepositFromList,
   buildWithdrawRequest,
@@ -21,14 +22,20 @@ const {
   buildTransferFundsToMaster,
   buildWithdrawAndTransferFundsToMaster,
   isOnlySafeOwner,
+  uniqueNonce,
 } = require("../scripts/utils/trading_strategy_helpers")(web3, artifacts)
 const { waitForNSeconds, execTransaction } = require("../scripts/utils/internals")(web3, artifacts)
-const { deployNewStrategy, prepareTokenRegistration, deploySafe } = require("../scripts/utils/strategy_simulator")(
-  web3,
-  artifacts
-)
+const {
+  deployNewStrategy,
+  prepareTokenRegistration,
+  deploySafe,
+  addCustomMintableTokenToExchange,
+} = require("../scripts/utils/strategy_simulator")(web3, artifacts)
+const { calcSafeAddresses } = require("../scripts/utils/calculate_fleet_addresses")(web3, artifacts)
 
 const { toErc20Units, fromErc20Units } = require("../scripts/utils/printing_tools")
+const { checkCorrectnessOfDeposits } = require("../scripts/utils/price_utils")
+const { decodeCreateProxy } = require("./test_utils")
 const { DEFAULT_ORDER_EXPIRY, TEN, MAXUINT128 } = require("../scripts/utils/constants")
 
 const checkPricesOfBracketStrategy = async function (lowestLimit, highestLimit, bracketSafes, exchange) {
@@ -91,8 +98,7 @@ const testAutomaticDeposits = async function (
   await waitForNSeconds(301)
 
   const { bracketsWithQuoteTokenDeposit, bracketsWithbaseTokenDeposit } = expectedDistribution
-  const assert = require("assert")
-  assert.equal(
+  assertNodejs.equal(
     bracketsWithQuoteTokenDeposit + bracketsWithbaseTokenDeposit,
     numBrackets,
     "Malformed test case, sum of expected distribution should be equal to the fleet size"
@@ -174,6 +180,29 @@ contract("GnosisSafe", function (accounts) {
       const fleet = await deployFleetOfSafes(masterSafe.address, 10)
       assert.equal(fleet.length, 10)
       for (const bracketAddress of fleet) assert(await isOnlySafeOwner(masterSafe.address, bracketAddress))
+    })
+    it("deterministic deployment", async () => {
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+      const nonce = "0"
+      const numberOfSafes = 10
+      const transaction = await buildDeterministicFleetOfSafes(masterSafe.address, numberOfSafes, nonce)
+      const transcript = await execTransaction(masterSafe, safeOwner, transaction)
+
+      const fleet = []
+      for (let i = 0; i < numberOfSafes; i++) {
+        const rawLog = transcript.receipt.rawLogs[i]
+        fleet.push(decodeCreateProxy(rawLog))
+      }
+      const nextRawLog = transcript.receipt.rawLogs[numberOfSafes]
+      await assertNodejs.throws(function () {
+        return decodeCreateProxy(nextRawLog)
+      }, Error("Input raw event is not a CreateProxy event"))
+
+      const deterministicFleet = await calcSafeAddresses(numberOfSafes, nonce)
+      for (let i = 0; i < numberOfSafes; i++) {
+        assert.equal(deterministicFleet[i], fleet[i])
+        assert(await isOnlySafeOwner(masterSafe.address, fleet[i]))
+      }
     })
   })
   describe("transfer tests:", async function () {
@@ -815,6 +844,210 @@ contract("GnosisSafe", function (accounts) {
           message: "Lowest limit must be lower than highest limit",
         }
       )
+    })
+  })
+
+  describe("buildFullLiquidityProvision:", async function () {
+    it("Deploys fleet of Gnosis Safes", async () => {
+      const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+      const proxyFactory = await ProxyFactory.deployed()
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+
+      const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const { id: usdcId, token: usdc } = await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])
+      const amountWeth = toErc20Units("1", 18)
+      const amountUsdc = toErc20Units("400", 6)
+      await weth.mint(masterSafe.address, amountWeth)
+      await usdc.mint(masterSafe.address, amountUsdc)
+
+      // At the time of writing, the default gas limit is 6000000.
+      // The maximum fleet size for this gas limit is 9.
+      // To allow for future changes, the number below is set to 7.
+      const fleetSize = 7
+      const fullLiquidityProvisionTransaction = await buildFullLiquidityProvision({
+        masterAddress: masterSafe.address,
+        fleetSize,
+        baseTokenId: wethId,
+        quoteTokenId: usdcId,
+        lowestLimit: 300,
+        highestLimit: 400,
+        currentPrice: 380,
+        depositBaseToken: amountWeth,
+        depositQuoteToken: amountUsdc,
+      })
+      const transcript = await execTransaction(masterSafe, safeOwner, fullLiquidityProvisionTransaction)
+
+      const fleet = []
+      for (let i = 0; i < fleetSize; i++) {
+        const rawLog = transcript.receipt.rawLogs[i]
+        fleet.push(decodeCreateProxy(rawLog))
+      }
+      const nextRawLog = transcript.receipt.rawLogs[fleetSize]
+      await assertNodejs.throws(function () {
+        return decodeCreateProxy(nextRawLog)
+      }, Error("Input raw event is not a CreateProxy event"))
+
+      // the Gnosis Safe nonce of the master safe is zero, since there weren't any transactions after its creation
+      const nonce = await uniqueNonce(masterSafe.address, 0)
+      const deterministicFleet = await calcSafeAddresses(fleetSize, nonce)
+
+      for (let i = 0; i < fleetSize; i++) {
+        assert.equal(deterministicFleet[i], fleet[i])
+        assert(await isOnlySafeOwner(masterSafe.address, fleet[i]))
+      }
+    })
+    it("Creates correct orders", async () => {
+      const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+      const proxyFactory = await ProxyFactory.deployed()
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+
+      const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const { id: usdcId, token: usdc } = await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])
+      const amountWeth = toErc20Units("1", 18)
+      const amountUsdc = toErc20Units("400", 6)
+      await weth.mint(masterSafe.address, amountWeth)
+      await usdc.mint(masterSafe.address, amountUsdc)
+
+      // At the time of writing, the default gas limit is 6000000.
+      // The maximum fleet size for this gas limit is 9.
+      // To allow for future changes, the number below is set to 7.
+      const fleetSize = 7
+      const lowestLimit = 300
+      const highestLimit = 400
+      const currentPrice = 380
+      const fullLiquidityProvisionTransaction = await buildFullLiquidityProvision({
+        masterAddress: masterSafe.address,
+        fleetSize,
+        baseTokenId: wethId,
+        quoteTokenId: usdcId,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        depositBaseToken: amountWeth,
+        depositQuoteToken: amountUsdc,
+      })
+      await execTransaction(masterSafe, safeOwner, fullLiquidityProvisionTransaction)
+
+      const nonce = await uniqueNonce(masterSafe.address, 0)
+      const fleet = await calcSafeAddresses(fleetSize, nonce)
+
+      await checkPricesOfBracketStrategy(lowestLimit, highestLimit, fleet, exchange)
+      // Check that unlimited orders are being used
+      for (const bracketAddress of fleet) {
+        const auctionElements = decodeOrders(await exchange.getEncodedUserOrders(bracketAddress))
+        const [buyOrder, sellOrder] = auctionElements
+        assert(buyOrder.priceNumerator.eq(MAXUINT128))
+        assert(sellOrder.priceDenominator.eq(MAXUINT128))
+      }
+    })
+    it("Deposits correct amount of tokens", async () => {
+      const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+      const proxyFactory = await ProxyFactory.deployed()
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+
+      const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const { id: usdcId, token: usdc } = await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])
+      const amountWeth = toErc20Units("1", 18)
+      const amountUsdc = toErc20Units("500", 6)
+      await weth.mint(masterSafe.address, amountWeth)
+      await usdc.mint(masterSafe.address, amountUsdc)
+
+      const fleetSize = 6
+      const lowestLimit = 300
+      const highestLimit = 400
+      const currentPrice = 380
+
+      const bracketsWithQuoteTokenDeposit = 5
+      const bracketsWithBaseTokenDeposit = fleetSize - bracketsWithQuoteTokenDeposit
+
+      const fullLiquidityProvisionTransaction = await buildFullLiquidityProvision({
+        masterAddress: masterSafe.address,
+        fleetSize,
+        baseTokenId: wethId,
+        quoteTokenId: usdcId,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        depositBaseToken: amountWeth,
+        depositQuoteToken: amountUsdc,
+      })
+      await execTransaction(masterSafe, safeOwner, fullLiquidityProvisionTransaction)
+
+      const nonce = await uniqueNonce(masterSafe.address, 0)
+      const fleet = await calcSafeAddresses(fleetSize, nonce)
+
+      // Close auction for deposits to be reflected in exchange balance
+      await waitForNSeconds(301)
+
+      for (const bracketAddress of fleet) {
+        await checkCorrectnessOfDeposits(
+          currentPrice,
+          bracketAddress,
+          exchange,
+          usdc,
+          weth,
+          amountUsdc.div(new BN(bracketsWithQuoteTokenDeposit)),
+          amountWeth.div(new BN(bracketsWithBaseTokenDeposit))
+        )
+      }
+    })
+    it("Can execute multiple deployments from the same address", async () => {
+      const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+      const proxyFactory = await ProxyFactory.deployed()
+      const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
+
+      const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
+      const { id: usdcId, token: usdc } = await addCustomMintableTokenToExchange(exchange, "USDC", 6, accounts[0])
+      const amountWeth = toErc20Units("1", 18)
+      const amountUsdc = toErc20Units("500", 6)
+      const two = new BN(2)
+      await weth.mint(masterSafe.address, amountWeth.mul(two))
+      await usdc.mint(masterSafe.address, amountUsdc.mul(two))
+
+      const fleetSize = 6
+      const lowestLimit = 300
+      const highestLimit = 400
+      const currentPrice = 380
+
+      const fullLiquidityProvisionTransaction = await buildFullLiquidityProvision({
+        masterAddress: masterSafe.address,
+        fleetSize,
+        baseTokenId: wethId,
+        quoteTokenId: usdcId,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        depositBaseToken: amountWeth,
+        depositQuoteToken: amountUsdc,
+      })
+      await execTransaction(masterSafe, safeOwner, fullLiquidityProvisionTransaction)
+
+      const nonce0 = await uniqueNonce(masterSafe.address, 0)
+      const fleet0 = await calcSafeAddresses(fleetSize, nonce0)
+      for (const address of fleet0) {
+        assert(await isOnlySafeOwner(masterSafe.address, address))
+      }
+
+      // same parameters but different deployment, since the nonce of the Safe is increased by one
+      const anotherFullLiquidityProvisionTransaction = await buildFullLiquidityProvision({
+        masterAddress: masterSafe.address,
+        fleetSize,
+        baseTokenId: wethId,
+        quoteTokenId: usdcId,
+        lowestLimit,
+        highestLimit,
+        currentPrice,
+        depositBaseToken: amountWeth,
+        depositQuoteToken: amountUsdc,
+      })
+      await execTransaction(masterSafe, safeOwner, anotherFullLiquidityProvisionTransaction)
+
+      const nonce1 = await uniqueNonce(masterSafe.address, 1)
+      const fleet1 = await calcSafeAddresses(fleetSize, nonce1)
+      for (let i = 0; i < fleetSize; i++) {
+        assert.notEqual(fleet0[i], fleet1[i])
+        assert(await isOnlySafeOwner(masterSafe.address, fleet1[i]))
+      }
     })
   })
 

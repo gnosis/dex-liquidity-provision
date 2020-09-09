@@ -6,30 +6,9 @@ const GnosisSafe = artifacts.require("GnosisSafe")
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
 const FleetFactory = artifacts.require("FleetFactory")
-const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 
-/**
- * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
- *
- * @param {any} rawEvent bytes of an event emmited from GnosisSafeProxyFactory
- * @returns {Address} the address of the newly created proxy.
- */
-const decodeCreateProxy = function (rawEvent) {
-  const { data, topics } = rawEvent
-  const eventSignature = web3.eth.abi.encodeEventSignature("ProxyCreation(address)")
-  assert.equal(topics[0], eventSignature, "Input raw event is not a CreateProxy event")
-  const decoded = web3.eth.abi.decodeLog(
-    [
-      {
-        type: "address",
-        name: "proxy",
-      },
-    ],
-    data,
-    topics
-  )
-  return decoded.proxy
-}
+const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
+const { decodeCreateProxy } = require("./test_utils")
 
 contract("FleetFactory", function (accounts) {
   let gnosisSafeMasterCopy

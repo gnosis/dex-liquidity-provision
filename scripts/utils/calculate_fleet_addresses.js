@@ -1,4 +1,7 @@
-module.exports = function (web3) {
+module.exports = function (web3, artifacts) {
+  const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+  const GnosisSafe = artifacts.require("GnosisSafe")
+
   const { generateAddress2, toBuffer, bufferToHex } = require("ethereumjs-util")
   const { toBN, sha3 } = web3.utils
 
@@ -33,12 +36,22 @@ module.exports = function (web3) {
       toBuffer("0x" + uint256Encode(salt)),
       toBuffer(byteCode)
     )
-    return bufferToHex(safeAddress)
+    return web3.utils.toChecksumAddress(bufferToHex(safeAddress))
   }
 
-  const calcSafeAddresses = async (fleetFactoryDeterministic, bracketCount, gnosisSafeTemplateAddress, saltNonce) => {
-    const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory")
-    const proxyFactory = await GnosisSafeProxyFactory.at(await fleetFactoryDeterministic.proxyFactory())
+  const calcSafeAddresses = async (
+    bracketCount,
+    saltNonce,
+    fleetFactoryDeterministic = null,
+    gnosisSafeTemplateAddress = null
+  ) => {
+    const proxyFactoryAddress =
+      fleetFactoryDeterministic !== null ? await fleetFactoryDeterministic.proxyFactory() : GnosisSafeProxyFactory.address
+    if (gnosisSafeTemplateAddress === null) {
+      gnosisSafeTemplateAddress = GnosisSafe.address
+    }
+
+    const proxyFactory = await GnosisSafeProxyFactory.at(proxyFactoryAddress)
 
     // Retrieve the "creation code" of the proxy factory - needed in order to calculate the create2 addresses
     const deployedBytecode = await proxyFactory.proxyCreationCode()
