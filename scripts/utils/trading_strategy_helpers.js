@@ -47,6 +47,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {SmartContract} Gnosis Safe Contract
    */
   const getSafe = function (safeAddress) {
+    console.log("trying to get safe at")
     return GnosisSafe.at(safeAddress)
   }
 
@@ -357,7 +358,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // safe pushing to array
     const masterTransactions = []
     for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
-    return buildBundledTransaction(masterTransactions)
+    return masterTransactions
   }
 
   /**
@@ -727,7 +728,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       })
     )
 
-    return buildBundledTransaction(masterTransactions)
+    return masterTransactions
   }
 
   /**
@@ -739,8 +740,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    */
   const buildWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
     const withdrawalTransaction = await buildWithdrawClaim(masterAddress, withdrawals)
-    const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false)
-    return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
+    const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, true)
+    return [...withdrawalTransaction, ...transferFundsToMasterTransaction]
   }
 
   const getAllowances = async function (owner, tokenInfo) {

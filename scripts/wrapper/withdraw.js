@@ -207,7 +207,7 @@ module.exports = function (web3, artifacts) {
 
     log("Started building withdraw transaction.")
     const transactionPromise = buildWithdrawAndTransferFundsToMaster(argv.masterSafe, withdrawals)
-
+    console.log(transactionPromise)
     for (const withdrawal of withdrawals) {
       const { symbol: tokenSymbol, decimals: tokenDecimals } = await tokenInfoPromises[withdrawal.tokenAddress]
 
