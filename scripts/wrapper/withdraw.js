@@ -75,15 +75,15 @@ module.exports = function (web3, artifacts) {
         const bracketAddress = tokenBracketPairs[index][0]
         const usdValue = await amountUSDValue(amount, token, globalPriceStorage)
         log(`Request for ${token.symbol} on bracket ${bracketAddress} USD value: ${usdValue}$`)
-        //if (usdValue.gte(ONE)) {
+        if (usdValue.gte(ONE)) {
           withdrawals.push({
             bracketAddress,
             tokenAddress: token.address,
             amount,
           })
-        //} else {
-        //  log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
-        //}
+        } else {
+          log(`Skipping request for ${token.symbol} on bracket ${bracketAddress} since USD value < 1`)
+        }
       }
     }
 
