@@ -25,7 +25,7 @@ const argv = default_yargs
   }).argv
 
 const toPayment = function (leaderBoardItem) {
-  const { receiver, amount, token_address: tokenAddress } = leaderBoardItem
+  const { receiver, amount, tokenAddress } = leaderBoardItem
   return {
     tokenAddress,
     receiver,
@@ -38,6 +38,11 @@ const parseTransferFile = async function (filename) {
   let results
   if (ext === ".csv") {
     results = await parseCsvFile(filename)
+    results = results.map(({ amount, receiver, token_address }) => ({
+      amount,
+      receiver,
+      tokenAddress: token_address,
+    }))
   } else if (ext === ".json") {
     results = JSON.parse(await fs.readFile(filename, "utf8"))
   } else {
