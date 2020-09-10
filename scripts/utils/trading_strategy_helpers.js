@@ -380,7 +380,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
+   * Creates transactions for a collection of operations (either withdraw or requestWithdraw) on BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
@@ -496,7 +496,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of Deposits from brackets into BatchExchange. Particularily,
+   * Creates transactions for a collection of Deposits from brackets into BatchExchange. Particularily,
    * the resulting transaction is that of approval and deposit of specified tokens behalf of each bracket.
    *
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
@@ -544,7 +544,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return buildBundledTransaction(await transactionsTransferDataFromList(...arguments))
   }
   /**
-   * Batches together a collection of transfer-related transaction information. Particularily,
+   * Creates transactions for a collection of transfer-related transaction information. Particularily,
    * the resulting transaction is that of transfering all specified funds from master through its brackets
    * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
    *
@@ -802,7 +802,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of transfers from each bracket to master
+   * Creates transactions for a collection of transfers from each bracket to master
    *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
@@ -853,7 +853,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of transfers from each bracket to master
+   * Creates transactions for a collection of transfers from each bracket to master
    *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
