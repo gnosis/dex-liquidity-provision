@@ -502,7 +502,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the relevant transactions used for submission to a Gnosis Safe Multi-Sig
    */
   const transactionsDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
