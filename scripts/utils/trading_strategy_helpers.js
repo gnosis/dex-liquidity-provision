@@ -846,7 +846,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
+   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the funds stored in the exchange
    */
   const buildWithdrawAndTransferFundsToMaster = async function () {
     return buildBundledTransaction(await transactionsWithdrawAndTransferFundsToMaster(...arguments))
