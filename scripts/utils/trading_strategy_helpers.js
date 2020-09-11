@@ -386,7 +386,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
-   * @returns {Transaction} Multisend transaction to be sent from masterAddress for withdraw requests or claims
+   * @returns {Transaction[]} Transactions to be sent from masterAddress for withdraw requests or claims
    */
   const transactionGenericFundMovement = async function (masterAddress, withdrawals, functionName) {
     // TODO: the name of this function is misleading considering it is only for request and claim of withdraws.
