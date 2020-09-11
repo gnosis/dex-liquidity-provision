@@ -288,7 +288,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address|SmartContract} masterSafe Gnosis Safe smart contract (or its address) that
    * will own the fleet for which the nonce is created.
    * @param {string} [gnosisSafeNonce=null] If set, the function uses the given nonce instead of
-   * retieving the current transaction nonce of the master safe.
+   * retrieving the current transaction nonce of the master safe.
    * @returns {string} Nonce to be used on a deterministic fleet deployment.
    */
   const uniqueNonce = async function (masterSafe, gnosisSafeNonce = null) {
