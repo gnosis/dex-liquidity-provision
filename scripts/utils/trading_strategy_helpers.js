@@ -552,7 +552,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
    * @param {boolean} [unsafe=false] does not perform balance verification
    * @param {boolean} [debug=false] prints log statements when true
-   * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
+   * @returns {Transaction[]} all the transactions used for transfer submission to a Gnosis Safe Multi-Sig
    */
   const transactionsTransferDataFromList = async function (masterAddress, transferList, unsafe = false, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
