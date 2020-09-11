@@ -807,7 +807,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @param {boolean} limitToMaxWithdrawableAmount flag indicating max withdrawable amount should be limited to balance
-   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
+   * @returns {Transaction[]} Transaction that have to be sent from the master address to transfer back all funds
    */
   const transactionsTransferFundsToMaster = async function (masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
     const tokeinInfoPromises = fetchTokenInfoForFlux(withdrawals)
