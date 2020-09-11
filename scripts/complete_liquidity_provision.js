@@ -2,20 +2,16 @@ const assert = require("assert")
 
 const {
   deployFleetOfSafes,
-  fetchTokenInfoFromExchange,
   buildTransferApproveDepositFromOrders,
   buildOrders,
-  checkSufficiencyOfBalance,
   hasExistingOrders,
-  getSafe,
   getExchange,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
+const { sanitizeArguments } = require("./utils/liquidity_provision_sanity_checks")(web3, artifacts)
 
-const { isPriceReasonable, areBoundsReasonable } = require("./utils/price_utils")
 const { proceedAnyways } = require("./utils/user_interface_helpers")
-const { toErc20Units } = require("./utils/printing_tools")
 const { sleep } = require("./utils/js_helpers")
 const { DEFAULT_NUM_SAFES } = require("./utils/constants")
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
@@ -96,68 +92,33 @@ const findBracketsWithExistingOrders = async function (bracketAddresses, exchang
 
 module.exports = async (callback) => {
   try {
-    // initialize promises that will be used later in the code to speed up execution
-    const exchangePromise = getExchange()
-    const masterSafePromise = getSafe(argv.masterSafe)
-    const signerPromise = web3.eth.getAccounts().then((accounts) => accounts[0])
-    const masterOwnersPromise = masterSafePromise.then((masterSafe) => masterSafe.getOwners())
     let assertBracketsWellFormedPromise
     let bracketsWithExistingOrdersPromise
-    let bracketAddresses
     if (argv.brackets) {
-      bracketAddresses = argv.brackets
-      assertBracketsWellFormedPromise = verifyBracketsWellFormed(argv.masterSafe, bracketAddresses, null, null, true)
+      const exchangePromise = getExchange()
+      assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
+      assertBracketsWellFormedPromise = verifyBracketsWellFormed(argv.masterSafe, argv.brackets, null, null, true)
       bracketsWithExistingOrdersPromise = exchangePromise.then((exchange) =>
-        findBracketsWithExistingOrders(bracketAddresses, exchange)
+        findBracketsWithExistingOrders(argv.brackets, exchange)
       )
     }
 
-    const exchange = await exchangePromise
-    const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
-    const baseTokenData = await tokenInfoPromises[argv.baseTokenId]
-    const quoteTokenData = await tokenInfoPromises[argv.quoteTokenId]
-    const { instance: baseToken, decimals: baseTokenDecimals } = baseTokenData
-    const { instance: quoteToken, decimals: quoteTokenDecimals } = quoteTokenData
-    const depositBaseToken = toErc20Units(argv.depositBaseToken, baseTokenDecimals)
-    const depositQuoteToken = toErc20Units(argv.depositQuoteToken, quoteTokenDecimals)
+    const {
+      masterSafe,
+      signer,
+      depositBaseToken,
+      depositQuoteToken,
+      baseTokenData,
+      quoteTokenData,
+      masterSafeNonce,
+    } = await sanitizeArguments({
+      argv,
+      maxBrackets: 23,
+    })
 
-    const hasSufficientBaseTokenPromise = checkSufficiencyOfBalance(baseToken, argv.masterSafe, depositBaseToken)
-    const hasSufficientQuoteTokenPromise = checkSufficiencyOfBalance(quoteToken, argv.masterSafe, depositQuoteToken)
-    const isPriceCloseToOnlineSourcePromise = isPriceReasonable(baseTokenData, quoteTokenData, argv.currentPrice)
-
-    const signer = await signerPromise
     console.log("Using account:", signer)
-    if (!argv.verify) {
-      assert((await masterOwnersPromise).includes(signer), `Please ensure signer account ${signer} is an owner of masterSafe`)
-    }
-    if (argv.brackets) {
-      assert(argv.numBrackets === argv.brackets.length, "Please ensure numBrackets equals number of brackets")
-    }
 
-    console.log("==> Performing safety checks")
-    if (!(await hasSufficientBaseTokenPromise)) {
-      callback(`Error: MasterSafe ${argv.masterSafe} has insufficient balance for base token ${baseToken.address}`)
-    }
-    if (!(await hasSufficientQuoteTokenPromise)) {
-      callback(`Error: MasterSafe ${argv.masterSafe} has insufficient balance for quote token ${quoteToken.address}`)
-    }
-
-    // check price against external price API
-    if (!(await isPriceCloseToOnlineSourcePromise)) {
-      if (!(await proceedAnyways("Price check failed!"))) {
-        callback("Error: Price checks did not pass")
-      }
-    }
-    const areBoundsTooSpreadOut = areBoundsReasonable(argv.currentPrice, argv.lowestLimit, argv.highestLimit)
-    if (!areBoundsTooSpreadOut) {
-      if (!(await proceedAnyways("Bound checks failed!"))) {
-        callback("Error: Bound checks did not pass")
-      }
-    }
-    if (argv.numBrackets > 23) {
-      callback("Error: Choose a smaller numBrackets, otherwise your payload will be to big for Infura nodes")
-    }
-
+    let bracketAddresses
     if (argv.brackets) {
       console.log("==> Skipping safe deployment and using brackets")
       bracketAddresses = argv.brackets
@@ -192,8 +153,8 @@ module.exports = async (callback) => {
     const bundledFundingTransaction = await buildTransferApproveDepositFromOrders(
       argv.masterSafe,
       bracketAddresses,
-      baseToken.address,
-      quoteToken.address,
+      baseTokenData.address,
+      quoteTokenData.address,
       argv.lowestLimit,
       argv.highestLimit,
       argv.currentPrice,
@@ -202,28 +163,23 @@ module.exports = async (callback) => {
       true
     )
 
-    let nonce = argv.nonce
-    const masterSafe = await masterSafePromise
-    if (nonce === undefined) {
-      nonce = (await masterSafe.nonce()).toNumber()
-    }
     if (!argv.verify) {
       console.log(
         "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
       )
-      await signAndSend(masterSafe, orderTransaction, argv.network, nonce)
+      await signAndSend(masterSafe, orderTransaction, argv.network, masterSafeNonce)
       console.log(
         "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
       )
-      await signAndSend(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+      await signAndSend(masterSafe, bundledFundingTransaction, argv.network, masterSafeNonce + 1)
       console.log(
-        `To verify the transactions run the same script with --verify --nonce=${nonce} --brackets=${bracketAddresses.join()}`
+        `To verify the transactions run the same script with --verify --nonce=${masterSafeNonce} --brackets=${bracketAddresses.join()}`
       )
     } else {
       console.log("==> Verifying order placing transaction.")
-      await transactionExistsOnSafeServer(masterSafe, orderTransaction, argv.network, nonce)
+      await transactionExistsOnSafeServer(masterSafe, orderTransaction, argv.network, masterSafeNonce)
       console.log("==> Verifying funds transferring transaction.")
-      await transactionExistsOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, nonce + 1)
+      await transactionExistsOnSafeServer(masterSafe, bundledFundingTransaction, argv.network, masterSafeNonce + 1)
     }
 
     callback()
