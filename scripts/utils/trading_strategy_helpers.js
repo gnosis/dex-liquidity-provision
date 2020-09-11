@@ -300,6 +300,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     if (gnosisSafeNonce === null) {
       gnosisSafeNonce = await masterSafe.nonce()
     }
+
+    // FleetFactoryDeterministic could in principle be used by other projects to deploy their safes.
+    // Without the following string descriptor, the pattern would be very natural (address + some
+    // kind of nonce) so it could inadvertently cause very annoying conflicts with unrelated projects.
+    // With this "string descriptor" instead there would be no such risk of an accidental hash collision.
     const STRING_DESCRIPTOR = "Custom Market Maker deterministic deployment"
     const hashInput = STRING_DESCRIPTOR + masterSafe.address + gnosisSafeNonce.toString()
     const nonce = web3.utils.sha3(hashInput)
