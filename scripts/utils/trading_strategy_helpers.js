@@ -925,7 +925,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Assign the project to an employee.
+   * Create a single transaction that bundles bracket deployment, order creation, and deposits in a
+   * single transaction that can be executed atomically by the master Safe.
    *
    * @param {object} deploymentParameters The parameters used by the deployed strategy.
    * @param {Address} deploymentParameters.masterAddress Address of the master safe owning the brackets
