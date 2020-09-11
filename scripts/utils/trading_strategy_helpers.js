@@ -367,15 +367,15 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
+   * Creates transactions for a collection of operations (either withdraw or requestWithdraw) on BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
    * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
-   * @returns {Transaction} Multisend transaction to be sent from masterAddress for withdraw requests or claims
+   * @returns {Transaction[]} Transactions to be sent from masterAddress for withdraw requests or claims
    */
-  const buildGenericFundMovement = async function (masterAddress, withdrawals, functionName) {
+  const transactionGenericFundMovement = async function (masterAddress, withdrawals, functionName) {
     // TODO: the name of this function is misleading considering it is only for request and claim of withdraws.
     const exchange = await exchangePromise
 
@@ -411,7 +411,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     // safe pushing to array
     const masterTransactions = []
     for (const transactionPromise of masterTransactionsPromises) masterTransactions.push(await transactionPromise)
-    return buildBundledTransaction(masterTransactions)
+    return masterTransactions
   }
 
   /**
@@ -478,7 +478,20 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
-  const buildDepositFromList = async function (masterAddress, depositList, debug = false) {
+  const buildDepositFromList = async function () {
+    return buildBundledTransaction(await transactionsDepositFromList(...arguments))
+  }
+
+  /**
+   * Creates transactions for a collection of Deposits from brackets into BatchExchange. Particularily,
+   * the resulting transaction is that of approval and deposit of specified tokens behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Deposit[]} depositList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction[]} all the relevant transactions used for submission to a Gnosis Safe Multi-Sig
+   */
+  const transactionsDepositFromList = async function (masterAddress, depositList, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
     const exchange = await exchangePromise
     const tokenInfoPromises = fetchTokenInfoForFlux(depositList)
@@ -500,7 +513,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         return buildExecTransaction(masterAddress, deposit.bracketAddress, bracketBundledTransaction)
       })
     )
-    return buildBundledTransaction(transactions)
+    return transactions
   }
 
   /**
@@ -514,7 +527,21 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {boolean} [debug=false] prints log statements when true
    * @returns {Transaction} all the relevant transaction information used for submission to a Gnosis Safe Multi-Sig
    */
-  const buildTransferDataFromList = async function (masterAddress, transferList, unsafe = false, debug = false) {
+  const buildTransferDataFromList = async function () {
+    return buildBundledTransaction(await transactionsTransferDataFromList(...arguments))
+  }
+  /**
+   * Creates transactions for a collection of transfer-related transaction information. Particularily,
+   * the resulting transaction is that of transfering all specified funds from master through its brackets
+   * followed by approval and deposit of those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {string} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
+   * @param {Transfer[]} transferList List of {@link Deposit} that are to be bundled together
+   * @param {boolean} [unsafe=false] does not perform balance verification
+   * @param {boolean} [debug=false] prints log statements when true
+   * @returns {Transaction[]} all the transactions used for transfer submission to a Gnosis Safe Multi-Sig
+   */
+  const transactionsTransferDataFromList = async function (masterAddress, transferList, unsafe = false, debug = false) {
     const log = debug ? (...a) => console.log(...a) : () => {}
 
     const uniqueTokens = uniqueItems(transferList.map((t) => t.tokenAddress))
@@ -562,7 +589,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       )
       log("Balance verification passed")
     }
-    return buildBundledTransaction(transactions)
+    return transactions
   }
 
   const formatDepositString = function (depositsAsJsonString) {
@@ -730,8 +757,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction requesting withdraw that must sent from masterAddress
    */
-  const buildWithdrawRequest = function (masterAddress, withdrawals) {
-    return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw")
+  const buildWithdrawRequest = async function (masterAddress, withdrawals) {
+    return buildBundledTransaction(await transactionGenericFundMovement(masterAddress, withdrawals, "requestWithdraw"))
   }
 
   /**
@@ -745,8 +772,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
    */
-  const buildWithdrawClaim = function (masterAddress, withdrawals) {
-    return buildGenericFundMovement(masterAddress, withdrawals, "withdraw")
+  const buildWithdrawClaim = async function (masterAddress, withdrawals) {
+    return buildBundledTransaction(await transactionGenericFundMovement(masterAddress, withdrawals, "withdraw"))
   }
 
   /**
@@ -757,7 +784,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {boolean} limitToMaxWithdrawableAmount flag indicating max withdrawable amount should be limited to balance
    * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back all funds
    */
-  const buildTransferFundsToMaster = async function (masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
+  const buildTransferFundsToMaster = async function () {
+    return buildBundledTransaction(await transactionsTransferFundsToMaster(...arguments))
+  }
+
+  /**
+   * Creates transactions for a collection of transfers from each bracket to master
+   *
+   * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
+   * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+   * @param {boolean} limitToMaxWithdrawableAmount flag indicating max withdrawable amount should be limited to balance
+   * @returns {Transaction[]} Transaction that have to be sent from the master address to transfer back all funds
+   */
+  const transactionsTransferFundsToMaster = async function (masterAddress, withdrawals, limitToMaxWithdrawableAmount) {
     const tokeinInfoPromises = fetchTokenInfoForFlux(withdrawals)
 
     // TODO: enforce that there are no overlapping withdrawals
@@ -786,7 +825,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       })
     )
 
-    return buildBundledTransaction(masterTransactions)
+    return masterTransactions
   }
 
   /**
@@ -794,12 +833,23 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the fubnds stored in the exchange
+   * @returns {Transaction} Multisend transaction that has to be sent from the master address to transfer back the funds stored in the exchange
    */
-  const buildWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
-    const withdrawalTransaction = await buildWithdrawClaim(masterAddress, withdrawals)
-    const transferFundsToMasterTransaction = await buildTransferFundsToMaster(masterAddress, withdrawals, false)
-    return buildBundledTransaction([withdrawalTransaction, transferFundsToMasterTransaction])
+  const buildWithdrawAndTransferFundsToMaster = async function () {
+    return buildBundledTransaction(await transactionsWithdrawAndTransferFundsToMaster(...arguments))
+  }
+
+  /**
+   * Creates transactions for a collection of transfers from each bracket to master
+   *
+   * @param {Address} masterAddress address of Master Gnosis Safe (Multi-Sig)
+   * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
+   * @returns {Transaction[]} Transaction that have to be sent from the master address to transfer back the funds stored in the exchange
+   */
+  const transactionsWithdrawAndTransferFundsToMaster = async function (masterAddress, withdrawals) {
+    const withdrawalTransaction = await transactionGenericFundMovement(masterAddress, withdrawals, "withdraw")
+    const transferFundsToMasterTransaction = await transactionsTransferFundsToMaster(masterAddress, withdrawals, false)
+    return withdrawalTransaction.concat(transferFundsToMasterTransaction)
   }
 
   const getAllowances = async function (owner, tokenInfo) {
