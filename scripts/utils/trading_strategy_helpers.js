@@ -367,19 +367,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of operations (either withdraw or requestWithdraw) on BatchExchange
-   * on behalf of a fleet of brackets owned by a single "Master Safe"
-   *
-   * @param {Address} masterAddress Ethereum address of Master Gnosis Safe (Multi-Sig)
-   * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
-   * @param {string} functionName Name of the function that is to be executed (can be "requestWithdraw" or "withdraw")
-   * @returns {Transaction} Multisend transaction to be sent from masterAddress for withdraw requests or claims
-   */
-  const buildGenericFundMovement = async function () {
-    return buildBundledTransaction(await transactionGenericFundMovement(...arguments))
-  }
-
-  /**
    * Creates transactions for a collection of operations (either withdraw or requestWithdraw) on BatchExchange
    * on behalf of a fleet of brackets owned by a single "Master Safe"
    *
@@ -770,8 +757,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction requesting withdraw that must sent from masterAddress
    */
-  const buildWithdrawRequest = function (masterAddress, withdrawals) {
-    return buildGenericFundMovement(masterAddress, withdrawals, "requestWithdraw")
+  const buildWithdrawRequest = async function (masterAddress, withdrawals) {
+    return buildBundledTransaction(await transactionGenericFundMovement(masterAddress, withdrawals, "requestWithdraw"))
   }
 
   /**
@@ -785,8 +772,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {Withdrawal[]} withdrawals List of {@link Withdrawal} that are to be bundled together
    * @returns {Transaction} Multisend transaction that has to be sent from the master address to withdraw the desired funds
    */
-  const buildWithdrawClaim = function (masterAddress, withdrawals) {
-    return buildGenericFundMovement(masterAddress, withdrawals, "withdraw")
+  const buildWithdrawClaim = async function (masterAddress, withdrawals) {
+    return buildBundledTransaction(await transactionGenericFundMovement(masterAddress, withdrawals, "withdraw"))
   }
 
   /**
