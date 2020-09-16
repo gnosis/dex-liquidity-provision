@@ -7,7 +7,7 @@ const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
 const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
-const { calcSafeAddresses } = require("../scripts/utils/calculate_fleet_addresses")(web3)
+const { calcSafeAddresses } = require("../scripts/utils/calculate_fleet_addresses")(web3, artifacts)
 
 contract("FleetFactoryDeterministic", function (accounts) {
   let gnosisSafeMasterCopy
@@ -41,7 +41,7 @@ contract("FleetFactoryDeterministic", function (accounts) {
           gnosisSafeMasterCopy.address,
           nonce
         )
-        const fleetCalculated = await calcSafeAddresses(fleetFactory, numberOfSafes, gnosisSafeMasterCopy.address, nonce)
+        const fleetCalculated = await calcSafeAddresses(numberOfSafes, nonce, fleetFactory, gnosisSafeMasterCopy.address)
         // the last event lists all created proxy, and is the only event decoded by Truffle
         assert.equal(transcript.receipt.rawLogs.length, numberOfSafes + 1, "More events than expected")
         assert.equal(transcript.logs.length, 1, "More events than expected")

@@ -40,7 +40,33 @@ const populatePriceStorage = function () {
   return priceStorage
 }
 
+/**
+ * Decodes a ProxyCreation raw event from GnosisSafeProxyFactory and tests it for validity.
+ *
+ * @param {any} rawEvent bytes of an event emmited from GnosisSafeProxyFactory
+ * @returns {Address} the address of the newly created proxy.
+ */
+const decodeCreateProxy = function (rawEvent) {
+  const { data, topics } = rawEvent
+  const eventSignature = web3.eth.abi.encodeEventSignature("ProxyCreation(address)")
+  if (topics[0] !== eventSignature) {
+    throw new Error("Input raw event is not a CreateProxy event")
+  }
+  const decoded = web3.eth.abi.decodeLog(
+    [
+      {
+        type: "address",
+        name: "proxy",
+      },
+    ],
+    data,
+    topics
+  )
+  return decoded.proxy
+}
+
 module.exports = {
   createTokenAndGetData,
   populatePriceStorage,
+  decodeCreateProxy,
 }

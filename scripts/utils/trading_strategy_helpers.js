@@ -16,6 +16,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const fs = require("fs")
   const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
   const { buildBundledTransaction, buildExecTransaction } = require("./internals")(web3, artifacts)
+  const { calcSafeAddresses } = require("./calculate_fleet_addresses")(web3, artifacts)
   const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
   const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
@@ -24,10 +25,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const BatchExchange = artifacts.require("BatchExchange")
   const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
+  const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 
   const exchangePromise = BatchExchange.deployed()
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
+  const fleetFactoryDeterministicPromise = FleetFactoryDeterministic.deployed()
   const hardcodedTokensByNetwork = require("./hardcoded_tokens")
 
   /**
@@ -248,6 +251,65 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
 
     const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
     return transcript.logs[0].args.fleet
+  }
+
+  /**
+   * Returns a transaction creating a (deterministically generated) fleet of Safes owned by
+   * the given master address for the given nonce.
+   *
+   * @param {Address} masterAddress address of Gnosis Safe (Multi-Sig) owning the Safes that
+   * will be created
+   * @param {number} fleetSize number of safes to be created with masterAddress as owner
+   * @param {string|BN} nonce non-repeating value that is used to determine the fleet addresses
+   * @returns {Transaction} transaction that can be used to deterministically generate a fleet
+   * with the given parameters
+   */
+  const buildDeterministicFleetOfSafes = async function (masterAddress, fleetSize, nonce) {
+    const fleetFactoryDeterministic = await fleetFactoryDeterministicPromise
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
+
+    const data = fleetFactoryDeterministic.contract.methods
+      .deployFleetWithNonce(masterAddress, fleetSize, gnosisSafeMasterCopy.address, nonce)
+      .encodeABI()
+    const transaction = {
+      operation: CALL,
+      to: fleetFactoryDeterministic.address,
+      value: 0,
+      data,
+    }
+
+    return transaction
+  }
+
+  /**
+   * Computes a unique nonce that can be used to create a deterministic fleet deployment for
+   * the given master safe.
+   *
+   * @param {Address|SmartContract} masterSafe Gnosis Safe smart contract (or its address) that
+   * will own the fleet for which the nonce is created.
+   * @param {string} [gnosisSafeNonce=null] If set, the function uses the given nonce instead of
+   * retrieving the current transaction nonce of the master safe.
+   * @returns {string} Nonce to be used on a deterministic fleet deployment.
+   */
+  const uniqueNonce = async function (masterSafe, gnosisSafeNonce = null) {
+    masterSafe = typeof masterSafe === "string" ? await getSafe(masterSafe) : masterSafe
+
+    // There can be only one transaction executed with the same Gnosis Safe nonce.
+    // This nonce can be combined with a fixed string to create a number that is
+    // unique for each deployment from the same master Safe.
+    if (gnosisSafeNonce === null) {
+      gnosisSafeNonce = await masterSafe.nonce()
+    }
+
+    // FleetFactoryDeterministic could in principle be used by other projects to deploy their safes.
+    // Without the following string descriptor, the pattern would be very natural (address + some
+    // kind of nonce) so it could inadvertently cause very annoying conflicts with unrelated projects.
+    // With this "string descriptor" instead there would be no such risk of an accidental hash collision.
+    const STRING_DESCRIPTOR = "Custom Market Maker deterministic deployment"
+    const hashInput = STRING_DESCRIPTOR + masterSafe.address + gnosisSafeNonce.toString()
+    const nonce = web3.utils.sha3(hashInput)
+
+    return nonce
   }
 
   /**
@@ -619,6 +681,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
     return [].concat(...bracketsAsObjects)
   }
+
   /**
    * Fetches the brackets deployed with the deterministic fleet factory by a given masterSafe
    * from the blockchaiin via events.
@@ -639,7 +702,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   }
 
   /**
-   * Batches together a collection of transfer-related transaction information.
+   * Returns a list of transfer-related transaction information.
    * Particularly, the resulting transaction is that of transfering all sufficient funds from master
    * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
    *
@@ -652,10 +715,11 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} currentPrice current quote price
    * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
    * @param {number} depositBaseToken Amount of base tokens to be invested (in total)
-   * @param {boolean} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
-   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   * @param {boolean} [storeDepositsAsFile=false] whether to write the executed deposits to a file (defaults to false)
+   * @param {boolean} [debug=false]  prints log statements when true
+   * @returns {Transaction[]} all the relevant transactions to bundle for executing transfer, approve, deposits
    */
-  const buildTransferApproveDepositFromOrders = async function (
+  const transactionsForTransferApproveDepositFromOrders = async function (
     masterAddress,
     bracketAddresses,
     baseTokenAddress,
@@ -665,7 +729,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     currentPrice,
     depositQuoteToken,
     depositBaseToken,
-    storeDepositsAsFile = false
+    storeDepositsAsFile = false,
+    debug = false
   ) {
     const numBrackets = bracketAddresses.length
     const stepSizeAsMultiplier = Math.pow(highestLimit / lowestLimit, 1 / bracketAddresses.length)
@@ -707,7 +772,28 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         }
       })
     }
-    return buildTransferApproveDepositFromList(masterAddress, deposits)
+    return transactionsForTransferApproveDepositFromList(masterAddress, deposits, debug)
+  }
+
+  /**
+   * Batches together a collection of transfer-related transaction information.
+   * Particularly, the resulting transaction is that of transfering all sufficient funds from master
+   * to its brackets, then approving and depositing those same tokens into BatchExchange on behalf of each bracket.
+   *
+   * @param {Address} masterAddress Address of the master safe owning the brackets
+   * @param {Address[]} bracketAddresses list of bracket addresses that need the deposit
+   * @param {Address} baseTokenAddress second token to be traded in bracket strategy
+   * @param {Address} quoteTokenAddress one token to be traded in bracket strategy
+   * @param {number} lowestLimit lower price bound
+   * @param {number} highestLimit upper price bound
+   * @param {number} currentPrice current quote price
+   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
+   * @param {number} depositBaseToken Amount of base tokens to be invested (in total)
+   * @param {boolean} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
+   * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
+   */
+  const buildTransferApproveDepositFromOrders = async function () {
+    return buildBundledTransaction(await transactionsForTransferApproveDepositFromOrders(...arguments))
   }
 
   /**
@@ -893,11 +979,86 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
   }
 
+  /**
+   * Create a single transaction that bundles bracket deployment, order creation, and deposits in a
+   * single transaction that can be executed atomically by the master Safe.
+   *
+   * @param {object} deploymentParameters The parameters used by the deployed strategy.
+   * @param {Address} deploymentParameters.masterAddress Address of the master safe owning the brackets
+   * @param {number} deploymentParameters.fleetSize Number of brackets to be deployed
+   * @param {number} deploymentParameters.baseTokenId ID of token (on BatchExchange) whose target price is to be specified (i.e. ETH)
+   * @param {number} deploymentParameters.quoteTokenId ID of the quote token for the given price (i.e. DAI)
+   * @param {number} deploymentParameters.currentPrice Current price of one base token in quote tokens
+   * @param {number} deploymentParameters.lowestLimit Lower price bound
+   * @param {number} deploymentParameters.highestLimit Highest price bound
+   * @param {number} deploymentParameters.depositBaseToken Amount of base tokens to be invested (in total)
+   * @param {number} deploymentParameters.depositQuoteToken Amount of quote tokens to be invested (in total)
+   * @param {number} [deploymentParameters.masterSafeNonce=null] Gnosis Safe nonce that is used to compute the deployment addresses. If
+   * left empty, the first available nonce is retrieved from the blockchain
+   * @param {number} [deploymentParameters.expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
+   * @param {number} [deploymentParameters.debug=false] Prints log statements when true
+   * @returns {Transaction} Multisend transaction that executes a full liquidity deployment
+   */
+  const buildFullLiquidityProvision = async function ({
+    masterAddress,
+    fleetSize,
+    baseTokenId,
+    quoteTokenId,
+    lowestLimit,
+    highestLimit,
+    currentPrice,
+    depositBaseToken,
+    depositQuoteToken,
+    masterSafeNonce = null,
+    expiry = DEFAULT_ORDER_EXPIRY,
+    debug = false,
+  }) {
+    const noncePromise = uniqueNonce(masterAddress, masterSafeNonce)
+    const tokenInfoPromises = fetchTokenInfoFromExchange(await exchangePromise, [baseTokenId, quoteTokenId])
+    const createFleetTransaction = buildDeterministicFleetOfSafes(masterAddress, fleetSize, await noncePromise)
+    const bracketAddresses = await calcSafeAddresses(fleetSize, await noncePromise)
+
+    const createOrderTransactions = transactionsForOrders(
+      masterAddress,
+      bracketAddresses,
+      baseTokenId,
+      quoteTokenId,
+      lowestLimit,
+      highestLimit,
+      debug,
+      expiry
+    )
+
+    const baseTokenAddress = (await tokenInfoPromises[baseTokenId]).address
+    const quoteTokenAddress = (await tokenInfoPromises[quoteTokenId]).address
+    const depositTransactions = transactionsForTransferApproveDepositFromOrders(
+      masterAddress,
+      bracketAddresses,
+      baseTokenAddress,
+      quoteTokenAddress,
+      lowestLimit,
+      highestLimit,
+      currentPrice,
+      depositQuoteToken,
+      depositBaseToken,
+      undefined,
+      debug
+    )
+
+    return buildBundledTransaction([
+      await createFleetTransaction,
+      ...(await createOrderTransactions),
+      ...(await depositTransactions),
+    ])
+  }
+
   return {
     assertNoAllowances,
     assertIsOnlyFleetOwner,
     buildBracketTransactionForTransferApproveDeposit,
     buildDepositFromList,
+    buildDeterministicFleetOfSafes,
+    buildFullLiquidityProvision,
     buildOrders,
     buildTransferApproveDepositFromOrders,
     buildTransferApproveDepositFromList,
@@ -908,6 +1069,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     buildWithdrawRequest,
     transactionsForOrders,
     transactionsForTransferApproveDepositFromList,
+    transactionsForTransferApproveDepositFromOrders,
     checkSufficiencyOfBalance,
     deployFleetOfSafes,
     fetchTokenInfoAtAddresses,
@@ -923,5 +1085,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     isOnlyFleetOwner,
     retrieveTradedTokensPerBracket,
     tokenDetail,
+    uniqueNonce,
   }
 }
