@@ -1,10 +1,9 @@
 const createCsvWriter = require("csv-writer").createObjectCsvWriter
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
-const {
-  fetchTokenInfoFromExchange,
-  getExchange,
-  getDeployedBrackets,
-} = require("./utils/trading_strategy_helpers")(web3, artifacts)
+const { fetchTokenInfoFromExchange, getExchange, getDeployedBrackets } = require("./utils/trading_strategy_helpers")(
+  web3,
+  artifacts
+)
 const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
   .option("masterSafe", {
