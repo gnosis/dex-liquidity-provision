@@ -4,7 +4,6 @@ const {
   fetchTokenInfoFromExchange,
   getExchange,
   getDeployedBrackets,
-  getDeployedDeterministicBrackets,
 } = require("./utils/trading_strategy_helpers")(web3, artifacts)
 const { default_yargs } = require("./utils/default_yargs")
 const argv = default_yargs
@@ -21,9 +20,7 @@ const argv = default_yargs
 
 module.exports = async (callback) => {
   try {
-    const nonDeterministicBracketAddresses = await getDeployedBrackets(argv.masterSafe)
-    const deterministicBracketAddresses = await getDeployedDeterministicBrackets(argv.masterSafe)
-    const bracketAddresses = nonDeterministicBracketAddresses.concat(deterministicBracketAddresses)
+    const bracketAddresses = await getDeployedBrackets(argv.masterSafe)
     console.log("The following addresses have been deployed from your MASTER SAFE: ", bracketAddresses.join())
 
     // writing the brackets into a csv file
