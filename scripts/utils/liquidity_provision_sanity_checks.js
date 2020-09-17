@@ -5,6 +5,7 @@ const { proceedAnyways } = require("./user_interface_helpers")
 const { toErc20Units } = require("./printing_tools")
 
 module.exports = function (web3, artifacts) {
+  const { firstAvailableNonce } = require("./gnosis_safe_server_interactions")(web3, artifacts)
   const { fetchTokenInfoFromExchange, checkSufficiencyOfBalance, getSafe, getExchange } = require("./trading_strategy_helpers")(
     web3,
     artifacts
@@ -20,13 +21,15 @@ module.exports = function (web3, artifacts) {
    * @returns {object} data needed to deploy liquidity on the exchange
    */
   async function sanitizeArguments({ argv, maxBrackets }) {
+    if (argv.verify && argv.nonce === null) {
+      throw new Error("An explicit nonce is required to verify the transaction. Add the nonce using the --nonce argument.")
+    }
+
     // initialize promises that will be used later in the code to speed up execution
     const exchangePromise = getExchange()
     const masterSafePromise = getSafe(argv.masterSafe)
     const masterSafeNoncePromise =
-      argv.nonce === undefined
-        ? masterSafePromise.then((masterSafe) => masterSafe.nonce()).then((nonce) => nonce.toNumber())
-        : Promise.resolve(argv.nonce)
+      argv.nonce === null ? firstAvailableNonce(argv.masterSafe, argv.network) : Promise.resolve(argv.nonce)
     const signerPromise = web3.eth.getAccounts().then((accounts) => accounts[0])
     const masterOwnersPromise = masterSafePromise.then((masterSafe) => masterSafe.getOwners())
 
