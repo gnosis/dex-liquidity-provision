@@ -520,10 +520,14 @@ contract("Withdraw script", function (accounts) {
       }
       const globalPriceStorage = {}
       globalPriceStorage["WETH-USDC"] = { price: 250.0 }
-      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
-      // if the built transaction used the token balance of the bracket instead of zero, then
-      // the following transaction would fail.
-      await execTransaction(masterSafe, safeOwner, transaction)
+
+      // The transaction creation should be rejected because no funds can be withdrawn
+      // before executing a withdraw request.
+      // If the built transaction used the token balance of the bracket instead of zero,
+      // then the transaction creation would not fail.
+      await assertNodejs.rejects(prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage), {
+        message: "No funds can be withdrawn for the given parameters.",
+      })
     })
   })
   it("fails on bad input", async () => {

@@ -122,6 +122,10 @@ module.exports = function (web3, artifacts) {
       )
     )
 
+    if (withdrawals.length === 0) {
+      throw new Error("No funds can be withdrawn for the given parameters.")
+    }
+
     return {
       withdrawals,
       tokenInfoPromises,
