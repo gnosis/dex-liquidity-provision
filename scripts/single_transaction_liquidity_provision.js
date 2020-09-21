@@ -57,7 +57,7 @@ const argv = default_yargs
   })
   .option("nonce", {
     type: "number",
-    implies: ["verify"],
+    default: null,
     describe: "Use this specific nonce instead of the next available one",
   })
   .check(checkBracketsForDuplicate).argv

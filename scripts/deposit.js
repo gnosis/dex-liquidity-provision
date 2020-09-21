@@ -43,7 +43,7 @@ module.exports = async (callback) => {
       }
     } else {
       console.log("Verifying transaction")
-      await transactionExistsOnSafeServer(masterSafe, transaction, argv.network, (await masterSafe.nonce()).toNumber())
+      await transactionExistsOnSafeServer(masterSafe, transaction, argv.network)
     }
 
     callback()
