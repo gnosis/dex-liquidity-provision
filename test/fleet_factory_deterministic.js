@@ -8,6 +8,7 @@ const IProxy = artifacts.require("IProxy")
 const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const { calcSafeAddresses } = require("../scripts/utils/calculate_fleet_addresses")(web3, artifacts)
+const BN = require("bn.js")
 
 contract("FleetFactoryDeterministic", function (accounts) {
   let gnosisSafeMasterCopy
@@ -32,31 +33,33 @@ contract("FleetFactoryDeterministic", function (accounts) {
   describe("created safes", async function () {
     it("creates and logs new safes with several nonces", async () => {
       const numberOfSafes = 20
-      const nonces = [0, 10, 17]
+      const nonces = [0, 10, 17, new BN("23457692357684375")]
 
-      nonces.forEach(async (nonce) => {
-        const transcript = await fleetFactory.deployFleetWithNonce(
-          master.address,
-          numberOfSafes,
-          gnosisSafeMasterCopy.address,
-          nonce
-        )
-        const fleetCalculated = await calcSafeAddresses(numberOfSafes, nonce, fleetFactory, gnosisSafeMasterCopy.address)
-        // the last event lists all created proxy, and is the only event decoded by Truffle
-        assert.equal(transcript.receipt.rawLogs.length, numberOfSafes + 1, "More events than expected")
-        assert.equal(transcript.logs.length, 1, "More events than expected")
-
-        const emittedFleet = transcript.logs[0].args.fleet
-        const emittedOwner = transcript.logs[0].args.owner
-        assert.equal(emittedFleet.length, fleetCalculated.length, "FleetFactory did not log created Safes correctly")
-        for (let i = 0; i < numberOfSafes; i++)
-          assert.equal(
-            emittedFleet[i].toLowerCase(),
-            fleetCalculated[i].toLowerCase(),
-            `FleetFactory did not log created Safes ${i} correctly for nonce ${nonce}`
+      await Promise.all(
+        nonces.map(async (nonce) => {
+          const transcript = await fleetFactory.deployFleetWithNonce(
+            master.address,
+            numberOfSafes,
+            gnosisSafeMasterCopy.address,
+            nonce
           )
-        assert.equal(emittedOwner, master.address, "FleetFactory did not log the correct owner")
-      })
+          const fleetCalculated = await calcSafeAddresses(numberOfSafes, nonce, fleetFactory, gnosisSafeMasterCopy.address)
+          // the last event lists all created proxy, and is the only event decoded by Truffle
+          assert.equal(transcript.receipt.rawLogs.length, numberOfSafes + 1, "More events than expected")
+          assert.equal(transcript.logs.length, 1, "More events than expected")
+
+          const emittedFleet = transcript.logs[0].args.fleet
+          const emittedOwner = transcript.logs[0].args.owner
+          assert.equal(emittedFleet.length, fleetCalculated.length, "FleetFactory did not log created Safes correctly")
+          for (let i = 0; i < numberOfSafes; i++)
+            assert.equal(
+              emittedFleet[i].toLowerCase(),
+              fleetCalculated[i].toLowerCase(),
+              `FleetFactory did not log created Safes ${i} correctly for nonce ${nonce}`
+            )
+          assert.equal(emittedOwner, master.address, "FleetFactory did not log the correct owner")
+        })
+      )
     })
 
     it("are owned by master", async () => {
