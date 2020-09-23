@@ -316,16 +316,16 @@
     "@gnosis.pm/util-contracts" "^2.0.0"
     verify-on-etherscan "^1.1.1"
 
-"@gnosis.pm/safe-contracts@v1.1.1-dev.2":
-  version "1.1.1-dev.2"
-  resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-contracts/-/safe-contracts-1.1.1-dev.2.tgz#4a5b9a9befe66d15df87d2216237d4ea4f64118f"
-  integrity sha512-x0x8K3/XzfDmtmL6RaF8eSJUPJVmT7jd29kmwoodm/JlYlyOmdQNBynUZUTkmknIlF1coiypCLls9zDbx8QQfw==
+"@gnosis.pm/safe-contracts@v1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-contracts/-/safe-contracts-1.2.0.tgz#33e8332e09c19e8822fccb06c7d3eff806d091f6"
+  integrity sha512-lcpZodqztDgMICB0kAc8aJdQePwCaLJnbeNjgVTfLAo3fBckVRV06VHXg5IsZ26qLA4JfZ690Cb7TsDVE9ZF3w==
   dependencies:
     "@truffle/hdwallet-provider" "^1.0.0"
     dotenv "^8.0.0"
     openzeppelin-solidity "^2.0.0"
     shelljs "^0.8.3"
-    solc "0.5.14"
+    solc "0.5.17"
     truffle "^5.1.21"
 
 "@gnosis.pm/solidity-data-structures@=1.2.4":
@@ -6794,10 +6794,10 @@ sol-merger@3.1.0, sol-merger@^3.1.0:
     glob "^7.1.2"
     strip-json-comments "^3.0.1"
 
-solc@0.5.14:
-  version "0.5.14"
-  resolved "https://registry.yarnpkg.com/solc/-/solc-0.5.14.tgz#7c3ecb2441ac10a15cdfd39207372eb63f2bd00c"
-  integrity sha512-I/MCeOKjnLXxcD65wA+E37BxdERoAYoLeyJ5GnXFijICLmvhzt0xz59R92Zw3TPyJYnHSErKBYpMsfnZVyQJaQ==
+solc@0.5.17:
+  version "0.5.17"
+  resolved "https://registry.yarnpkg.com/solc/-/solc-0.5.17.tgz#8a76c50e98d49ca7610cca2fdc78ff3016540c67"
+  integrity sha512-qpX+PGaU0Q3c6lh2vDzMoIbhv6bIrecI4bYsx+xUs01xsGFnY6Nr0L8y/QMyutTnrHN6Lb/Yl672ZVRqxka96w==
   dependencies:
     command-exists "^1.2.8"
     commander "3.0.2"
