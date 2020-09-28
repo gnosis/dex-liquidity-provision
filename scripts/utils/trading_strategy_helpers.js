@@ -1056,6 +1056,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     transactionsForOrders,
     transactionsForTransferApproveDepositFromList,
     transactionsForTransferApproveDepositFromOrders,
+    transactionGenericFundMovement,
     checkSufficiencyOfBalance,
     deployFleetOfSafes,
     fetchTokenInfoAtAddresses,
