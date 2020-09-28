@@ -107,7 +107,7 @@ module.exports = function (web3, artifacts) {
               return
             }
             const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
-            log(`USD value for ${amount} ${tokenData.symbol} on bracket ${bracketAddress} is ${usdValue}$`);
+            log(`USD value for ${amount} ${tokenData.symbol} on bracket ${bracketAddress} is ${usdValue}$`)
             if (usdValue.gte(ONE)) {
               withdrawals.push({
                 bracketAddress,
