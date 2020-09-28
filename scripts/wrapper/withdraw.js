@@ -311,6 +311,7 @@ module.exports = function (web3, artifacts) {
     .check(checkBracketsForDuplicate)
 
   return {
+    getWithdrawalsAndTokenInfo,
     prepareWithdrawRequest,
     prepareWithdraw,
     prepareWithdrawAndTransferFundsToMaster,
