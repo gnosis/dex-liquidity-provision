@@ -68,10 +68,10 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@chainlink/contracts-0.0.9@npm:@chainlink/contracts@0.0.9":
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/@chainlink/contracts/-/contracts-0.0.9.tgz#d2ddc033c67686e2952c965e4084ca29d3461e90"
-  integrity sha512-bI97GItkgoViPNhJT9EDf/i33gMwpQj4MywV6IqMStKCoPrUkrTpx6Tt0Knhf73U8zh4qcY2+hoQ9Yqr8gLUqg==
+"@chainlink/contracts-0.0.10@npm:@chainlink/contracts@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@chainlink/contracts/-/contracts-0.0.10.tgz#9eca8ff76e82e62b8ceeda9b2f69395cdb4dae56"
+  integrity sha512-ok+ucSQ+3mrR+zjbi6zIrdd5M9XymcqVcnXGVyqBVRYZp97jS2/rt/glP320JmHxmi4pacgDOg0Ux11xIr1S8Q==
   optionalDependencies:
     "@truffle/contract" "^4.2.6"
     ethers "^4.0.45"
@@ -7181,10 +7181,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.27.4:
-  version "2.27.4"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.27.4.tgz#51e4b9837b4799b978d2cd4bd17beaa305cc4d20"
-  integrity sha512-mDyrB7AycqQmZe5j/TfmbN4GaY5hI7Cr9aIGv+GF7iRLAHfAuqQk96AzzZT9OOxF7zXTCjxSwFmZlYb7vzOIcQ==
+synthetix-js@=2.29.3:
+  version "2.29.3"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.29.3.tgz#96b2077ec430a1d390f861d65e1d8abcb8a63106"
+  integrity sha512-feOCfjsBio3f2uXfGo9OWalJ2PpkZ8RKnIEUqyI2o898ZrXarTwa1a5MjTgoBmIMMy2m8l+EE7HMO35Mh31Cmg==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -7196,16 +7196,16 @@ synthetix-js@=2.27.4:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.27.4"
+    synthetix "2.29.3"
     trezor-connect "8.1.8"
     walletlink "2.0.2"
 
-synthetix@2.27.4:
-  version "2.27.4"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.27.4.tgz#c42276a5e5377fc0cfa5a81b336f723e46010cd7"
-  integrity sha512-/ll0ZBWlIwx37jGyWS4+sMZBBtOzNJyyt70FxjFg41CKBD94KTN6ocllp/BUpdwc9UcU6LyoinWNR5oHRUUgrA==
+synthetix@2.29.3:
+  version "2.29.3"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.29.3.tgz#dc993cffff3eff2abd167ced4e3ca6dde96569e4"
+  integrity sha512-1TT7MtwG3AsD/d58CCzxwnafml0ypEvMFnFUHSG61LedipNog6yGWXFWuL0mjCqnl0eUYu9rhvFOOb+33fpCng==
   dependencies:
-    "@chainlink/contracts-0.0.9" "npm:@chainlink/contracts@0.0.9"
+    "@chainlink/contracts-0.0.10" "npm:@chainlink/contracts@0.0.10"
     abi-decoder "2.3.0"
     commander "5.1.0"
     openzeppelin-solidity-2.3.0 "npm:openzeppelin-solidity@2.3.0"
