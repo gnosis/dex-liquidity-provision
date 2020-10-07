@@ -13,6 +13,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const linkPrefix = {
     rinkeby: "rinkeby.",
     mainnet: "",
+    xdai: "xdai",
   }
 
   const webInterfaceBaseAddress = function (network) {
@@ -28,7 +29,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {SmartContract} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
-   * @param {string} network either rinkeby or mainnet
+   * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
    */
   const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
@@ -84,7 +85,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {SmartContract} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction whose existence is checked
-   * @param {string} network either rinkeby or mainnet
+   * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] Gnosis Safe transaction nonce.
    */
   const transactionExistsOnSafeServer = async function (masterSafe, transaction, network, nonce = null) {
@@ -132,7 +133,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address} multisigAddress Address of the multisig Safe for
    * which to retrieve the nonce.
-   * @param {string} network Either rinkeby or mainnet.
+   * @param {string} network Either rinkeby, dai or mainnet.
    * @returns {number} The first Safe nonce available for a new transaction.
    */
   const firstAvailableNonce = async function (multisigAddress, network) {
