@@ -243,7 +243,6 @@ module.exports = function (web3, artifacts) {
    *
    * @param {SmartContract} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
-   * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
    */
   const signAndExecute = async function (masterSafe, transaction, nonce = null) {
