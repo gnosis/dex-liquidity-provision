@@ -170,12 +170,18 @@ module.exports = function (web3, artifacts) {
     const estimateCall = masterSafe.contract.methods
       .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
       .encodeABI()
-    const estimateResponse = await web3.eth.call({
-      to: masterSafe.address,
-      from: masterSafe.address,
-      data: estimateCall,
-      gasPrice: 0,
-    })
+    let estimateResponse
+    try {
+     estimateResponse = await web3.eth.call({
+        to: masterSafe.address,
+        from: masterSafe.address,
+        data: estimateCall,
+        gasPrice: 0,
+      })
+    } catch(error) {
+      // Parity nodes throw with error message is "VM execution error\n Reverted 0x..."
+      estimateResponse = "0x" + error.message.split("0x").pop()
+    }
     // https://docs.gnosis.io/safe/docs/contracts_tx_execution/#safe-transaction-gas-limit-estimation
     // The value returned by requiredTxGas is encoded in a revert error message. For retrieving the hex
     // encoded uint value the first 68 bytes of the error message need to be removed.
