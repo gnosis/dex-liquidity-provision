@@ -172,7 +172,7 @@ module.exports = function (web3, artifacts) {
       .encodeABI()
     let estimateResponse
     try {
-     estimateResponse = await web3.eth.call({
+      estimateResponse = await web3.eth.call({
         to: masterSafe.address,
         from: masterSafe.address,
         data: estimateCall,
