@@ -67,6 +67,10 @@
     "4": {
       "links": {},
       "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
+    },
+    "100": {
+      "links": {},
+      "address": "0x6851D6fDFAfD08c0295C392436245E5bc78B0185"
     }
   },
   "GnosisSafeProxyFactory": {
@@ -111,6 +115,10 @@
       "links": {},
       "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
       "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
+    },
+    "100": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
     }
   }
 }
