@@ -190,6 +190,39 @@ module.exports = function (web3, artifacts) {
     return Math.ceil((txGasEstimate * 64) / 63)
   }
 
+  /**
+   * Signs the given transaction with given nonce and gas amount
+   *
+   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {Transaction} transaction The transaction to be signed and sent
+   * @param {number} gas Gas that should be used for the Safe transaction.
+   * @param {number} nonce Specified transaction index.
+   */
+  const signTransaction = async function (masterSafe, transaction, gas, nonce) {
+    const transactionHash = await masterSafe.getTransactionHash(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      gas,
+      0,
+      0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
+      nonce
+    )
+
+    const signer = (await web3.eth.getAccounts())[0]
+    console.log(
+      `Signing transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`
+    )
+    return {
+      signature: await getSafeCompatibleSignature(transactionHash, signer),
+      signer,
+      transactionHash
+    }
+  }
+
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
     const sig = await web3.eth.sign(transactionHash, signer)
     let v = parseInt(sig.slice(-2), 16)
@@ -205,6 +238,34 @@ module.exports = function (web3, artifacts) {
     return sig.slice(0, -2) + recoveryByte.toString(16)
   }
 
+  /**
+   * Signs and executes a transaction on the given safe
+   *
+   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {Transaction} transaction The transaction to be signed and sent
+   * @param {string} network either rinkeby, xdai or mainnet
+   * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
+   */
+  const signAndExecute = async function (masterSafe, transaction, nonce = null) {
+    if (nonce === null) {
+      nonce = await masterSafe.nonce()
+    }
+    const safeTxGas = await estimateGas(masterSafe, transaction)
+    const { signature } = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
+    
+    await masterSafe.execTransaction(
+      transaction.to, 
+      transaction.value, 
+      transaction.data, 
+      transaction.operation, 
+      safeTxGas,
+      0, 
+      0, 
+      ZERO_ADDRESS, 
+      ZERO_ADDRESS,
+      signature)
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
@@ -215,6 +276,8 @@ module.exports = function (web3, artifacts) {
     buildBundledTransaction,
     buildExecTransaction,
     getSafeCompatibleSignature,
+    signAndExecute,
+    signTransaction,
     CALL,
   }
 }

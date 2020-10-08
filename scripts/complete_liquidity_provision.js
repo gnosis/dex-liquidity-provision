@@ -10,6 +10,7 @@ const {
 const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { verifyBracketsWellFormed } = require("./utils/verify_scripts")(web3, artifacts)
 const { sanitizeArguments } = require("./utils/liquidity_provision_sanity_checks")(web3, artifacts)
+const { signAndExecute } = require("./utils/internals")(web3, artifacts)
 
 const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { sleep } = require("./utils/js_helpers")
@@ -73,6 +74,11 @@ const argv = default_yargs
     type: "boolean",
     default: false,
     describe: "Do not actually send transactions, just simulate their submission",
+  })
+  .option("executeOnchain", {
+    type: "boolean",
+    default: false,
+    describe: "Directly execute transaction on-chain instead of sending to the backend",
   })
   .option("nonce", {
     type: "number",
@@ -163,15 +169,17 @@ module.exports = async (callback) => {
       true
     )
 
+    const signAndSendOrExecuteOnChain = argv.executeOnchain ? async (safe, tx, _, nonce) => signAndExecute(safe, tx, nonce) : signAndSend
+
     if (!argv.verify) {
       console.log(
         "==> Sending the order placing transaction to gnosis-safe interface.\n    Attention: This transaction MUST be executed first!"
       )
-      await signAndSend(masterSafe, orderTransaction, argv.network, masterSafeNonce)
+      await signAndSendOrExecuteOnChain(masterSafe, orderTransaction, argv.network, masterSafeNonce)
       console.log(
         "==> Sending the funds transferring transaction.\n    Attention: This transaction can only be executed after the one above!"
       )
-      await signAndSend(masterSafe, bundledFundingTransaction, argv.network, masterSafeNonce + 1)
+      await signAndSendOrExecuteOnChain(masterSafe, bundledFundingTransaction, argv.network, masterSafeNonce + 1)
       console.log(
         `To verify the transactions run the same script with --verify --nonce=${masterSafeNonce} --brackets=${bracketAddresses.join()}`
       )
