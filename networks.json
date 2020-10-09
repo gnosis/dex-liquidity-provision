@@ -23,16 +23,6 @@
       "transactionHash": "0x2d5d771058550950b8675fae4e2f09f2e39d0056bd9a831a597ac7b4a72fbed9"
     }
   },
-  "GnosisSafe": {
-    "1": {
-      "links": {},
-      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-    },
-    "4": {
-      "links": {},
-      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-    }
-  },
   "GnosisSafeProxyFactory": {
     "1": {
       "links": {},
