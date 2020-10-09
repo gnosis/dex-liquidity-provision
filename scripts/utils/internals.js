@@ -178,7 +178,7 @@ module.exports = function (web3, artifacts) {
         data: estimateCall,
         gasPrice: 0,
       })
-    } catch(error) {
+    } catch (error) {
       // Parity nodes throw with error message is "VM execution error\n Reverted 0x..."
       estimateResponse = "0x" + error.message.split("0x").pop()
     }
