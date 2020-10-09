@@ -504,11 +504,11 @@
     defer-to-connect "^1.0.1"
 
 "@truffle/artifactor@^4.0.72":
-  version "4.0.80"
-  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.80.tgz#ad6b292602783641dd35849ca391285256ea58e4"
-  integrity sha512-rk6ab1SFnwT9b4ffoIDa3KsN5A0WED85Arqf2BvRfGj75JF2PaWKG/+RqrQ21u/6+DbVVomepiUmvmHHi/y80w==
+  version "4.0.81"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.81.tgz#b68df959887ebf2ef8993640f30bb75a376fd2cf"
+  integrity sha512-SUJ2n5GzmhuoYbtpooGclmMdKoAde7Qq2+JlCV9FRWh9Sq4uDKH+5atICCMJN3eyTTW0S7caGtBnw+hM7hIvJQ==
   dependencies:
-    "@truffle/contract-schema" "^3.2.5"
+    "@truffle/contract-schema" "^3.3.0"
     fs-extra "^8.1.0"
     lodash.assign "^4.2.0"
     lodash.merge "^4.6.2"
