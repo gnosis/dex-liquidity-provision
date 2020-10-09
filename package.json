@@ -30,6 +30,11 @@
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint && yarn pretty-check"
+    }
+  },
   "devDependencies": {
     "@truffle/artifactor": "^4.0.72",
     "eslint": "^7.6.0",
@@ -37,6 +42,7 @@
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-react": "^7.20.6",
     "ganache-cli": "6.11.0",
+    "husky": "^4.3.0",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
     "tmp-promise": "^3.0.2",
