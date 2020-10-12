@@ -30,13 +30,19 @@
     "networks-inject": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/inject_network_info.js",
     "networks-extract": "CONF_FILE=$(pwd)'/migration_conf.js'  node node_modules/@gnosis.pm/util-contracts/src/extract_network_info.js"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint && yarn pretty-check"
+    }
+  },
   "devDependencies": {
     "@truffle/artifactor": "^4.0.72",
     "eslint": "^7.6.0",
     "eslint-plugin-jsdoc": "^30.2.1",
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-react": "^7.20.6",
-    "ganache-cli": "6.11.0",
+    "husky": "^4.3.0",
+    "ganache-cli": "6.12.0",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
     "tmp-promise": "^3.0.2",
@@ -49,7 +55,7 @@
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
     "@gnosis.pm/util-contracts": "^2.0.7",
     "@openzeppelin/contracts": "=2.5.1",
-    "@truffle/contract": "4.2.24",
+    "@truffle/contract": "4.2.25",
     "axios": "^0.20.0",
     "bignumber.js": "^9.0.0",
     "bn.js": "^5.1.2",
@@ -60,7 +66,7 @@
     "eth-gas-reporter": "^0.2.17",
     "ethereumjs-util": "^7.0.4",
     "node-fetch": "^2.6.0",
-    "synthetix-js": "=2.27.4",
+    "synthetix-js": "=2.30.0",
     "truffle": "^5.1.39",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1",
     "typescript-logging": "^1.0.0"

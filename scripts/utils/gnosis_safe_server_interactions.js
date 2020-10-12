@@ -115,7 +115,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address} multisigAddress Address of the multisig Safe for
    * which to retrieve the nonce.
-   * @param {string} network Either rinkeby, dai or mainnet.
+   * @param {string} network Either rinkeby, xdai or mainnet.
    * @returns {number} The first Safe nonce available for a new transaction.
    */
   const firstAvailableNonce = async function (multisigAddress, network) {
