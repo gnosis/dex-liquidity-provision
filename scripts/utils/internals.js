@@ -213,13 +213,11 @@ module.exports = function (web3, artifacts) {
     )
 
     const signer = (await web3.eth.getAccounts())[0]
-    console.log(
-      `Signing transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`
-    )
+    console.log(`Signing transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`)
     return {
       signature: await getSafeCompatibleSignature(transactionHash, signer),
       signer,
-      transactionHash
+      transactionHash,
     }
   }
 
@@ -251,18 +249,19 @@ module.exports = function (web3, artifacts) {
     }
     const safeTxGas = await estimateGas(masterSafe, transaction)
     const { signature } = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
-    
+
     await masterSafe.execTransaction(
-      transaction.to, 
-      transaction.value, 
-      transaction.data, 
-      transaction.operation, 
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
       safeTxGas,
-      0, 
-      0, 
-      ZERO_ADDRESS, 
+      0,
+      0,
       ZERO_ADDRESS,
-      signature)
+      ZERO_ADDRESS,
+      signature
+    )
   }
 
   return {

@@ -76,7 +76,7 @@ module.exports = function (web3, artifacts) {
       throw new Error("Choose a smaller numBrackets, otherwise your transaction would be too large.")
     }
 
-    if (argv.executeOnchain && await thresholdPromise != 1) {
+    if (argv.executeOnchain && (await thresholdPromise) != 1) {
       throw new Error("More than one signature required. Cannot execute on chain immediately.")
     }
 

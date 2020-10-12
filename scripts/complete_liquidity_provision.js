@@ -169,7 +169,9 @@ module.exports = async (callback) => {
       true
     )
 
-    const signAndSendOrExecuteOnChain = argv.executeOnchain ? async (safe, tx, _, nonce) => signAndExecute(safe, tx, nonce) : signAndSend
+    const signAndSendOrExecuteOnChain = argv.executeOnchain
+      ? async (safe, tx, _, nonce) => signAndExecute(safe, tx, nonce)
+      : signAndSend
 
     if (!argv.verify) {
       console.log(

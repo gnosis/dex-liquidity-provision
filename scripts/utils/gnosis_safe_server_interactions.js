@@ -37,7 +37,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
 
     const safeTxGas = await estimateGas(masterSafe, transaction)
-    const {signature, signer, transactionHash} = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
+    const { signature, signer, transactionHash } = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
 
     const endpoint = `${transactionApiBaseAddress(network)}/safes/${masterSafe.address}/transactions/`
     const postData = {
