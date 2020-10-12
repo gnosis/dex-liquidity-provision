@@ -10,6 +10,7 @@ module.exports = function (web3, artifacts) {
   const IProxy = artifacts.require("IProxy")
   const MultiSend = artifacts.require("MultiSend")
 
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
 
   const jsonrpc = "2.0"
@@ -135,7 +136,7 @@ module.exports = function (web3, artifacts) {
    * @returns {Transaction} Transaction calling execTransaction; should be executed by master
    */
   const buildExecTransaction = async function (masterAddress, bracketAddress, transaction) {
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed() // TODO: do we need the master copy instance?
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise // TODO: do we need the master copy instance?
 
     const execData = await execTransactionData(gnosisSafeMasterCopy, masterAddress, transaction)
     const execTransaction = {

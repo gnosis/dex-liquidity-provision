@@ -28,6 +28,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 
   const exchangePromise = BatchExchange.deployed()
+  const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const fleetFactoryPromise = FleetFactory.deployed()
   const fleetFactoryDeterministicPromise = FleetFactoryDeterministic.deployed()
   const hardcodedTokensByNetwork = require("./hardcoded_tokens")
@@ -246,7 +247,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    */
   const deployFleetOfSafes = async function (masterAddress, fleetSize) {
     const fleetFactory = await fleetFactoryPromise
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     const transcript = await fleetFactory.deployFleet(masterAddress, fleetSize, gnosisSafeMasterCopy.address)
     return transcript.logs[0].args.fleet
@@ -265,7 +266,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    */
   const buildDeterministicFleetOfSafes = async function (masterAddress, fleetSize, nonce) {
     const fleetFactoryDeterministic = await fleetFactoryDeterministicPromise
-    const gnosisSafeMasterCopy = await GnosisSafe.deployed()
+    const gnosisSafeMasterCopy = await gnosisSafeMasterCopyPromise
 
     const data = fleetFactoryDeterministic.contract.methods
       .deployFleetWithNonce(masterAddress, fleetSize, gnosisSafeMasterCopy.address, nonce)
