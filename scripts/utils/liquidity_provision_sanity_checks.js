@@ -32,6 +32,7 @@ module.exports = function (web3, artifacts) {
       argv.nonce === null ? firstAvailableNonce(argv.masterSafe, argv.network) : Promise.resolve(argv.nonce)
     const signerPromise = web3.eth.getAccounts().then((accounts) => accounts[0])
     const masterOwnersPromise = masterSafePromise.then((masterSafe) => masterSafe.getOwners())
+    const thresholdPromise = masterSafePromise.then((masterSafe) => masterSafe.getThreshold())
 
     const exchange = await exchangePromise
     const tokenInfoPromises = fetchTokenInfoFromExchange(exchange, [argv.baseTokenId, argv.quoteTokenId])
@@ -72,7 +73,11 @@ module.exports = function (web3, artifacts) {
       }
     }
     if (argv.numBrackets > maxBrackets) {
-      throw new Error("Error: Choose a smaller numBrackets, otherwise your transaction would be too large.")
+      throw new Error("Choose a smaller numBrackets, otherwise your transaction would be too large.")
+    }
+
+    if (argv.executeOnchain && await thresholdPromise != 1) {
+      throw new Error("More than one signature required. Cannot execute on chain immediately.")
     }
 
     return {
