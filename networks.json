@@ -1,4 +1,30 @@
 {
+  "BatchExchange": {
+    "1": {
+      "links": {
+        "IdToAddressBiMap": "0xED4d05496C71e71cC2A8726af1242C22108d1761",
+        "IterableAppendOnlySet": "0xCDDB32b6Bb2808D5B5115dAab207479cE98d2636"
+      },
+      "address": "0x6F400810b62df8E13fded51bE75fF5393eaa841F",
+      "transactionHash": "0xe74e8e965afc67f96a38caee794f008be33a7fe7ea96b9baad7b2963250ac36a"
+    },
+    "4": {
+      "links": {
+        "IdToAddressBiMap": "0x5c4C6bf91240A5fdBfB9a1BEd8d43227046e2feA",
+        "IterableAppendOnlySet": "0x0D47D0548FDAD66B06E81a826EED8c687aCddBCB"
+      },
+      "address": "0xC576eA7bd102F7E476368a5E98FA455d1Ea34dE2",
+      "transactionHash": "0xc5bf4f48747093a79b623c2a2392ccbdb73a3d788e7d1f0f53f640ea18496d90"
+    },
+    "100": {
+      "links": {
+        "IdToAddressBiMap": "0x048E53A455a058462eA58442E1D94Fbc955495cB",
+        "IterableAppendOnlySet": "0x57E6B987c2ccd421859A244dd22a0D5a62D88f91"
+      },
+      "address": "0x25B06305CC4ec6AfCF3E7c0b673da1EF8ae26313",
+      "transactionHash": "0xd5e7da686ace1ae7f1917ad54b8610ee936bdc900e56b495739795fba3d5e7c1"
+    }
+  },
   "FleetFactory": {
     "1": {
       "links": {},
