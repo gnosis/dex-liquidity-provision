@@ -1,4 +1,30 @@
 {
+  "BatchExchange": {
+    "1": {
+      "links": {
+        "IdToAddressBiMap": "0xED4d05496C71e71cC2A8726af1242C22108d1761",
+        "IterableAppendOnlySet": "0xCDDB32b6Bb2808D5B5115dAab207479cE98d2636"
+      },
+      "address": "0x6F400810b62df8E13fded51bE75fF5393eaa841F",
+      "transactionHash": "0xe74e8e965afc67f96a38caee794f008be33a7fe7ea96b9baad7b2963250ac36a"
+    },
+    "4": {
+      "links": {
+        "IdToAddressBiMap": "0x5c4C6bf91240A5fdBfB9a1BEd8d43227046e2feA",
+        "IterableAppendOnlySet": "0x0D47D0548FDAD66B06E81a826EED8c687aCddBCB"
+      },
+      "address": "0xC576eA7bd102F7E476368a5E98FA455d1Ea34dE2",
+      "transactionHash": "0xc5bf4f48747093a79b623c2a2392ccbdb73a3d788e7d1f0f53f640ea18496d90"
+    },
+    "100": {
+      "links": {
+        "IdToAddressBiMap": "0x048E53A455a058462eA58442E1D94Fbc955495cB",
+        "IterableAppendOnlySet": "0x57E6B987c2ccd421859A244dd22a0D5a62D88f91"
+      },
+      "address": "0x25B06305CC4ec6AfCF3E7c0b673da1EF8ae26313",
+      "transactionHash": "0xd5e7da686ace1ae7f1917ad54b8610ee936bdc900e56b495739795fba3d5e7c1"
+    }
+  },
   "FleetFactory": {
     "1": {
       "links": {},
@@ -9,6 +35,11 @@
       "links": {},
       "address": "0x1b94BF378B910e5be70b59e774867a1c919821C7",
       "transactionHash": "0xf8256a6b6c92a95f9342d0dbb8afee83d1dd6bec8510278893f568ae0114ee3f"
+    },
+    "100": {
+      "links": {},
+      "address": "0x473E1D34458F26BFeB40f304a13c80FA291d0Abc",
+      "transactionHash": "0x906fbf6b72e2a1d79e2829c5413fdd6102470a06a71fca4cddb534aca8dcac84"
     }
   },
   "FleetFactoryDeterministic": {
@@ -21,6 +52,11 @@
       "links": {},
       "address": "0x6b7aaDEE3F3060c52F1c5Afcfc2F4d25554af3e5",
       "transactionHash": "0x2d5d771058550950b8675fae4e2f09f2e39d0056bd9a831a597ac7b4a72fbed9"
+    },
+    "100": {
+      "links": {},
+      "address": "0xE91c3d95629465e597CC35ee407d0f11aE19646E",
+      "transactionHash": "0xdceb34cf58d94a57627ba569fb03fd73ee103e751f13d9e8caf96ee4ad0d66bc"
     }
   },
   "GnosisSafeProxyFactory": {
@@ -32,6 +68,11 @@
       "links": {},
       "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
       "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
+    },
+    "100": {
+      "links": {},
+      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
+      "transactionHash": "0x25ecede929e0cf7c19057e66a31d081ebedb34680f7a84db3dd000f379da0487"
     }
   },
   "Migrations": {
@@ -44,6 +85,11 @@
       "links": {},
       "address": "0xAd0B040edF19bB81BDb2f14B26c7ba5F7ec263C2",
       "transactionHash": "0x34f548082b798f50d41ddd036c7fdf15cafda442c7f55947a1a46db8f5632924"
+    },
+    "100": {
+      "links": {},
+      "address": "0x43A58D234283F9AB8872bedf60f06cd88cAea4DE",
+      "transactionHash": "0x3476269d80d50afe4168479135b2f030778f81716631c0507d7bb09e7f7b28e0"
     }
   },
   "MultiSend": {
@@ -55,6 +101,10 @@
       "links": {},
       "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
       "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
+    },
+    "100": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
     }
   }
 }
