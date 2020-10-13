@@ -3,7 +3,7 @@
  */
 
 const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const IProxy = artifacts.require("IProxy")
 const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
@@ -19,7 +19,7 @@ contract("FleetFactoryDeterministic", function (accounts) {
 
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
     fleetFactory = await FleetFactoryDeterministic.new(proxyFactory.address)
     master = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterController], 1))
   })
@@ -27,7 +27,8 @@ contract("FleetFactoryDeterministic", function (accounts) {
   it("is deployed with the right factory", async () => {
     const deployedFleetFactory = await FleetFactoryDeterministic.deployed()
     const retrievedProxyFactory = await deployedFleetFactory.proxyFactory()
-    assert.equal(retrievedProxyFactory, ProxyFactory.address, "Wrong proxy factory after deployment")
+    const factory = await GnosisSafeProxyFactory.deployed()
+    assert.equal(retrievedProxyFactory, factory.address, "Wrong proxy factory after deployment")
   })
 
   describe("created safes", async function () {

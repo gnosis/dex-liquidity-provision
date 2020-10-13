@@ -59,22 +59,6 @@
       "transactionHash": "0xdceb34cf58d94a57627ba569fb03fd73ee103e751f13d9e8caf96ee4ad0d66bc"
     }
   },
-  "GnosisSafeProxyFactory": {
-    "1": {
-      "links": {},
-      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B"
-    },
-    "4": {
-      "links": {},
-      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
-      "transactionHash": "0x6b93c236af4d8adf9d9f4aaab07d0158f9ed7dd727141ca117191a3297d6b0e1"
-    },
-    "100": {
-      "links": {},
-      "address": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
-      "transactionHash": "0x25ecede929e0cf7c19057e66a31d081ebedb34680f7a84db3dd000f379da0487"
-    }
-  },
   "Migrations": {
     "1": {
       "links": {},

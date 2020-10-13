@@ -2,11 +2,11 @@ const BN = require("bn.js")
 const assertNodejs = require("assert")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
 const { GnosisSafe } = require("./../scripts/utils/dependencies")(web3, artifacts)
+const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const TokenOWL = artifacts.require("TokenOWL")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const TestToken = artifacts.require("DetailedMintableToken")
 
 const {
@@ -124,7 +124,7 @@ contract("GnosisSafe", function (accounts) {
 
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
     testToken = await TestToken.new("TEST", 18)
 
     exchange = await BatchExchange.deployed()
@@ -850,7 +850,7 @@ contract("GnosisSafe", function (accounts) {
   describe("buildFullLiquidityProvision:", async function () {
     it("Deploys fleet of Gnosis Safes", async () => {
       const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-      const proxyFactory = await ProxyFactory.deployed()
+      const proxyFactory = await GnosisSafeProxyFactory.deployed()
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
 
       const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
@@ -898,7 +898,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("Creates correct orders", async () => {
       const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-      const proxyFactory = await ProxyFactory.deployed()
+      const proxyFactory = await GnosisSafeProxyFactory.deployed()
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
 
       const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
@@ -942,7 +942,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("Deposits correct amount of tokens", async () => {
       const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-      const proxyFactory = await ProxyFactory.deployed()
+      const proxyFactory = await GnosisSafeProxyFactory.deployed()
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
 
       const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])
@@ -993,7 +993,7 @@ contract("GnosisSafe", function (accounts) {
     })
     it("Can execute multiple deployments from the same address", async () => {
       const gnosisSafeMasterCopy = await GnosisSafe.deployed()
-      const proxyFactory = await ProxyFactory.deployed()
+      const proxyFactory = await GnosisSafeProxyFactory.deployed()
       const masterSafe = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [safeOwner], 1))
 
       const { id: wethId, token: weth } = await addCustomMintableTokenToExchange(exchange, "WETH", 18, accounts[0])

@@ -9,8 +9,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
   const { getOneinchPrice, checkNoProfitableOffer } = require("./price_utils")
   const { GnosisSafe } = require("./dependencies")(web3, artifacts)
+  const { GnosisSafeProxyFactory } = require("./dependencies")(web3, artifacts)
 
-  const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory.sol")
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
   const expectedBytecodePromise = GnosisSafeProxyFactory.deployed().then((proxyFactory) => proxyFactory.proxyRuntimeCode())
 

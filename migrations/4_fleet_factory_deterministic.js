@@ -1,6 +1,7 @@
-const GnosisSafeProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
+const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const FleetFactoryDeterministic = artifacts.require("./FleetFactoryDeterministic.sol")
 
 module.exports = async function (deployer) {
-  await deployer.deploy(FleetFactoryDeterministic, GnosisSafeProxyFactory.address, { gas: 500000 })
+  const factory = await GnosisSafeProxyFactory.deployed()
+  await deployer.deploy(FleetFactoryDeterministic, factory.address, { gas: 500000 })
 }

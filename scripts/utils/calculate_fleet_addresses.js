@@ -1,5 +1,5 @@
 module.exports = function (web3, artifacts) {
-  const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+  const { GnosisSafeProxyFactory } = require("./dependencies")(web3, artifacts)
   const { GnosisSafe } = require("./dependencies")(web3, artifacts)
 
   const { generateAddress2, toBuffer, bufferToHex } = require("ethereumjs-util")

@@ -1,6 +1,6 @@
 const BatchExchange = artifacts.require("BatchExchange")
 const { GnosisSafe } = require("../../scripts/utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { addCustomMintableTokenToExchange, deploySafe } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)
 const { deployFleetOfSafes, buildDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
@@ -13,7 +13,7 @@ contract("Deposit scripts", function (accounts) {
   const safeOwner = accounts[0]
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
 
     exchange = await BatchExchange.deployed()
   })
