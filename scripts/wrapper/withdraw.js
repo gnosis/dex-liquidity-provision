@@ -299,6 +299,11 @@ module.exports = function (web3, artifacts) {
         return str.split(",")
       },
     })
+    .option("executeOnchain", {
+      type: "boolean",
+      default: false,
+      describe: "Directly execute transaction on-chain instead of sending to the backend",
+    })
     .check(checkBracketsForDuplicate)
 
   return {
