@@ -2,7 +2,7 @@
  * @typedef {import('../scripts/typedef.js').Address} Address
  */
 
-const GnosisSafe = artifacts.require("GnosisSafe")
+const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const IProxy = artifacts.require("IProxy")
 const FleetFactory = artifacts.require("FleetFactory")

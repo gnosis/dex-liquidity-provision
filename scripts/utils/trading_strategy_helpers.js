@@ -20,10 +20,10 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
   const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
+  const { GnosisSafe } = require("./dependencies")(web3, artifacts)
 
   const ERC20 = artifacts.require("ERC20Detailed")
   const BatchExchange = artifacts.require("BatchExchange")
-  const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
   const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 

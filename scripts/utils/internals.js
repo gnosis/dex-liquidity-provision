@@ -5,9 +5,9 @@
 
 module.exports = function (web3, artifacts) {
   const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
+  const { GnosisSafe } = require("./dependencies")(web3, artifacts)
 
   const IProxy = artifacts.require("IProxy")
-  const GnosisSafe = artifacts.require("GnosisSafe.sol")
   const MultiSend = artifacts.require("MultiSend")
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()

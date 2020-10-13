@@ -2,7 +2,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 
 const MintableToken = artifacts.require("DetailedMintableToken")
-const GnosisSafe = artifacts.require("GnosisSafe")
+const { GnosisSafe } = require("../../scripts/utils/dependencies")(web3, artifacts)
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 
 const { deploySafe } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)

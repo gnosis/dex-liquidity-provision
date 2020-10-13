@@ -24,7 +24,7 @@ module.exports = async (callback) => {
 
     const weth = await WETH.deployed()
 
-    const GnosisSafe = artifacts.require("GnosisSafe")
+    const { GnosisSafe } = require("./utils/dependencies")(web3, artifacts)
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const decimals = await weth.decimals()

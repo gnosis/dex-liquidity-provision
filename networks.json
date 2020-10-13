@@ -59,20 +59,6 @@
       "transactionHash": "0xdceb34cf58d94a57627ba569fb03fd73ee103e751f13d9e8caf96ee4ad0d66bc"
     }
   },
-  "GnosisSafe": {
-    "1": {
-      "links": {},
-      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-    },
-    "4": {
-      "links": {},
-      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-    },
-    "100": {
-      "links": {},
-      "address": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F"
-    }
-  },
   "GnosisSafeProxyFactory": {
     "1": {
       "links": {},

@@ -2,7 +2,7 @@ const BN = require("bn.js")
 const assert = require("assert")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
-const GnosisSafe = artifacts.require("GnosisSafe")
+const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
 const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
