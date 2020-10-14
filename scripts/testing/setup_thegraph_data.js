@@ -1,7 +1,6 @@
 const { deployNewStrategy } = require("../utils/strategy_simulator")(web3, artifacts)
 const BatchExchange = artifacts.require("BatchExchange")
-const { GnosisSafe } = require("../utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../utils/dependencies")(web3, artifacts)
 const { default_yargs } = require("../utils/default_yargs")
 const argv = default_yargs.argv
 
@@ -20,7 +19,7 @@ module.exports = async (callback) => {
     if (argv.network == "mainnet") callback("Error: don't run this script on mainnet")
     const accounts = await web3.eth.getAccounts()
     const safeOwner = accounts[0]
-    const proxyFactory = await ProxyFactory.deployed()
+    const proxyFactory = await GnosisSafeProxyFactory.deployed()
     const exchange = await BatchExchange.deployed()
     const gnosisSafeMasterCopy = await GnosisSafe.new()
     await deployNewStrategy(strategyConfig, gnosisSafeMasterCopy, proxyFactory, safeOwner, exchange, accounts)

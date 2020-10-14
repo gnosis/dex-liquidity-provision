@@ -1,7 +1,6 @@
 const Artifactor = require("@truffle/artifactor")
 const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
-const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const MultiSend = artifacts.require("./MultiSend.sol")
 
 module.exports = async function (deployer, network, accounts) {
@@ -19,7 +18,6 @@ module.exports = async function (deployer, network, accounts) {
 
   if (network === "development") {
     await deploySafe(deployer)
-    await deployer.deploy(ProxyFactory)
     await deployer.deploy(MultiSend)
   } else {
     // eslint-disable-next-line no-console
@@ -28,7 +26,9 @@ module.exports = async function (deployer, network, accounts) {
 }
 
 async function deploySafe(deployer) {
-  await deployer.deploy(GnosisSafe)
   const artifactor = new Artifactor("node_modules/@gnosis.pm/safe-contracts/build/contracts/")
+  await deployer.deploy(GnosisSafe)
   await artifactor.save(GnosisSafe)
+  await deployer.deploy(GnosisSafeProxyFactory)
+  await artifactor.save(GnosisSafeProxyFactory)
 }

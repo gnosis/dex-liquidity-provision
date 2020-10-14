@@ -6,8 +6,7 @@ const assertNodejs = require("assert")
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const MintableToken = artifacts.require("DetailedMintableToken")
-const { GnosisSafe } = require("../../scripts/utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { deploySafe, addCustomMintableTokenToExchange, deployNewStrategy } = require("../../scripts/utils/strategy_simulator")(
   web3,
@@ -36,7 +35,7 @@ contract("Withdraw script", function (accounts) {
   const safeOwner = accounts[0]
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
 
     exchange = await BatchExchange.deployed()
     globalPriceStorage["DAI-USDC"] = { price: 1.0 }

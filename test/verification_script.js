@@ -2,8 +2,7 @@ const BN = require("bn.js")
 const assert = require("assert")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
-const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
@@ -114,7 +113,7 @@ contract("Verification checks", function (accounts) {
   beforeEach(async function () {
     safeOwner = accounts[0]
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
     const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
 
