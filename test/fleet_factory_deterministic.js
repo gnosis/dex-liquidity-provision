@@ -2,8 +2,7 @@
  * @typedef {import('../scripts/typedef.js').Address} Address
  */
 
-const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
-const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const IProxy = artifacts.require("IProxy")
 const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 const { deploySafe } = require("../scripts/utils/strategy_simulator")(web3, artifacts)

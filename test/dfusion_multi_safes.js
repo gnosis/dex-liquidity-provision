@@ -1,8 +1,7 @@
 const BN = require("bn.js")
 const assertNodejs = require("assert")
 const { decodeOrders } = require("@gnosis.pm/dex-contracts")
-const { GnosisSafe } = require("./../scripts/utils/dependencies")(web3, artifacts)
-const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
+const { GnosisSafe, GnosisSafeProxyFactory } = require("./../scripts/utils/dependencies")(web3, artifacts)
 
 const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")

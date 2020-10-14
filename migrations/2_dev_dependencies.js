@@ -1,7 +1,6 @@
 const Artifactor = require("@truffle/artifactor")
 const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
-const { GnosisSafe } = require("../scripts/utils/dependencies")(web3, artifacts)
-const { GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const MultiSend = artifacts.require("./MultiSend.sol")
 
 module.exports = async function (deployer, network, accounts) {
