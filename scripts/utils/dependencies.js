@@ -13,9 +13,11 @@ module.exports = function (web3, artifacts) {
 
   const GnosisSafe = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/GnosisSafe.json"))
   const GnosisSafeProxyFactory = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/GnosisSafeProxyFactory.json"))
+  const MultiSend = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/MultiSend.json"))
 
   return {
     GnosisSafe,
     GnosisSafeProxyFactory,
+    MultiSend,
   }
 }
