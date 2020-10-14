@@ -1,11 +1,6 @@
 const Artifactor = require("@truffle/artifactor")
 const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
-<<<<<<< HEAD
-const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
-const MultiSend = artifacts.require("./MultiSend.sol")
-=======
 const { GnosisSafe, GnosisSafeProxyFactory, MultiSend } = require("../scripts/utils/dependencies")(web3, artifacts)
->>>>>>> [Easy] Use packaged MultiSend contract instead of local deployment
 
 module.exports = async function (deployer, network, accounts) {
   console.log("Migrating Batch Exchange")
