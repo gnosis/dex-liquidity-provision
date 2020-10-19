@@ -486,15 +486,15 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@solidity-parser/parser@^0.5.2":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.5.2.tgz#4d74670ead39e4f4fdab605a393ba8ea2390a2c4"
-  integrity sha512-uRyvnvVYmgNmTBpWDbBsH/0kPESQhQpEc4KsvMRLVzFJ1o1s0uIv0Y6Y9IB5vI1Dwz2CbS4X/y4Wyw/75cTFnQ==
-
 "@solidity-parser/parser@^0.6.0":
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.6.1.tgz#113edceb51da7ab3ca14ebd4cc66fe64bcb9082e"
   integrity sha512-MUA5kP9LdeTILeOsaz/k/qA4MdTNUxrn6q6HMYsMzQN5crU9bWKND2DaoWZhzofQM0VaTOaD8GFkCw1BYbNj5w==
+
+"@solidity-parser/parser@^0.8.0":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.8.1.tgz#1b606578af86b9ad10755409804a6ba83f9ce8a4"
+  integrity sha512-DF7H6T8I4lo2IZOE2NZwt3631T8j1gjpQLjmvY2xBNK50c4ltslR4XPKwT6RkeSd4+xCAK0GHC/k7sbRDBE4Yw==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -3131,9 +3131,9 @@ escape-string-regexp@4.0.0:
   integrity sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==
 
 eslint-plugin-jsdoc@^30.2.1:
-  version "30.6.4"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.6.4.tgz#ae7dab1ff24dff2c75fab7bb96a6b5f12621c212"
-  integrity sha512-aDTsAkKwyMsIYtytjH5zPtv+LkbCORN6oy/T4L40ssU5pgXWRSs0ULyJb6e4p2jT8y5nmG3IgpawYarL4tKunw==
+  version "30.6.5"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.6.5.tgz#4d6c794430afe1593459e56ecc65a2df0230b8d1"
+  integrity sha512-obC3wi1/b5hsPLXa3ZDs571QXGqkVsphndMsIsVQzWRdZOaRbxdvGiKhLzzZytbRZAL1M1Bkdc/3Af7eNxJ/Hg==
   dependencies:
     comment-parser "^0.7.6"
     debug "^4.2.0"
@@ -3307,12 +3307,12 @@ eth-ens-namehash@2.0.8, eth-ens-namehash@^2.0.0:
     js-sha3 "^0.5.7"
 
 eth-gas-reporter@^0.2.17:
-  version "0.2.17"
-  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.2.17.tgz#3ff12ae0235d97b429bcad3a1b05ce4d1a91d9be"
-  integrity sha512-MsrUqeXTAFU9QEdAIdaVu+QeU1XwFsKvPDEC68iheppVR5xUP11h4SyPhSRZiGfOzXr1CfTtPM/B6wPGtt7/LA==
+  version "0.2.18"
+  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.2.18.tgz#6b7dd40628d073109ea6439f652a8d41b259ce7d"
+  integrity sha512-P6LQ1QmU9bqU4zmd01Ws/b2EWAD5rT771U0wyJ/c+fKE6RdE9ks8KzjdR1zjosV2uilMfqVTtrBrXveCOnaTyQ==
   dependencies:
     "@ethersproject/abi" "^5.0.0-beta.146"
-    "@solidity-parser/parser" "^0.5.2"
+    "@solidity-parser/parser" "^0.8.0"
     cli-table3 "^0.5.0"
     colors "^1.1.2"
     ethereumjs-util "6.2.0"
@@ -7385,10 +7385,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.30.0:
-  version "2.30.0"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.30.0.tgz#aafd10a0586c891e8c98cb2adc406e49562daa6a"
-  integrity sha512-SmIAes+TKxK4WDTdsgjt7OurRwJezYsl+He8bC/zTbktBtMMG+pOD7UZBDl74iIJ8aI+f9Zk8Bzkklglpsfv1Q==
+synthetix-js@=2.30.1:
+  version "2.30.1"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.30.1.tgz#5e948a255bcd4cec1b809d10c18c552b6b06bf8a"
+  integrity sha512-ijFOgihCACZ8/C63TDU+ZvR0jjMMcVqVmInWsS87eB6wdhjlKgJzCBGo3NQTaiB9CtSf4YkC9tA+W/opZk3TDA==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -7400,14 +7400,14 @@ synthetix-js@=2.30.0:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.30.0"
+    synthetix "2.30.1"
     trezor-connect "8.1.8"
     walletlink "2.0.2"
 
-synthetix@2.30.0:
-  version "2.30.0"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.30.0.tgz#8fd7208634458024aa2097b4844cdf0df2b47730"
-  integrity sha512-6aNuDX7gfWj1zY5T2LfpmgB12GNX4C+q5bUNuf8XV9HykUcWiwZqmbg2HilQjcschFgme7JdKR3i4uZB/LjoNA==
+synthetix@2.30.1:
+  version "2.30.1"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.30.1.tgz#43972a1c632a8ef9226e4063c6cb7b903bea46a5"
+  integrity sha512-1y8bLw3L4GPzVb9Z7yUHqWSSXmfUQbYHOwQb1Pwc0dSM+qIjopT6sY3vaL0HbTy+jemhPXcaP+fFZY4UqppFmw==
   dependencies:
     "@chainlink/contracts-0.0.10" "npm:@chainlink/contracts@0.0.10"
     abi-decoder "2.3.0"
