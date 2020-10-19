@@ -1,6 +1,7 @@
 const BN = require("bn.js")
 const assert = require("assert")
 
+const { BatchExchange } = require("../scripts/utils/dependencies")
 const { addCustomMintableTokenToExchange } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const {
   isPriceReasonable,
@@ -13,7 +14,6 @@ const { fetchTokenInfoFromExchange } = require("../scripts/utils/trading_strateg
 contract("PriceOracle", function (accounts) {
   let exchange
   beforeEach(async function () {
-    const BatchExchange = artifacts.require("BatchExchange")
     exchange = await BatchExchange.deployed()
   })
   describe("Price oracle sanity check", async () => {

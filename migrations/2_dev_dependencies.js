@@ -1,26 +1,31 @@
 const Artifactor = require("@truffle/artifactor")
 const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
-const { GnosisSafe, GnosisSafeProxyFactory, MultiSend } = require("../scripts/utils/dependencies")(web3, artifacts)
+const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory, MultiSend } = require("../scripts/utils/dependencies")(
+  web3,
+  artifacts
+)
 
 module.exports = async function (deployer, network, accounts) {
-  console.log("Migrating Batch Exchange")
-  const artefact = await migrateBatchExchange({
+  if (network === "development") {
+    console.log("Migrating Batch Exchange")
+    await deployBatchExchangeContracts(deployer, network, accounts[0])
+    await deploySafeContracts(deployer)
+  } else {
+    console.log("Not in development, so nothing to do. Current network is %s", network)
+  }
+}
+
+async function deployBatchExchangeContracts(deployer, network, account) {
+  await migrateBatchExchange({
+    BatchExchange,
     artifacts,
     deployer,
     network,
-    account: accounts[0],
+    account,
     web3,
   })
-
-  const artifactor = new Artifactor("build/contracts/")
-  await artifactor.save(artefact)
-
-  if (network === "development") {
-    await deploySafeContracts(deployer)
-  } else {
-    // eslint-disable-next-line no-console
-    console.log("Not in development, so nothing to do. Current network is %s", network)
-  }
+  const artifactor = new Artifactor("node_modules/@gnosis.pm/dex-contracts/build/contracts/")
+  await artifactor.save(BatchExchange)
 }
 
 async function deploySafeContracts(deployer) {

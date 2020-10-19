@@ -1,6 +1,4 @@
-const BatchExchange = artifacts.require("BatchExchange")
-const { GnosisSafe } = require("../../scripts/utils/dependencies")(web3, artifacts)
-const { GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
+const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { addCustomMintableTokenToExchange, deploySafe } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)
 const { deployFleetOfSafes, buildDepositFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
