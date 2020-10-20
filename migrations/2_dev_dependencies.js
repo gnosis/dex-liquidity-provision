@@ -1,5 +1,5 @@
 const Artifactor = require("@truffle/artifactor")
-const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/PoC_dfusion")
+const migrateBatchExchange = require("@gnosis.pm/dex-contracts/src/migration/migrate_BatchExchange")
 const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory, MultiSend } = require("../scripts/utils/dependencies")(
   web3,
   artifacts
