@@ -8,7 +8,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   )
   const { getMasterCopy, getFallbackHandler } = require("./internals")(web3, artifacts)
   const { getOneinchPrice, checkNoProfitableOffer } = require("./price_utils")
-  const { GnosisSafe, GnosisSafeProxyFactory } = require("./dependencies")(web3, artifacts)
+  const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory } = require("./dependencies")(web3, artifacts)
 
   const gnosisSafeMasterCopy = GnosisSafe.deployed()
   const expectedBytecodePromise = GnosisSafeProxyFactory.deployed().then((proxyFactory) => proxyFactory.proxyRuntimeCode())
@@ -108,8 +108,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const log = logActivated ? (...a) => console.log(...a) : () => {}
 
     const bracketTraderAddresses = brackets.map((address) => address.toLowerCase())
-    const BatchExchangeContract = artifacts.require("BatchExchange")
-    const exchange = await BatchExchangeContract.deployed()
+    const exchange = await BatchExchange.deployed()
 
     // Fetch all token infos(decimals, symbols etc) and prices upfront for the following verification
     const ordersObjects = await Promise.all(

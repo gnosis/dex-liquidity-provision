@@ -1,7 +1,7 @@
 const BN = require("bn.js")
 const assert = require("assert")
 
-const { BatchExchange } = require("../scripts/utils/dependencies")
+const { BatchExchange } = require("../scripts/utils/dependencies")(web3, artifacts)
 const { addCustomMintableTokenToExchange } = require("../scripts/utils/strategy_simulator")(web3, artifacts)
 const {
   isPriceReasonable,
