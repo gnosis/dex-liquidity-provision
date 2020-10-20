@@ -11,11 +11,13 @@ module.exports = function (web3, artifacts) {
     return Contract
   }
 
+  const BatchExchange = makeContract(require("@gnosis.pm/dex-contracts/build/contracts/BatchExchange.json"))
   const GnosisSafe = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/GnosisSafe.json"))
   const GnosisSafeProxyFactory = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/GnosisSafeProxyFactory.json"))
   const MultiSend = makeContract(require("@gnosis.pm/safe-contracts/build/contracts/MultiSend.json"))
 
   return {
+    BatchExchange,
     GnosisSafe,
     GnosisSafeProxyFactory,
     MultiSend,

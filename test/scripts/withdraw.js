@@ -3,10 +3,9 @@ const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
 
-const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const MintableToken = artifacts.require("DetailedMintableToken")
-const { GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
+const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { deploySafe, addCustomMintableTokenToExchange, deployNewStrategy } = require("../../scripts/utils/strategy_simulator")(
   web3,
