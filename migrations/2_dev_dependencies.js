@@ -15,6 +15,11 @@ module.exports = async function (deployer, network, accounts) {
   }
 }
 
+/**
+ * @param deployer
+ * @param network
+ * @param account
+ */
 async function deployBatchExchangeContracts(deployer, network, account) {
   await migrateBatchExchange({
     BatchExchange,
@@ -28,6 +33,9 @@ async function deployBatchExchangeContracts(deployer, network, account) {
   await artifactor.save(BatchExchange)
 }
 
+/**
+ * @param deployer
+ */
 async function deploySafeContracts(deployer) {
   const artifactor = new Artifactor("node_modules/@gnosis.pm/safe-contracts/build/contracts/")
   await deployer.deploy(GnosisSafe)
