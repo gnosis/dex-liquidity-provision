@@ -82,7 +82,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   /**
    * Checks whether a transaction was already proposed to the gnosis-safe UI
    *
-   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {SmartContract} masterSafe Instance of the master safe owning the brackets
    * @param {Transaction} transaction The transaction whose existence is checked
    * @param {string} network either rinkeby or mainnet
    * @param {number} [nonce=null] Gnosis Safe transaction nonce.
