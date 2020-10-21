@@ -308,6 +308,7 @@ module.exports = function (web3, artifacts) {
     .option("executeOnchain", {
       type: "boolean",
       default: false,
+      conflicts: ["nonce"],
       describe: "Directly execute transaction on-chain instead of sending to the backend",
     })
     .check(checkBracketsForDuplicate)
