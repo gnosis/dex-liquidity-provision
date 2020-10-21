@@ -2,8 +2,7 @@
  * @typedef {import('../scripts/typedef.js').Address} Address
  */
 
-const GnosisSafe = artifacts.require("GnosisSafe")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const IProxy = artifacts.require("IProxy")
 const FleetFactory = artifacts.require("FleetFactory")
 
@@ -19,7 +18,7 @@ contract("FleetFactory", function (accounts) {
 
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
     fleetFactory = await FleetFactory.new(proxyFactory.address)
     master = await GnosisSafe.at(await deploySafe(gnosisSafeMasterCopy, proxyFactory, [masterController], 1))
   })
@@ -27,7 +26,7 @@ contract("FleetFactory", function (accounts) {
   it("is deployed with the right factory", async () => {
     const deployedFleetFactory = await FleetFactory.deployed()
     const retrievedProxyFactory = await deployedFleetFactory.proxyFactory()
-    assert.equal(retrievedProxyFactory, ProxyFactory.address, "Wrong proxy factory after deployment")
+    assert.equal(retrievedProxyFactory, GnosisSafeProxyFactory.address, "Wrong proxy factory after deployment")
   })
 
   it("creates and logs new safes", async () => {

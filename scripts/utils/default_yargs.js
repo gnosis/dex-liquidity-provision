@@ -8,7 +8,7 @@ const default_yargs = require("yargs")
   .option("network", {
     type: "string",
     describe: "network where the script is executed",
-    choices: ["rinkeby", "mainnet"],
+    choices: ["rinkeby", "xdai", "mainnet"],
   })
 
 const checkNoDuplicate = function (array) {

@@ -14,7 +14,7 @@ module.exports = function (web3, artifacts) {
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
   const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
-  const { MAXUINT256, ONE } = require("../utils/constants")
+  const { MAXUINT256, ONE, ZERO } = require("../utils/constants")
   const { uniqueItems } = require("../utils/js_helpers")
 
   const assertGoodArguments = function (argv) {
@@ -43,8 +43,7 @@ module.exports = function (web3, artifacts) {
     brackets,
     tokens,
     tokenIds,
-    printOutput = false,
-    globalPriceStorage = {}
+    printOutput = false
   ) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
@@ -103,24 +102,23 @@ module.exports = function (web3, artifacts) {
             const tokenData = await tokenInfoPromises[tokenAddress]
             const amount = await amountFunction(bracketAddress, tokenData, await exchangePromise)
             // skip costly network request if amount is zero
-            if (amount === "0") {
+            if (amount.eq(ZERO)) {
               return
             }
-            const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
 
-            if (usdValue.gte(ONE)) {
-              withdrawals.push({
-                bracketAddress,
-                tokenAddress,
-                amount,
-              })
-            } else {
-              log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
-            }
+            withdrawals.push({
+              bracketAddress,
+              tokenAddress,
+              amount,
+            })
           })
         )
       )
     )
+
+    if (withdrawals.length === 0) {
+      throw new Error("No funds can be withdrawn for the given parameters.")
+    }
 
     return {
       withdrawals,
@@ -136,16 +134,17 @@ module.exports = function (web3, artifacts) {
     let amountFunction
     if (argv.noBalanceCheck) {
       amountFunction = function () {
-        return MAXUINT256.toString()
+        return MAXUINT256
       }
     } else {
       amountFunction = async function (bracketAddress, tokenData, exchange) {
         const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
         const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
         if (usdValue.gte(ONE)) {
-          return MAXUINT256.toString()
+          return MAXUINT256
         } else {
-          return "0"
+          log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
+          return ZERO
         }
       }
     }
@@ -155,8 +154,7 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput,
-      globalPriceStorage
+      printOutput
     )
 
     log("Started building withdraw transaction.")
@@ -170,7 +168,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdraw = async function (argv, printOutput = false, globalPriceStorage = {}) {
+  const prepareWithdraw = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -184,8 +182,7 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput,
-      globalPriceStorage
+      printOutput
     )
 
     log("Started building withdraw transaction.")
@@ -200,13 +197,13 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
+  const prepareTransferFundsToMaster = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
 
     const amountFunction = async function (bracketAddress, tokenData) {
-      return (await tokenData.instance.balanceOf(bracketAddress)).toString()
+      return tokenData.instance.balanceOf(bracketAddress)
     }
     const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
       amountFunction,
@@ -214,8 +211,7 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput,
-      globalPriceStorage
+      printOutput
     )
 
     log("Started building withdraw transaction.")
@@ -235,7 +231,7 @@ module.exports = function (web3, artifacts) {
 
     return transactionPromise
   }
-  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false, globalPriceStorage = {}) {
+  const prepareWithdrawAndTransferFundsToMaster = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
@@ -249,8 +245,7 @@ module.exports = function (web3, artifacts) {
       argv.brackets,
       argv.tokens,
       argv.tokenIds,
-      printOutput,
-      globalPriceStorage
+      printOutput
     )
 
     log("Started building withdraw transaction.")
@@ -309,6 +304,11 @@ module.exports = function (web3, artifacts) {
       describe:
         "Nonce used in the transaction submitted to the web interface. If omitted, the first available nonce considering all pending transactions will be used.",
       default: null,
+    })
+    .option("executeOnchain", {
+      type: "boolean",
+      default: false,
+      describe: "Directly execute transaction on-chain instead of sending to the backend",
     })
     .check(checkBracketsForDuplicate)
 

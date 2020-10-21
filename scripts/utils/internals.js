@@ -5,10 +5,9 @@
 
 module.exports = function (web3, artifacts) {
   const { ZERO_ADDRESS, CALL, DELEGATECALL } = require("./constants")
+  const { GnosisSafe, MultiSend } = require("./dependencies")(web3, artifacts)
 
   const IProxy = artifacts.require("IProxy")
-  const GnosisSafe = artifacts.require("GnosisSafe.sol")
-  const MultiSend = artifacts.require("MultiSend")
 
   const gnosisSafeMasterCopyPromise = GnosisSafe.deployed()
   const multiSendPromise = MultiSend.deployed()
@@ -170,18 +169,55 @@ module.exports = function (web3, artifacts) {
     const estimateCall = masterSafe.contract.methods
       .requiredTxGas(transaction.to, transaction.value, transaction.data, transaction.operation)
       .encodeABI()
-    const estimateResponse = await web3.eth.call({
-      to: masterSafe.address,
-      from: masterSafe.address,
-      data: estimateCall,
-      gasPrice: 0,
-    })
+    let estimateResponse
+    try {
+      estimateResponse = await web3.eth.call({
+        to: masterSafe.address,
+        from: masterSafe.address,
+        data: estimateCall,
+        gasPrice: 0,
+      })
+    } catch (error) {
+      // Parity nodes throw with error message is "VM execution error\n Reverted 0x..."
+      estimateResponse = "0x" + error.message.split("0x").pop()
+    }
     // https://docs.gnosis.io/safe/docs/contracts_tx_execution/#safe-transaction-gas-limit-estimation
     // The value returned by requiredTxGas is encoded in a revert error message. For retrieving the hex
     // encoded uint value the first 68 bytes of the error message need to be removed.
     const txGasEstimate = parseInt(estimateResponse.substring(138), 16)
     // Multiply with 64/63 due to EIP-150 (https://github.com/ethereum/EIPs/blob/master/EIPS/eip-150.md)
     return Math.ceil((txGasEstimate * 64) / 63)
+  }
+
+  /**
+   * Signs the given transaction with given nonce and gas amount
+   *
+   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {Transaction} transaction The transaction to be signed and sent
+   * @param {number} gas Gas that should be used for the Safe transaction.
+   * @param {number} nonce Specified transaction index.
+   */
+  const signTransaction = async function (masterSafe, transaction, gas, nonce) {
+    const transactionHash = await masterSafe.getTransactionHash(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      gas,
+      0,
+      0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
+      nonce
+    )
+
+    const signer = (await web3.eth.getAccounts())[0]
+    console.log(`Signing transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`)
+    return {
+      signature: await getSafeCompatibleSignature(transactionHash, signer),
+      signer,
+      transactionHash,
+    }
   }
 
   const getSafeCompatibleSignature = async function (transactionHash, signer) {
@@ -199,6 +235,34 @@ module.exports = function (web3, artifacts) {
     return sig.slice(0, -2) + recoveryByte.toString(16)
   }
 
+  /**
+   * Signs and executes a transaction on the given safe
+   *
+   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {Transaction} transaction The transaction to be signed and sent
+   * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
+   */
+  const signAndExecute = async function (masterSafe, transaction, nonce = null) {
+    if (nonce === null) {
+      nonce = await masterSafe.nonce()
+    }
+    const safeTxGas = await estimateGas(masterSafe, transaction)
+    const { signature } = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
+
+    await masterSafe.execTransaction(
+      transaction.to,
+      transaction.value,
+      transaction.data,
+      transaction.operation,
+      safeTxGas,
+      0,
+      0,
+      ZERO_ADDRESS,
+      ZERO_ADDRESS,
+      signature
+    )
+  }
+
   return {
     waitForNSeconds,
     getMasterCopy,
@@ -209,6 +273,8 @@ module.exports = function (web3, artifacts) {
     buildBundledTransaction,
     buildExecTransaction,
     getSafeCompatibleSignature,
+    signAndExecute,
+    signTransaction,
     CALL,
   }
 }

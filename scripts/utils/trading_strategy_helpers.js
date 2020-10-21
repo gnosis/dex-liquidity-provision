@@ -20,10 +20,9 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
   const { shortenedAddress, toErc20Units, fromErc20Units } = require("./printing_tools")
   const { uniqueItems } = require("./js_helpers")
   const { DEFAULT_ORDER_EXPIRY, CALL } = require("./constants")
+  const { BatchExchange, GnosisSafe } = require("./dependencies")(web3, artifacts)
 
   const ERC20 = artifacts.require("ERC20Detailed")
-  const BatchExchange = artifacts.require("BatchExchange")
-  const GnosisSafe = artifacts.require("GnosisSafe")
   const FleetFactory = artifacts.require("FleetFactory")
   const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
 
@@ -671,33 +670,19 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @returns {Address[]} List of bracket (Safe) addresses
    **/
   const getDeployedBrackets = async function (masterSafe) {
-    const FleetFactory = artifacts.require("FleetFactory")
-    const fleetFactory = await FleetFactory.deployed()
+    const fleetFactory = await fleetFactoryPromise
+    const fleetFactoryDeterministic = await fleetFactoryDeterministicPromise
     const events = await fleetFactory.getPastEvents("FleetDeployed", {
       filter: { owner: masterSafe },
       fromBlock: 0,
       toBlock: "latest",
     })
-    const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
-    return [].concat(...bracketsAsObjects)
-  }
-
-  /**
-   * Fetches the brackets deployed with the deterministic fleet factory by a given masterSafe
-   * from the blockchaiin via events.
-   *
-   * @param {Address} masterSafe
-   * @returns {Address[]} List of bracket (Safe) addresses
-   */
-  const getDeployedDeterministicBrackets = async function (masterSafe) {
-    const FleetFactoryDeterministic = artifacts.require("FleetFactoryDeterministic")
-    const fleetFactoryDeterministic = await FleetFactoryDeterministic.deployed()
-    const events = await fleetFactoryDeterministic.getPastEvents("FleetDeployed", {
+    const eventsDeterministic = await fleetFactoryDeterministic.getPastEvents("FleetDeployed", {
       filter: { owner: masterSafe },
       fromBlock: 0,
       toBlock: "latest",
     })
-    const bracketsAsObjects = events.map((object) => object.returnValues.fleet)
+    const bracketsAsObjects = events.concat(eventsDeterministic).map((object) => object.returnValues.fleet)
     return [].concat(...bracketsAsObjects)
   }
 
@@ -1077,7 +1062,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     fetchTokenInfoForFlux,
     getAllowances,
     getDeployedBrackets,
-    getDeployedDeterministicBrackets,
     getExchange,
     getSafe,
     hasExistingOrders,

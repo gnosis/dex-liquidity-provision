@@ -2,8 +2,7 @@ const assert = require("assert")
 const BN = require("bn.js")
 
 const MintableToken = artifacts.require("DetailedMintableToken")
-const GnosisSafe = artifacts.require("GnosisSafe")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { deploySafe } = require("../../scripts/utils/strategy_simulator")(web3, artifacts)
 const { buildTransferDataFromList } = require("../../scripts/utils/trading_strategy_helpers")(web3, artifacts)
@@ -17,7 +16,7 @@ contract("buildTransferDataFromList (a.k.a. Airdrop Token Transfer)", function (
   const safeOwner = accounts[0]
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
   })
 
   describe("Basic Transfers", () => {

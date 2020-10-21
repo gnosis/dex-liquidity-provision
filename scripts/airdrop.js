@@ -73,7 +73,7 @@ module.exports = async (callback) => {
       }
     }
 
-    const GnosisSafe = artifacts.require("GnosisSafe")
+    const { GnosisSafe } = require("./utils/dependencies")(web3, artifacts)
     const masterSafe = await GnosisSafe.at(argv.fundAccount)
 
     console.log("Preparing transaction data...")

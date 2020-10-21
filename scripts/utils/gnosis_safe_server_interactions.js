@@ -6,13 +6,13 @@
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
-  const { getSafeCompatibleSignature, estimateGas } = require("./internals")(web3, artifacts)
+  const { signTransaction, estimateGas } = require("./internals")(web3, artifacts)
   const { ZERO_ADDRESS } = require("./constants")
-  const CommonBaseGasForGnosisSafeTransaction = 0
 
   const linkPrefix = {
     rinkeby: "rinkeby.",
     mainnet: "",
+    xdai: "xdai",
   }
 
   const webInterfaceBaseAddress = function (network) {
@@ -28,7 +28,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {SmartContract} masterSafe Address of the master safe owning the brackets
    * @param {Transaction} transaction The transaction to be signed and sent
-   * @param {string} network either rinkeby or mainnet
+   * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] specified transaction index. Will fetch correct value if not specified.
    */
   const signAndSend = async function (masterSafe, transaction, network, nonce = null) {
@@ -37,24 +37,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     }
 
     const safeTxGas = await estimateGas(masterSafe, transaction)
-    const transactionHash = await masterSafe.getTransactionHash(
-      transaction.to,
-      transaction.value,
-      transaction.data,
-      transaction.operation,
-      safeTxGas,
-      CommonBaseGasForGnosisSafeTransaction,
-      0,
-      ZERO_ADDRESS,
-      ZERO_ADDRESS,
-      nonce
-    )
-
-    const signer = (await web3.eth.getAccounts())[0]
-    console.log(
-      `Signing and posting multi-send transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`
-    )
-    const sigs = await getSafeCompatibleSignature(transactionHash, signer)
+    const { signature, signer, transactionHash } = await signTransaction(masterSafe, transaction, safeTxGas, nonce)
 
     const endpoint = `${transactionApiBaseAddress(network)}/safes/${masterSafe.address}/transactions/`
     const postData = {
@@ -63,14 +46,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       data: transaction.data,
       operation: transaction.operation,
       safeTxGas: safeTxGas,
-      baseGas: CommonBaseGasForGnosisSafeTransaction,
+      baseGas: 0,
       gasPrice: 0, // important that this is zero
       gasToken: ZERO_ADDRESS,
       refundReceiver: ZERO_ADDRESS,
       nonce: nonce,
       contractTransactionHash: transactionHash,
       sender: web3.utils.toChecksumAddress(signer),
-      signature: sigs,
+      signature: signature,
     }
     await axios.post(endpoint, postData).catch(function (error) {
       throw new Error("Error while talking to the gnosis-interface: " + JSON.stringify(error.response.data))
@@ -84,7 +67,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {SmartContract} masterSafe Instance of the master safe owning the brackets
    * @param {Transaction} transaction The transaction whose existence is checked
-   * @param {string} network either rinkeby or mainnet
+   * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] Gnosis Safe transaction nonce.
    */
   const transactionExistsOnSafeServer = async function (masterSafe, transaction, network, nonce = null) {
@@ -99,7 +82,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
       transaction.data,
       transaction.operation,
       safeTxGas,
-      CommonBaseGasForGnosisSafeTransaction,
+      0,
       0,
       ZERO_ADDRESS,
       ZERO_ADDRESS,
@@ -132,7 +115,7 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    *
    * @param {Address} multisigAddress Address of the multisig Safe for
    * which to retrieve the nonce.
-   * @param {string} network Either rinkeby or mainnet.
+   * @param {string} network Either rinkeby, xdai or mainnet.
    * @returns {number} The first Safe nonce available for a new transaction.
    */
   const firstAvailableNonce = async function (multisigAddress, network) {

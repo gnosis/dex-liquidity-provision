@@ -3,11 +3,9 @@ const fs = require("fs").promises
 const tmp = require("tmp-promise")
 const assertNodejs = require("assert")
 
-const BatchExchange = artifacts.require("BatchExchange")
 const ERC20 = artifacts.require("ERC20Detailed")
 const MintableToken = artifacts.require("DetailedMintableToken")
-const GnosisSafe = artifacts.require("GnosisSafe")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory } = require("../../scripts/utils/dependencies")(web3, artifacts)
 
 const { deploySafe, addCustomMintableTokenToExchange, deployNewStrategy } = require("../../scripts/utils/strategy_simulator")(
   web3,
@@ -36,7 +34,7 @@ contract("Withdraw script", function (accounts) {
   const safeOwner = accounts[0]
   beforeEach(async function () {
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
+    proxyFactory = await GnosisSafeProxyFactory.new()
 
     exchange = await BatchExchange.deployed()
     globalPriceStorage["DAI-USDC"] = { price: 1.0 }
@@ -149,7 +147,7 @@ contract("Withdraw script", function (accounts) {
         withdrawalFile: depositFile.path,
         withdraw: true,
       }
-      const claimTx = await prepareWithdraw(argv2, false, globalPriceStorage)
+      const claimTx = await prepareWithdraw(argv2, false)
       await execTransaction(masterSafe, safeOwner, claimTx)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -178,10 +176,10 @@ contract("Withdraw script", function (accounts) {
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const claimTx = await prepareWithdraw(argv, false, globalPriceStorage)
+      const claimTx = await prepareWithdraw(argv, false)
       await execTransaction(masterSafe, safeOwner, claimTx)
 
-      const transferTx = await prepareTransferFundsToMaster(argv, false, globalPriceStorage)
+      const transferTx = await prepareTransferFundsToMaster(argv, false)
       await execTransaction(masterSafe, safeOwner, transferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -213,7 +211,7 @@ contract("Withdraw script", function (accounts) {
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
+      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false)
       await execTransaction(masterSafe, safeOwner, claimAndTransferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -368,7 +366,7 @@ contract("Withdraw script", function (accounts) {
       await execTransaction(masterSafe, safeOwner, transaction1)
       await waitForNSeconds(301)
 
-      const transaction2 = await prepareWithdraw(argv, false, globalPriceStorage)
+      const transaction2 = await prepareWithdraw(argv, false)
       await execTransaction(masterSafe, safeOwner, transaction2)
 
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
@@ -398,14 +396,13 @@ contract("Withdraw script", function (accounts) {
       const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
-        noBalanceCheck: true,
         tokens: [tokenInfo[0].address, tokenInfo[1].address],
       }
       const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, requestTransaction)
       await waitForNSeconds(301)
 
-      const claimTransaction = await prepareWithdraw(argv, false, globalPriceStorage)
+      const claimTransaction = await prepareWithdraw(argv, false)
       await execTransaction(masterSafe, safeOwner, claimTransaction)
 
       const usdcAddress = tokenInfo[0].address
@@ -414,11 +411,10 @@ contract("Withdraw script", function (accounts) {
         const pendingWithdraw = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0]
         if (tokenAddress === usdcAddress) {
           assert.equal(bracketBalance, "0", "Not expecting to claim USDC balance")
-          assert(pendingWithdraw.gt(new BN(0)), "Should still have non-zero pending withdraw!")
         } else {
           assert.equal(bracketBalance, amount, "Bad amount requested to withdraw")
-          assert.equal(pendingWithdraw, "0", "A withdrawal request is still pending")
         }
+        assert.equal(pendingWithdraw, "0", "A withdrawal request is still pending")
       }
     })
     it("transfers funds to master", async () => {
@@ -448,10 +444,10 @@ contract("Withdraw script", function (accounts) {
       await execTransaction(masterSafe, safeOwner, requestTransaction)
       await waitForNSeconds(301)
 
-      const claimTransaction = await prepareWithdraw(argv, false, globalPriceStorage)
+      const claimTransaction = await prepareWithdraw(argv, false)
       await execTransaction(masterSafe, safeOwner, claimTransaction)
 
-      const transferTransaction = await prepareTransferFundsToMaster(argv, false, globalPriceStorage)
+      const transferTransaction = await prepareTransferFundsToMaster(argv, false)
       await execTransaction(masterSafe, safeOwner, transferTransaction)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -492,7 +488,7 @@ contract("Withdraw script", function (accounts) {
       await execTransaction(masterSafe, safeOwner, requestTx)
       await waitForNSeconds(301)
 
-      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
+      const claimAndTransferTx = await prepareWithdrawAndTransferFundsToMaster(argv, false)
       await execTransaction(masterSafe, safeOwner, claimAndTransferTx)
 
       for (const { tokenAddress, bracketAddress } of deposits) {
@@ -518,12 +514,14 @@ contract("Withdraw script", function (accounts) {
         brackets: bracketAddresses,
         tokens: [tokenInfo[0].address],
       }
-      const globalPriceStorage = {}
-      globalPriceStorage["WETH-USDC"] = { price: 250.0 }
-      const transaction = await prepareWithdrawAndTransferFundsToMaster(argv, false, globalPriceStorage)
-      // if the built transaction used the token balance of the bracket instead of zero, then
-      // the following transaction would fail.
-      await execTransaction(masterSafe, safeOwner, transaction)
+
+      // The transaction creation should be rejected because no funds can be withdrawn
+      // before executing a withdraw request.
+      // If the built transaction used the token balance of the bracket instead of zero,
+      // then the transaction creation would not fail.
+      await assertNodejs.rejects(prepareWithdrawAndTransferFundsToMaster(argv, false), {
+        message: "No funds can be withdrawn for the given parameters.",
+      })
     })
   })
   it("fails on bad input", async () => {
