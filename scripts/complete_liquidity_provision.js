@@ -78,6 +78,7 @@ const argv = default_yargs
   .option("executeOnchain", {
     type: "boolean",
     default: false,
+    conflicts: ["nonce"],
     describe: "Directly execute transaction on-chain instead of sending to the backend",
   })
   .option("nonce", {
