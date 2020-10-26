@@ -1002,7 +1002,6 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     const tokenInfoPromises = fetchTokenInfoFromExchange(await exchangePromise, [baseTokenId, quoteTokenId])
     const createFleetTransaction = buildDeterministicFleetOfSafes(masterAddress, fleetSize, await noncePromise)
     const bracketAddresses = await calcSafeAddresses(fleetSize, await noncePromise)
-    console.log(bracketAddresses)
 
     const createOrderTransactions = transactionsForOrders(
       masterAddress,
