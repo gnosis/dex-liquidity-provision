@@ -12,7 +12,7 @@ module.exports = function (web3, artifacts) {
     buildWithdrawAndTransferFundsToMaster,
     retrieveTradedTokensPerBracket,
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
-  const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
+  const { default_yargs, checkBracketsForDuplicate, noNonceWithExecuteOnchain } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
   const { MAXUINT256, ONE, ZERO } = require("../utils/constants")
   const { uniqueItems } = require("../utils/js_helpers")
@@ -322,7 +322,6 @@ module.exports = function (web3, artifacts) {
     .option("executeOnchain", {
       type: "boolean",
       default: false,
-      conflicts: ["nonce"],
       describe: "Directly execute transaction on-chain instead of sending to the backend",
     })
     .option("verify", {
@@ -330,6 +329,7 @@ module.exports = function (web3, artifacts) {
       default: false,
       describe: "Do not actually send transactions, just simulate their submission",
     })
+    .check(noNonceWithExecuteOnchain)
     .check(checkBracketsForDuplicate)
 
   return {
