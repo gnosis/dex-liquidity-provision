@@ -6,7 +6,8 @@
 
 module.exports = function (web3 = web3, artifacts = artifacts) {
   const axios = require("axios")
-  const { signTransaction, estimateGas } = require("./internals")(web3, artifacts)
+  const { signTransaction, signAndExecute, estimateGas } = require("./internals")(web3, artifacts)
+  const { promptUser } = require("./user_interface_helpers")
   const { ZERO_ADDRESS } = require("./constants")
 
   const linkPrefix = {
@@ -60,6 +61,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     })
     const interfaceLink = `${webInterfaceBaseAddress(network)}/safes/${masterSafe.address}/transactions/`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
+
+    return nonce
   }
 
   /**
@@ -142,9 +145,55 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     return 1 + nonce
   }
 
+  /**
+   * Either checks if the transaction exists on the web interface
+   * or create a new transaction, depending on the first flag.
+   *
+   * @param {boolean} verifyOnly Whether to verify if the transaction exists
+   * or creating a new one.
+   * @param {SmartContract} masterSafe The Safe used to execute the
+   * transaction.
+   * @param {number} nonce The nonce used by the transaction.
+   * @param {Transaction} transaction The transaction to be sent.
+   * @param {string} network Either rinkeby, xdai or mainnet.
+   * @param {boolean} executeOnchain Whether the transaction should be
+   * executed immediately onchain or just created in the web interface.
+   * @param {boolean} mustPromptUser Whether to prompt the user with a
+   * confirmation dialog.
+   */
+  const processTransaction = async function (
+    verifyOnly,
+    masterSafe,
+    nonce,
+    transaction,
+    network,
+    executeOnchain,
+    mustPromptUser
+  ) {
+    if (!verifyOnly) {
+      let promptSuccessful = true
+      if (mustPromptUser) {
+        const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
+        promptSuccessful = answer === "y" || answer.toLowerCase() === "yes"
+      }
+      if (promptSuccessful) {
+        if (executeOnchain) {
+          await signAndExecute(masterSafe, transaction)
+        } else {
+          const nonce = await signAndSend(masterSafe, transaction, network)
+          console.log(`To verify the transaction run the same script with --verify --nonce=${nonce}`)
+        }
+      }
+    } else {
+      console.log("Verifying transaction...")
+      await transactionExistsOnSafeServer(masterSafe, transaction, network, nonce)
+    }
+  }
+
   return {
     firstAvailableNonce,
     signAndSend,
+    processTransaction,
     transactionExistsOnSafeServer,
     linkPrefix,
   }
