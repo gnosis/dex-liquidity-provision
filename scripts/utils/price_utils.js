@@ -181,9 +181,9 @@ const isPriceReasonable = async (
     console.log(
       `Warning: the chosen price differs by more than ${acceptedPriceDeviationInPercentage} percent from the price found on ${onlinePriceSlice.source}.`
     )
-    console.log(`    chosen price: ${price} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`)
+    console.log(`    chosen price: ${price} ${quoteTokenData.symbol} needed to buy 1 ${baseTokenData.symbol}`)
     console.log(
-      `    ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} bought for 1 ${baseTokenData.symbol}`
+      `    ${onlinePriceSlice.source} price: ${onlinePrice} ${quoteTokenData.symbol} needed to buy 1 ${baseTokenData.symbol}`
     )
     return false
   }

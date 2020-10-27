@@ -2,8 +2,7 @@ const BN = require("bn.js")
 const assert = require("assert")
 const { getUnlimitedOrderAmounts } = require("@gnosis.pm/dex-contracts")
 
-const GnosisSafe = artifacts.require("GnosisSafe")
-const ProxyFactory = artifacts.require("GnosisSafeProxyFactory")
+const { BatchExchange, GnosisSafe, GnosisSafeProxyFactory } = require("../scripts/utils/dependencies")(web3, artifacts)
 const EvilGnosisSafeProxy = artifacts.require("EvilGnosisSafeProxy")
 
 const { verifyCorrectSetup } = require("../scripts/utils/verify_scripts")(web3, artifacts)
@@ -114,8 +113,7 @@ contract("Verification checks", function (accounts) {
   beforeEach(async function () {
     safeOwner = accounts[0]
     gnosisSafeMasterCopy = await GnosisSafe.new()
-    proxyFactory = await ProxyFactory.new()
-    const BatchExchange = artifacts.require("BatchExchange")
+    proxyFactory = await GnosisSafeProxyFactory.new()
     exchange = await BatchExchange.deployed()
 
     // TODO: this is needed as fetching the orderbook on an empty orderbook throws. This can be fixed in the future

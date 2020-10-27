@@ -1,5 +1,5 @@
 const { buildFullLiquidityProvision } = require("./utils/trading_strategy_helpers")(web3, artifacts)
-const { signAndSend, transactionExistsOnSafeServer } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
+const { processTransaction } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
 const { sanitizeArguments } = require("./utils/liquidity_provision_sanity_checks")(web3, artifacts)
 
 const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
@@ -60,6 +60,11 @@ const argv = default_yargs
     default: null,
     describe: "Use this specific nonce instead of the next available one",
   })
+  .option("executeOnchain", {
+    type: "boolean",
+    default: false,
+    describe: "Directly execute transaction on-chain instead of sending to the backend",
+  })
   .check(checkBracketsForDuplicate).argv
 
 module.exports = async (callback) => {
@@ -86,14 +91,15 @@ module.exports = async (callback) => {
       masterSafeNonce,
     })
 
-    if (!argv.verify) {
-      console.log("==> Sending the transaction to the Gnosis-Safe interface.")
-      await signAndSend(masterSafe, fullLiquidityProvisionTransaction, argv.network, masterSafeNonce)
-      console.log("To verify the transactions run the same script with --verify")
-    } else {
-      console.log("==> Verifying transaction.")
-      await transactionExistsOnSafeServer(masterSafe, fullLiquidityProvisionTransaction, argv.network, masterSafeNonce)
-    }
+    await processTransaction(
+      argv.verify,
+      await masterSafe,
+      argv.nonce,
+      fullLiquidityProvisionTransaction,
+      argv.network,
+      argv.executeOnchain,
+      false
+    )
 
     callback()
   } catch (error) {

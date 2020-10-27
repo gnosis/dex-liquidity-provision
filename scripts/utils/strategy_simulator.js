@@ -5,7 +5,7 @@ module.exports = function (web3, artifacts) {
     artifacts
   )
   const { ZERO_ADDRESS } = require("./constants")
-  const GnosisSafe = artifacts.require("GnosisSafe")
+  const { GnosisSafe } = require("./dependencies")(web3, artifacts)
   const TokenOWL = artifacts.require("TokenOWL")
   const TestToken = artifacts.require("DetailedMintableToken")
   const assert = require("assert")

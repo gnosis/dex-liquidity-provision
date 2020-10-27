@@ -19,11 +19,17 @@ const argv = default_yargs
     type: "boolean",
     default: false,
     describe: "Do not actually send transactions, just simulate their submission",
+  })
+  .option("nonce", {
+    type: "number",
+    describe:
+      "Nonce used in the transaction submitted to the web interface. If omitted, the first available nonce considering all pending transactions will be used.",
+    default: null,
   }).argv
 
 module.exports = async (callback) => {
   try {
-    const GnosisSafe = artifacts.require("GnosisSafe")
+    const { GnosisSafe } = require("./utils/dependencies")(web3, artifacts)
     const masterSafe = await GnosisSafe.at(argv.masterSafe)
 
     const deposits = JSON.parse(await fs.readFile(argv.depositFile, "utf8"))
@@ -39,11 +45,11 @@ module.exports = async (callback) => {
     if (!argv.verify) {
       const answer = await promptUser("Are you sure you want to send this transaction to the EVM? [yN] ")
       if (answer == "y" || answer.toLowerCase() == "yes") {
-        await signAndSend(masterSafe, transaction, argv.network)
+        await signAndSend(masterSafe, transaction, argv.network, argv.nonce)
       }
     } else {
       console.log("Verifying transaction")
-      await transactionExistsOnSafeServer(masterSafe, transaction, argv.network)
+      await transactionExistsOnSafeServer(masterSafe, transaction, argv.network, argv.nonce)
     }
 
     callback()
