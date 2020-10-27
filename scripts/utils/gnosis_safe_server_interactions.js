@@ -61,12 +61,14 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
     })
     const interfaceLink = `${webInterfaceBaseAddress(network)}/safes/${masterSafe.address}/transactions/`
     console.log("Transaction awaiting execution in the interface", interfaceLink)
+
+    return nonce
   }
 
   /**
    * Checks whether a transaction was already proposed to the gnosis-safe UI
    *
-   * @param {SmartContract} masterSafe Address of the master safe owning the brackets
+   * @param {SmartContract} masterSafe Instance of the master safe owning the brackets
    * @param {Transaction} transaction The transaction whose existence is checked
    * @param {string} network either rinkeby, xdai or mainnet
    * @param {number} [nonce=null] Gnosis Safe transaction nonce.
@@ -175,9 +177,12 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
         promptSuccessful = answer === "y" || answer.toLowerCase() === "yes"
       }
       if (promptSuccessful) {
-        const signAndSendOrExecuteOnChain = executeOnchain ? (safe, tx) => signAndExecute(safe, tx) : signAndSend
-        await signAndSendOrExecuteOnChain(masterSafe, transaction, network)
-        console.log("To verify the transaction run the same script with --verify")
+        if (executeOnchain) {
+          await signAndExecute(masterSafe, transaction)
+        } else {
+          const nonce = await signAndSend(masterSafe, transaction, network)
+          console.log(`To verify the transaction run the same script with --verify --nonce=${nonce}`)
+        }
       }
     } else {
       console.log("Verifying transaction...")

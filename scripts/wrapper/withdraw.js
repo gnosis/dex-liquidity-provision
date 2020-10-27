@@ -313,9 +313,16 @@ module.exports = function (web3, artifacts) {
         return str.split(",")
       },
     })
+    .option("nonce", {
+      type: "number",
+      describe:
+        "Nonce used in the transaction submitted to the web interface. If omitted, the first available nonce considering all pending transactions will be used.",
+      default: null,
+    })
     .option("executeOnchain", {
       type: "boolean",
       default: false,
+      conflicts: ["nonce"],
       describe: "Directly execute transaction on-chain instead of sending to the backend",
     })
     .option("verify", {
