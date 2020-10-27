@@ -15,7 +15,7 @@ const { signAndExecute } = require("./utils/internals")(web3, artifacts)
 const { proceedAnyways } = require("./utils/user_interface_helpers")
 const { sleep } = require("./utils/js_helpers")
 const { DEFAULT_NUM_SAFES } = require("./utils/constants")
-const { default_yargs, checkBracketsForDuplicate } = require("./utils/default_yargs")
+const { default_yargs, checkBracketsForDuplicate, noNonceWithExecuteOnchain } = require("./utils/default_yargs")
 
 const argv = default_yargs
   .option("masterSafe", {
@@ -78,7 +78,6 @@ const argv = default_yargs
   .option("executeOnchain", {
     type: "boolean",
     default: false,
-    conflicts: ["nonce"],
     describe: "Directly execute transaction on-chain instead of sending to the backend",
   })
   .option("nonce", {
@@ -86,6 +85,7 @@ const argv = default_yargs
     default: null,
     describe: "Use this specific nonce instead of the next available one",
   })
+  .check(noNonceWithExecuteOnchain)
   .check(checkBracketsForDuplicate).argv
 
 const findBracketsWithExistingOrders = async function (bracketAddresses, exchange) {

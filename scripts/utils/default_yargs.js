@@ -27,7 +27,22 @@ function checkBracketsForDuplicate(argv) {
   return true
 }
 
+/**
+ * Throws if --executeOnchain and --nonce are used simultaneously,
+ * otherwise returns true.
+ *
+ * @param {object} argv script arguments.
+ * @returns {boolean} true, throw if both flags are used.
+ */
+function noNonceWithExecuteOnchain(argv) {
+  if (argv.executeOnchain && argv.nonce !== null) {
+    throw new Error("Arguments --executeOnchain and --nonce are mutually exclusive")
+  }
+  return true
+}
+
 module.exports = {
   default_yargs,
   checkBracketsForDuplicate,
+  noNonceWithExecuteOnchain,
 }
