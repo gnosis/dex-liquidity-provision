@@ -139,11 +139,10 @@ module.exports = function (web3, artifacts) {
     } else {
       amountFunction = async function (bracketAddress, tokenData, exchange) {
         const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
-        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
-        if (usdValue.gte(ONE)) {
+        if (amount.gt(ZERO)) {
           return MAXUINT256
         } else {
-          log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
+          log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since there is no (0) balance for this token.`)
           return ZERO
         }
       }
