@@ -232,11 +232,11 @@ const orderSellValueInUSD = async (order, tokenInfo, globalPriceStorage = null) 
     .toBN()
 }
 
-const amountUSDValue = async function (amount, tokenInfo, globalPriceStorage = null) {
+const amountUSDValue = async function (amountPromise, tokenInfo, globalPriceStorage = null) {
   const currentMarketPriceSlice = await getOneinchPrice(tokenInfo, { symbol: "USDC", decimals: 6 }, globalPriceStorage)
   const currentMarketPrice = currentMarketPriceSlice.price
   return Fraction.fromNumber(parseFloat(currentMarketPrice))
-    .mul(new Fraction(new BN(amount), new BN(10).pow(new BN(tokenInfo.decimals))))
+    .mul(new Fraction(new BN(await amountPromise), new BN(10).pow(new BN(tokenInfo.decimals))))
     .toBN()
 }
 

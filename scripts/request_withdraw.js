@@ -4,12 +4,18 @@ const { defaultWithdrawYargs, prepareWithdrawRequest } = require("./wrapper/with
 const { signAndExecute } = require("./utils/internals")(web3, artifacts)
 const { promptUser } = require("./utils/user_interface_helpers")
 
-const argv = defaultWithdrawYargs.option("noBalanceCheck", {
-  type: "boolean",
-  default: false,
-  describe:
-    "Request withdraw for tokens without checking if the token has no balance. Useful to account for trading that might be happening during the withdraw request",
-}).argv
+const argv = defaultWithdrawYargs
+  .option("stopTrading", {
+    type: "boolean",
+    default: false,
+    describe:
+      "Request withdraw of all funds on each bracket for each traded tokens, independently of their actual balance. Selected brackets will stop any trading from the following batch",
+  })
+  .option("onlySkipNonzero", {
+    type: "boolean",
+    default: false,
+    describe: "Withdraw balance of all nonzero balances, even if the amounts have very small USD value",
+  }).argv
 
 module.exports = async (callback) => {
   try {

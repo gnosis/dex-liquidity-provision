@@ -35,6 +35,10 @@ module.exports = function (web3, artifacts) {
         throw new Error("Argument error: --tokens or --tokenIds can only be used with --brackets")
       }
     }
+
+    if (argv.stopTrading && argv.onlySkipNonzero) {
+      throw new Error("Argument error: --stopTrading and --onlySkipNonzero cannot be used simultaneously")
+    }
   }
 
   const getWithdrawalsAndTokenInfo = async function (
@@ -138,14 +142,20 @@ module.exports = function (web3, artifacts) {
       }
     } else {
       amountFunction = async function (bracketAddress, tokenData, exchange) {
-        const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
-        const usdValue = await amountUSDValue(amount, tokenData, globalPriceStorage)
-        if (usdValue.gte(ONE)) {
-          return MAXUINT256
-        } else {
-          log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
-          return ZERO
+        const amountPromise = exchange.getBalance(bracketAddress, tokenData.address)
+        if (!argv.stopTrading && !argv.onlySkipNonzero) {
+          const usdValue = await amountUSDValue(amountPromise, tokenData, globalPriceStorage)
+          if (usdValue.lt(ONE)) {
+            log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
+            return ZERO
+          }
         }
+        if (argv.onlySkipNonzero) {
+          if ((await amountPromise).eq(ZERO)) {
+            return ZERO
+          }
+        }
+        return MAXUINT256
       }
     }
     const { withdrawals, tokenInfoPromises } = await getWithdrawalsAndTokenInfo(
