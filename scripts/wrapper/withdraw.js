@@ -123,19 +123,16 @@ module.exports = function (web3, artifacts) {
     // sort to guarantee that the same withdraw operation always returns
     // a vector with the same order of elements
     withdrawals.sort((wLeft, wRight) => {
-      if (wLeft.tokenAddress === wRight.tokenAddress) {
-        if (wLeft.bracketAddress === wRight.bracketAddress) {
-          if (wLeft.amount.eq(wRight.amount)) {
-            return 0
-          } else {
-            return wLeft.amount.gt(wRight.amount) ? 1 : -1
-          }
-        } else {
-          return wLeft.bracketAddress > wRight.bracketAddress ? 1 : -1
-        }
-      } else {
+      if (wLeft.tokenAddress !== wRight.tokenAddress) {
         return wLeft.tokenAddress > wRight.tokenAddress ? 1 : -1
       }
+      if (wLeft.bracketAddress !== wRight.bracketAddress) {
+        return wLeft.bracketAddress > wRight.bracketAddress ? 1 : -1
+      }
+      if (wLeft.amount.neq(wRight.amount)) {
+        return wLeft.amount.gt(wRight.amount) ? 1 : -1
+      }
+      return 0
     })
 
     return {
