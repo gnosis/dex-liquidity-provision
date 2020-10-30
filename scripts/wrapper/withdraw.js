@@ -125,12 +125,16 @@ module.exports = function (web3, artifacts) {
     withdrawals.sort((wLeft, wRight) => {
       if (wLeft.tokenAddress === wRight.tokenAddress) {
         if (wLeft.bracketAddress === wRight.bracketAddress) {
-          return wLeft.amount >= wRight.amount
+          if (wLeft.amount.eq(wRight.amount)) {
+            return 0
+          } else {
+            return wLeft.amount.gt(wRight.amount) ? 1 : -1
+          }
         } else {
-          return wLeft.bracketAddress > wRight.bracketAddress
+          return wLeft.bracketAddress > wRight.bracketAddress ? 1 : -1
         }
       } else {
-        return wLeft.tokenAddress > wRight.tokenAddress
+        return wLeft.tokenAddress > wRight.tokenAddress ? 1 : -1
       }
     })
 
