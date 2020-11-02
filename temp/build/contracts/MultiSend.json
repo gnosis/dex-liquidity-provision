@@ -1,0 +1,991 @@
+{
+  "contractName": "MultiSend",
+  "abi": [
+    {
+      "inputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "transactions",
+          "type": "bytes"
+        }
+      ],
+      "name": "multiSend",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.6+commit.b259423e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":false,\"inputs\":[{\"name\":\"transactions\",\"type\":\"bytes\"}],\"name\":\"multiSend\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}],\"devdoc\":{\"author\":\"Nick Dodson - <nick.dodson@consensys.net>Gon\\u00e7alo S\\u00e1 - <goncalo.sa@consensys.net>Stefan George - <stefan@gnosis.io>Richard Meissner - <richard@gnosis.io>\",\"methods\":{\"multiSend(bytes)\":{\"details\":\"Sends multiple transactions and reverts all if one fails.\",\"params\":{\"transactions\":\"Encoded transactions. Each transaction is encoded as a packed bytes of                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),                     to as a address (=> 20 bytes),                     value as a uint256 (=> 32 bytes),                     data length as a uint256 (=> 32 bytes),                     data as bytes.                     see abi.encodePacked for more information on packed encoding\"}}},\"title\":\"Multi Send - Allows to batch multiple transactions into one.\"},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol\":\"MultiSend\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol\":{\"keccak256\":\"0xc14274f4987469445781c38bdab3fb067890aa88469d7a4c72025e54278b8e84\",\"urls\":[\"bzzr://69911910407b34db639b555b76d18f8080c20ec2c440458012c237e00c83cfbc\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50604080517f6d756c746973656e642e67756172642e6279746573333200000000000000000081529051908190036017019020600055610231806100556000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80638d80ff0a14610030575b600080fd5b6100d66004803603602081101561004657600080fd5b81019060208101813564010000000081111561006157600080fd5b82018360208201111561007357600080fd5b8035906020019184600183028401116401000000008311171561009557600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295506100d8945050505050565b005b604080517f6d756c746973656e642e67756172642e6279746573333200000000000000000081529051908190036017019020600054141561014d57604051600160e51b62461bcd0281526004018080602001828103825260308152602001806101d66030913960400191505060405180910390fd5b805160205b818110156101d0578083015160f81c6001820184015160601c60158301850151603584018601516055850187016000856000811461019757600181146101a7576101b2565b6000808585888a5af191506101b2565b6000808585895af491505b50806101bd57600080fd5b8260550187019650505050505050610152565b50505056fe4d756c746953656e642073686f756c64206f6e6c792062652063616c6c6564207669612064656c656761746563616c6ca165627a7a7230582046704fd8fda24803cd41bc9b918051bde57ddb3f6cc19000e72aa30efbcbdbd10029",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c80638d80ff0a14610030575b600080fd5b6100d66004803603602081101561004657600080fd5b81019060208101813564010000000081111561006157600080fd5b82018360208201111561007357600080fd5b8035906020019184600183028401116401000000008311171561009557600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295506100d8945050505050565b005b604080517f6d756c746973656e642e67756172642e6279746573333200000000000000000081529051908190036017019020600054141561014d57604051600160e51b62461bcd0281526004018080602001828103825260308152602001806101d66030913960400191505060405180910390fd5b805160205b818110156101d0578083015160f81c6001820184015160601c60158301850151603584018601516055850187016000856000811461019757600181146101a7576101b2565b6000808585888a5af191506101b2565b6000808585895af491505b50806101bd57600080fd5b8260550187019650505050505050610152565b50505056fe4d756c746953656e642073686f756c64206f6e6c792062652063616c6c6564207669612064656c656761746563616c6ca165627a7a7230582046704fd8fda24803cd41bc9b918051bde57ddb3f6cc19000e72aa30efbcbdbd10029",
+  "sourceMap": "312:2694:20:-;;;440:57;8:9:-1;5:2;;;30:1;27;20:12;5:2;-1:-1;377:36:20;;;;;;;;;;;;;;;;471:5;:19;312:2694;;;;;;",
+  "deployedSourceMap": "312:2694:20:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;312:2694:20;;;;;;;;;;;;;;;;;;;1098:1906;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;1098:1906:20;;;;;;;;21:11:-1;5:28;;2:2;;;46:1;43;36:12;2:2;1098:1906:20;;35:9:-1;28:4;12:14;8:25;5:40;2:2;;;58:1;55;48:12;2:2;1098:1906:20;;;;;;100:9:-1;95:1;81:12;77:20;67:8;63:35;60:50;39:11;25:12;22:29;11:107;8:2;;;131:1;128;121:12;8:2;1098:1906:20;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;30:3:-1;22:6;14;1:33;99:1;81:16;;74:27;;;;-1:-1;1098:1906:20;;-1:-1:-1;1098:1906:20;;-1:-1:-1;;;;;1098:1906:20:i;:::-;;;377:36;;;;;;;;;;;;;;;;1181:5;;:20;;1173:81;;;;-1:-1:-1;;;;;1173:81:20;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1371:12;1365:19;1406:4;1423:1565;1437:6;1434:1;1431:13;1423:1565;;;1758:1;1744:12;1740:20;1734:27;1728:4;1724:38;2032:4;2029:1;2025:12;2011;2007:31;2001:38;1995:4;1991:49;2194:4;2191:1;2187:12;2173;2169:31;2163:38;2377:4;2374:1;2370:12;2356;2352:31;2346:38;2571:4;2568:1;2564:12;2550;2546:31;2609:1;2634:9;2665:1;2660:66;;;;2748:1;2743:67;;;;2627:183;;2660:66;2722:1;2719;2707:10;2701:4;2694:5;2690:2;2685:3;2680:44;2669:55;;2660:66;;2743:67;2806:1;2803;2791:10;2785:4;2781:2;2776:3;2763:45;2752:56;;2627:183;-1:-1:-1;2830:14:20;2827:2;;2857:1;2854;2847:12;2827:2;2962:10;2956:4;2952:21;2949:1;2945:29;2940:34;;1449:1539;;;;;;1423:1565;;;1337:1661;;;:::o",
+  "source": "pragma solidity >=0.5.0 <0.7.0;\n\n\n/// @title Multi Send - Allows to batch multiple transactions into one.\n/// @author Nick Dodson - <nick.dodson@consensys.net>\n/// @author Gonçalo Sá - <goncalo.sa@consensys.net>\n/// @author Stefan George - <stefan@gnosis.io>\n/// @author Richard Meissner - <richard@gnosis.io>\ncontract MultiSend {\n\n    bytes32 constant private GUARD_VALUE = keccak256(\"multisend.guard.bytes32\");\n\n    bytes32 guard;\n\n    constructor() public {\n        guard = GUARD_VALUE;\n    }\n\n    /// @dev Sends multiple transactions and reverts all if one fails.\n    /// @param transactions Encoded transactions. Each transaction is encoded as a packed bytes of\n    ///                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),\n    ///                     to as a address (=> 20 bytes),\n    ///                     value as a uint256 (=> 32 bytes),\n    ///                     data length as a uint256 (=> 32 bytes),\n    ///                     data as bytes.\n    ///                     see abi.encodePacked for more information on packed encoding\n    function multiSend(bytes memory transactions)\n        public\n    {\n        require(guard != GUARD_VALUE, \"MultiSend should only be called via delegatecall\");\n        // solium-disable-next-line security/no-inline-assembly\n        assembly {\n            let length := mload(transactions)\n            let i := 0x20\n            for { } lt(i, length) { } {\n                // First byte of the data is the operation.\n                // We shift by 248 bits (256 - 8 [operation byte]) it right since mload will always load 32 bytes (a word).\n                // This will also zero out unused data.\n                let operation := shr(0xf8, mload(add(transactions, i)))\n                // We offset the load address by 1 byte (operation byte)\n                // We shift it right by 96 bits (256 - 160 [20 address bytes]) to right-align the data and zero out unused data.\n                let to := shr(0x60, mload(add(transactions, add(i, 0x01))))\n                // We offset the load address by 21 byte (operation byte + 20 address bytes)\n                let value := mload(add(transactions, add(i, 0x15)))\n                // We offset the load address by 53 byte (operation byte + 20 address bytes + 32 value bytes)\n                let dataLength := mload(add(transactions, add(i, 0x35)))\n                // We offset the load address by 85 byte (operation byte + 20 address bytes + 32 value bytes + 32 data length bytes)\n                let data := add(transactions, add(i, 0x55))\n                let success := 0\n                switch operation\n                case 0 { success := call(gas, to, value, data, dataLength, 0, 0) }\n                case 1 { success := delegatecall(gas, to, data, dataLength, 0, 0) }\n                if eq(success, 0) { revert(0, 0) }\n                // Next entry starts at 85 byte + data length\n                i := add(i, add(0x55, dataLength))\n            }\n        }\n    }\n}\n",
+  "sourcePath": "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol",
+  "ast": {
+    "absolutePath": "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol",
+    "exportedSymbols": {
+      "MultiSend": [
+        2935
+      ]
+    },
+    "id": 2936,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 2905,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.5",
+          ".0",
+          "<",
+          "0.7",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:31:20"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title Multi Send - Allows to batch multiple transactions into one.\n @author Nick Dodson - <nick.dodson@consensys.net>\n @author Gonçalo Sá - <goncalo.sa@consensys.net>\n @author Stefan George - <stefan@gnosis.io>\n @author Richard Meissner - <richard@gnosis.io>",
+        "fullyImplemented": true,
+        "id": 2935,
+        "linearizedBaseContracts": [
+          2935
+        ],
+        "name": "MultiSend",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": true,
+            "id": 2910,
+            "name": "GUARD_VALUE",
+            "nodeType": "VariableDeclaration",
+            "scope": 2935,
+            "src": "338:75:20",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes32",
+              "typeString": "bytes32"
+            },
+            "typeName": {
+              "id": 2906,
+              "name": "bytes32",
+              "nodeType": "ElementaryTypeName",
+              "src": "338:7:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "value": {
+              "argumentTypes": null,
+              "arguments": [
+                {
+                  "argumentTypes": null,
+                  "hexValue": "6d756c746973656e642e67756172642e62797465733332",
+                  "id": 2908,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "kind": "string",
+                  "lValueRequested": false,
+                  "nodeType": "Literal",
+                  "src": "387:25:20",
+                  "subdenomination": null,
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_stringliteral_89232e6dba5a1949e493f5034fcd46db3c1ee01386363067973d7739bc50b63e",
+                    "typeString": "literal_string \"multisend.guard.bytes32\""
+                  },
+                  "value": "multisend.guard.bytes32"
+                }
+              ],
+              "expression": {
+                "argumentTypes": [
+                  {
+                    "typeIdentifier": "t_stringliteral_89232e6dba5a1949e493f5034fcd46db3c1ee01386363067973d7739bc50b63e",
+                    "typeString": "literal_string \"multisend.guard.bytes32\""
+                  }
+                ],
+                "id": 2907,
+                "name": "keccak256",
+                "nodeType": "Identifier",
+                "overloadedDeclarations": [],
+                "referencedDeclaration": 6020,
+                "src": "377:9:20",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
+                  "typeString": "function (bytes memory) pure returns (bytes32)"
+                }
+              },
+              "id": 2909,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "functionCall",
+              "lValueRequested": false,
+              "names": [],
+              "nodeType": "FunctionCall",
+              "src": "377:36:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "visibility": "private"
+          },
+          {
+            "constant": false,
+            "id": 2912,
+            "name": "guard",
+            "nodeType": "VariableDeclaration",
+            "scope": 2935,
+            "src": "420:13:20",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes32",
+              "typeString": "bytes32"
+            },
+            "typeName": {
+              "id": 2911,
+              "name": "bytes32",
+              "nodeType": "ElementaryTypeName",
+              "src": "420:7:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "value": null,
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 2919,
+              "nodeType": "Block",
+              "src": "461:36:20",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 2917,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 2915,
+                      "name": "guard",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2912,
+                      "src": "471:5:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes32",
+                        "typeString": "bytes32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 2916,
+                      "name": "GUARD_VALUE",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2910,
+                      "src": "479:11:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes32",
+                        "typeString": "bytes32"
+                      }
+                    },
+                    "src": "471:19:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "id": 2918,
+                  "nodeType": "ExpressionStatement",
+                  "src": "471:19:20"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 2920,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2913,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "451:2:20"
+            },
+            "returnParameters": {
+              "id": 2914,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "461:0:20"
+            },
+            "scope": 2935,
+            "src": "440:57:20",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 2933,
+              "nodeType": "Block",
+              "src": "1163:1841:20",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "commonType": {
+                          "typeIdentifier": "t_bytes32",
+                          "typeString": "bytes32"
+                        },
+                        "id": 2928,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "argumentTypes": null,
+                          "id": 2926,
+                          "name": "guard",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 2912,
+                          "src": "1181:5:20",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "!=",
+                        "rightExpression": {
+                          "argumentTypes": null,
+                          "id": 2927,
+                          "name": "GUARD_VALUE",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 2910,
+                          "src": "1190:11:20",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "src": "1181:20:20",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "4d756c746953656e642073686f756c64206f6e6c792062652063616c6c6564207669612064656c656761746563616c6c",
+                        "id": 2929,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "string",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "1203:50:20",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_stringliteral_be54b8c9bc01d366a87d58d4e594f7b0f8a1032210aae73d17a5ed4f177986bc",
+                          "typeString": "literal_string \"MultiSend should only be called via delegatecall\""
+                        },
+                        "value": "MultiSend should only be called via delegatecall"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_stringliteral_be54b8c9bc01d366a87d58d4e594f7b0f8a1032210aae73d17a5ed4f177986bc",
+                          "typeString": "literal_string \"MultiSend should only be called via delegatecall\""
+                        }
+                      ],
+                      "id": 2925,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        6029,
+                        6030
+                      ],
+                      "referencedDeclaration": 6030,
+                      "src": "1173:7:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 2930,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "1173:81:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 2931,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1173:81:20"
+                },
+                {
+                  "externalReferences": [
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "1371:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "1744:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2011:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2173:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2356:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2550:12:20",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 2932,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    let length := mload(transactions)\n    let i := 0x20\n    for {\n    }\n    lt(i, length)\n    {\n    }\n    {\n        let operation := shr(0xf8, mload(add(transactions, i)))\n        let to := shr(0x60, mload(add(transactions, add(i, 0x01))))\n        let value := mload(add(transactions, add(i, 0x15)))\n        let dataLength := mload(add(transactions, add(i, 0x35)))\n        let data := add(transactions, add(i, 0x55))\n        let success := 0\n        switch operation\n        case 0 {\n            success := call(gas(), to, value, data, dataLength, 0, 0)\n        }\n        case 1 {\n            success := delegatecall(gas(), to, data, dataLength, 0, 0)\n        }\n        if eq(success, 0)\n        {\n            revert(0, 0)\n        }\n        i := add(i, add(0x55, dataLength))\n    }\n}",
+                  "src": "1328:1676:20"
+                }
+              ]
+            },
+            "documentation": "@dev Sends multiple transactions and reverts all if one fails.\n @param transactions Encoded transactions. Each transaction is encoded as a packed bytes of\n                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),\n                     to as a address (=> 20 bytes),\n                     value as a uint256 (=> 32 bytes),\n                     data length as a uint256 (=> 32 bytes),\n                     data as bytes.\n                     see abi.encodePacked for more information on packed encoding",
+            "id": 2934,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "multiSend",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2923,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2922,
+                  "name": "transactions",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2934,
+                  "src": "1117:25:20",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 2921,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1117:5:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1116:27:20"
+            },
+            "returnParameters": {
+              "id": 2924,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1163:0:20"
+            },
+            "scope": 2935,
+            "src": "1098:1906:20",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 2936,
+        "src": "312:2694:20"
+      }
+    ],
+    "src": "0:3007:20"
+  },
+  "legacyAST": {
+    "absolutePath": "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol",
+    "exportedSymbols": {
+      "MultiSend": [
+        2935
+      ]
+    },
+    "id": 2936,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 2905,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.5",
+          ".0",
+          "<",
+          "0.7",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:31:20"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title Multi Send - Allows to batch multiple transactions into one.\n @author Nick Dodson - <nick.dodson@consensys.net>\n @author Gonçalo Sá - <goncalo.sa@consensys.net>\n @author Stefan George - <stefan@gnosis.io>\n @author Richard Meissner - <richard@gnosis.io>",
+        "fullyImplemented": true,
+        "id": 2935,
+        "linearizedBaseContracts": [
+          2935
+        ],
+        "name": "MultiSend",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": true,
+            "id": 2910,
+            "name": "GUARD_VALUE",
+            "nodeType": "VariableDeclaration",
+            "scope": 2935,
+            "src": "338:75:20",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes32",
+              "typeString": "bytes32"
+            },
+            "typeName": {
+              "id": 2906,
+              "name": "bytes32",
+              "nodeType": "ElementaryTypeName",
+              "src": "338:7:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "value": {
+              "argumentTypes": null,
+              "arguments": [
+                {
+                  "argumentTypes": null,
+                  "hexValue": "6d756c746973656e642e67756172642e62797465733332",
+                  "id": 2908,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "kind": "string",
+                  "lValueRequested": false,
+                  "nodeType": "Literal",
+                  "src": "387:25:20",
+                  "subdenomination": null,
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_stringliteral_89232e6dba5a1949e493f5034fcd46db3c1ee01386363067973d7739bc50b63e",
+                    "typeString": "literal_string \"multisend.guard.bytes32\""
+                  },
+                  "value": "multisend.guard.bytes32"
+                }
+              ],
+              "expression": {
+                "argumentTypes": [
+                  {
+                    "typeIdentifier": "t_stringliteral_89232e6dba5a1949e493f5034fcd46db3c1ee01386363067973d7739bc50b63e",
+                    "typeString": "literal_string \"multisend.guard.bytes32\""
+                  }
+                ],
+                "id": 2907,
+                "name": "keccak256",
+                "nodeType": "Identifier",
+                "overloadedDeclarations": [],
+                "referencedDeclaration": 6020,
+                "src": "377:9:20",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
+                  "typeString": "function (bytes memory) pure returns (bytes32)"
+                }
+              },
+              "id": 2909,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "functionCall",
+              "lValueRequested": false,
+              "names": [],
+              "nodeType": "FunctionCall",
+              "src": "377:36:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "visibility": "private"
+          },
+          {
+            "constant": false,
+            "id": 2912,
+            "name": "guard",
+            "nodeType": "VariableDeclaration",
+            "scope": 2935,
+            "src": "420:13:20",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes32",
+              "typeString": "bytes32"
+            },
+            "typeName": {
+              "id": 2911,
+              "name": "bytes32",
+              "nodeType": "ElementaryTypeName",
+              "src": "420:7:20",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "value": null,
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 2919,
+              "nodeType": "Block",
+              "src": "461:36:20",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 2917,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 2915,
+                      "name": "guard",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2912,
+                      "src": "471:5:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes32",
+                        "typeString": "bytes32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 2916,
+                      "name": "GUARD_VALUE",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2910,
+                      "src": "479:11:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes32",
+                        "typeString": "bytes32"
+                      }
+                    },
+                    "src": "471:19:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "id": 2918,
+                  "nodeType": "ExpressionStatement",
+                  "src": "471:19:20"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 2920,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2913,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "451:2:20"
+            },
+            "returnParameters": {
+              "id": 2914,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "461:0:20"
+            },
+            "scope": 2935,
+            "src": "440:57:20",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 2933,
+              "nodeType": "Block",
+              "src": "1163:1841:20",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "commonType": {
+                          "typeIdentifier": "t_bytes32",
+                          "typeString": "bytes32"
+                        },
+                        "id": 2928,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "argumentTypes": null,
+                          "id": 2926,
+                          "name": "guard",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 2912,
+                          "src": "1181:5:20",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "!=",
+                        "rightExpression": {
+                          "argumentTypes": null,
+                          "id": 2927,
+                          "name": "GUARD_VALUE",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 2910,
+                          "src": "1190:11:20",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "src": "1181:20:20",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "4d756c746953656e642073686f756c64206f6e6c792062652063616c6c6564207669612064656c656761746563616c6c",
+                        "id": 2929,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "string",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "1203:50:20",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_stringliteral_be54b8c9bc01d366a87d58d4e594f7b0f8a1032210aae73d17a5ed4f177986bc",
+                          "typeString": "literal_string \"MultiSend should only be called via delegatecall\""
+                        },
+                        "value": "MultiSend should only be called via delegatecall"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_stringliteral_be54b8c9bc01d366a87d58d4e594f7b0f8a1032210aae73d17a5ed4f177986bc",
+                          "typeString": "literal_string \"MultiSend should only be called via delegatecall\""
+                        }
+                      ],
+                      "id": 2925,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        6029,
+                        6030
+                      ],
+                      "referencedDeclaration": 6030,
+                      "src": "1173:7:20",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 2930,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "1173:81:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 2931,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1173:81:20"
+                },
+                {
+                  "externalReferences": [
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "1371:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "1744:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2011:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2173:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2356:12:20",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "transactions": {
+                        "declaration": 2922,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "2550:12:20",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 2932,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{\n    let length := mload(transactions)\n    let i := 0x20\n    for {\n    }\n    lt(i, length)\n    {\n    }\n    {\n        let operation := shr(0xf8, mload(add(transactions, i)))\n        let to := shr(0x60, mload(add(transactions, add(i, 0x01))))\n        let value := mload(add(transactions, add(i, 0x15)))\n        let dataLength := mload(add(transactions, add(i, 0x35)))\n        let data := add(transactions, add(i, 0x55))\n        let success := 0\n        switch operation\n        case 0 {\n            success := call(gas(), to, value, data, dataLength, 0, 0)\n        }\n        case 1 {\n            success := delegatecall(gas(), to, data, dataLength, 0, 0)\n        }\n        if eq(success, 0)\n        {\n            revert(0, 0)\n        }\n        i := add(i, add(0x55, dataLength))\n    }\n}",
+                  "src": "1328:1676:20"
+                }
+              ]
+            },
+            "documentation": "@dev Sends multiple transactions and reverts all if one fails.\n @param transactions Encoded transactions. Each transaction is encoded as a packed bytes of\n                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),\n                     to as a address (=> 20 bytes),\n                     value as a uint256 (=> 32 bytes),\n                     data length as a uint256 (=> 32 bytes),\n                     data as bytes.\n                     see abi.encodePacked for more information on packed encoding",
+            "id": 2934,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "multiSend",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2923,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2922,
+                  "name": "transactions",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2934,
+                  "src": "1117:25:20",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 2921,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1117:5:20",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1116:27:20"
+            },
+            "returnParameters": {
+              "id": 2924,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1163:0:20"
+            },
+            "scope": 2935,
+            "src": "1098:1906:20",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 2936,
+        "src": "312:2694:20"
+      }
+    ],
+    "src": "0:3007:20"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.6+commit.b259423e.Emscripten.clang"
+  },
+  "networks": {
+    "1": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
+    },
+    "4": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
+      "transactionHash": "0x6fabaeeba1dba60983da94818965ecbac7b2ed81fc71c08d6582e29dc05745c7"
+    },
+    "100": {
+      "links": {},
+      "address": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD"
+    }
+  },
+  "schemaVersion": "3.2.3",
+  "updatedAt": "2020-08-31T13:50:21.566Z",
+  "networkType": "ethereum",
+  "devdoc": {
+    "author": "Nick Dodson - <nick.dodson@consensys.net>Gonçalo Sá - <goncalo.sa@consensys.net>Stefan George - <stefan@gnosis.io>Richard Meissner - <richard@gnosis.io>",
+    "methods": {
+      "multiSend(bytes)": {
+        "details": "Sends multiple transactions and reverts all if one fails.",
+        "params": {
+          "transactions": "Encoded transactions. Each transaction is encoded as a packed bytes of                     operation as a uint8 with 0 for a call or 1 for a delegatecall (=> 1 byte),                     to as a address (=> 20 bytes),                     value as a uint256 (=> 32 bytes),                     data length as a uint256 (=> 32 bytes),                     data as bytes.                     see abi.encodePacked for more information on packed encoding"
+        }
+      }
+    },
+    "title": "Multi Send - Allows to batch multiple transactions into one."
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
