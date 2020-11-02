@@ -138,7 +138,7 @@ module.exports = function (web3, artifacts) {
       }
     } else {
       amountFunction = async function (bracketAddress, tokenData, exchange) {
-        const amount = (await exchange.getBalance(bracketAddress, tokenData.address)).toString()
+        const amount = (await exchange.getBalance(bracketAddress, tokenData.address))
         if (amount.gt(ZERO)) {
           return MAXUINT256
         } else {

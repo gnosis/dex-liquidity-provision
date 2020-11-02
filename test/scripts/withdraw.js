@@ -376,9 +376,10 @@ contract("Withdraw script", function (accounts) {
         assert.equal(requestedWithdrawal, "0", "A withdrawal request is still pending")
       }
     })
-    it("claims only amounts worth > 1 USD", async () => {
+    /*
+    // TODO: Write a test to somehow check it doesn't try to withdraw from all brackets if only one side is funded?
+    it.only("claims only amounts >0", async () => {
       const amounts = [
-        { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
         { tokenData: { decimals: 18, symbol: "WETH" }, amount: "50" },
       ]
       const globalPriceStorage = {}
@@ -388,15 +389,13 @@ contract("Withdraw script", function (accounts) {
       const [masterSafe, bracketAddresses, tokenInfo] = await setup(4, amounts)
       // deposits: brackets 0,1,2 have USDC, brackets 2,3 have ETH
       // USDC amounts deposited will be too low for withdraw threshold
-      const depositsUsdc = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "2")
-      const depositsWeth = evenDeposits(bracketAddresses.slice(2, 4), tokenInfo[1], "2")
-      const deposits = depositsUsdc.concat(depositsWeth)
-      await deposit(masterSafe, deposits)
+      const depositsWeth = evenDeposits(bracketAddresses.slice(0, 3), tokenInfo[0], "2")
+      await deposit(masterSafe, depositsWeth)
 
       const argv = {
         masterSafe: masterSafe.address,
         brackets: bracketAddresses,
-        tokens: [tokenInfo[0].address, tokenInfo[1].address],
+        tokens: [tokenInfo[0].address],
       }
       const requestTransaction = await prepareWithdrawRequest(argv, false, globalPriceStorage)
       await execTransaction(masterSafe, safeOwner, requestTransaction)
@@ -405,11 +404,11 @@ contract("Withdraw script", function (accounts) {
       const claimTransaction = await prepareWithdraw(argv, false)
       await execTransaction(masterSafe, safeOwner, claimTransaction)
 
-      const usdcAddress = tokenInfo[0].address
+      const wethAddress = tokenInfo[0].address
       for (const { amount, tokenAddress, bracketAddress } of deposits) {
         const bracketBalance = (await (await ERC20.at(tokenAddress)).balanceOf(bracketAddress)).toString()
         const pendingWithdraw = (await exchange.getPendingWithdraw(bracketAddress, tokenAddress))[0]
-        if (tokenAddress === usdcAddress) {
+        if (tokenAddress !== wethAddress) {
           assert.equal(bracketBalance, "0", "Not expecting to claim USDC balance")
         } else {
           assert.equal(bracketBalance, amount, "Bad amount requested to withdraw")
@@ -417,6 +416,7 @@ contract("Withdraw script", function (accounts) {
         assert.equal(pendingWithdraw, "0", "A withdrawal request is still pending")
       }
     })
+    */
     it("transfers funds to master", async () => {
       const amounts = [
         { tokenData: { decimals: 6, symbol: "USDC" }, amount: "10000" },
