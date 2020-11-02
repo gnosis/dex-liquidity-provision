@@ -11,10 +11,10 @@ module.exports = function (web3, artifacts) {
     return Contract
   }
 
-  const BatchExchange = makeContract(require("build/contracts/BatchExchange.json"))
-  const GnosisSafe = makeContract(require("build/contracts/GnosisSafe.json"))
-  const GnosisSafeProxyFactory = makeContract(require("build/contracts/GnosisSafeProxyFactory.json"))
-  const MultiSend = makeContract(require("build/contracts/MultiSend.json"))
+  const BatchExchange = makeContract(require("../../build/contracts/BatchExchange.json"))
+  const GnosisSafe = makeContract(require("../../build/contracts/GnosisSafe.json"))
+  const GnosisSafeProxyFactory = makeContract(require("../../build/contracts/GnosisSafeProxyFactory.json"))
+  const MultiSend = makeContract(require("../../build/contracts/MultiSend.json"))
 
   return {
     BatchExchange,
