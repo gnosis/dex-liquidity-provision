@@ -1,7 +1,6 @@
 module.exports = function (web3, artifacts) {
   const fs = require("fs").promises
   const { getWithdrawableAmount } = require("@gnosis.pm/dex-contracts")
-  const { amountUSDValue } = require("../utils/price_utils")
   const {
     getExchange,
     fetchTokenInfoAtAddresses,
@@ -14,7 +13,7 @@ module.exports = function (web3, artifacts) {
   } = require("../utils/trading_strategy_helpers")(web3, artifacts)
   const { default_yargs, checkBracketsForDuplicate } = require("../utils/default_yargs")
   const { fromErc20Units, shortenedAddress } = require("../utils/printing_tools")
-  const { MAXUINT256, ONE, ZERO } = require("../utils/constants")
+  const { MAXUINT256, ZERO } = require("../utils/constants")
   const { uniqueItems } = require("../utils/js_helpers")
 
   const assertGoodArguments = function (argv) {
@@ -126,7 +125,7 @@ module.exports = function (web3, artifacts) {
     }
   }
 
-  const prepareWithdrawRequest = async function (argv, printOutput = false, globalPriceStorage = {}) {
+  const prepareWithdrawRequest = async function (argv, printOutput = false) {
     const log = printOutput ? (...a) => console.log(...a) : () => {}
 
     assertGoodArguments(argv)
