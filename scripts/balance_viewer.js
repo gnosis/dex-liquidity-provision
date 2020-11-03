@@ -31,7 +31,7 @@ const argv = default_yargs
   })
   .option("lowBalanceThreshold", {
     type: "number",
-    describe: "error when the total balance of one of the token held is less than the threshold",
+    describe: "error when the total balance of one of the tokens held is less than the threshold",
   })
   .option("alias", {
     type: "string",
