@@ -29,6 +29,15 @@ const argv = default_yargs
       return str.split(",")
     },
   })
+  .option("lowBalanceThreshold", {
+    type: "number",
+    describe: "error when the total balance of one of the tokens held is less than the threshold",
+  })
+  .option("alias", {
+    type: "string",
+    describe: "An optional description of the bracket strategy",
+    default: "Bracket Strategy",
+  })
   .check(noMasterSafeAndBracketsTogether)
   .check(checkBracketsForDuplicate).argv
 
@@ -132,12 +141,12 @@ module.exports = async (callback) => {
         requestedForWithdraw: requestedForWithdrawSum[tokenId],
         storedInBracket: storedInBracketSum[tokenId],
       })
-      console.log(
-        `Total ${tokenData.symbol} in all brackets: ${fromErc20Units(
-          totalBalanceSum[tokenId].toString(),
-          tokenData.decimals
-        )}${optionalString}`
-      )
+      const balance_string = fromErc20Units(totalBalanceSum[tokenId].toString(), tokenData.decimals)
+      console.log(`Total ${tokenData.symbol} in all brackets: ${balance_string}${optionalString}`)
+
+      if (argv.lowBalanceThreshold && argv.lowBalanceThreshold > parseFloat(balance_string)) {
+        console.error(`${argv.alias} has low token balance: ${balance_string} ${tokenData.symbol}`)
+      }
     }
 
     callback()
