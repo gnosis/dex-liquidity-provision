@@ -120,6 +120,21 @@ module.exports = function (web3, artifacts) {
       throw new Error("No funds can be withdrawn for the given parameters.")
     }
 
+    // sort to guarantee that the same withdraw operation always returns
+    // a vector with the same order of elements
+    withdrawals.sort((wLeft, wRight) => {
+      if (wLeft.tokenAddress !== wRight.tokenAddress) {
+        return wLeft.tokenAddress > wRight.tokenAddress ? 1 : -1
+      }
+      if (wLeft.bracketAddress !== wRight.bracketAddress) {
+        return wLeft.bracketAddress > wRight.bracketAddress ? 1 : -1
+      }
+      if (wLeft.amount.neq(wRight.amount)) {
+        return wLeft.amount.gt(wRight.amount) ? 1 : -1
+      }
+      return 0
+    })
+
     return {
       withdrawals,
       tokenInfoPromises,
@@ -309,6 +324,11 @@ module.exports = function (web3, artifacts) {
       type: "boolean",
       default: false,
       describe: "Directly execute transaction on-chain instead of sending to the backend",
+    })
+    .option("verify", {
+      type: "boolean",
+      default: false,
+      describe: "Do not actually send transactions, just simulate their submission",
     })
     .check(noNonceWithExecuteOnchain)
     .check(checkBracketsForDuplicate)
