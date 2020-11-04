@@ -131,11 +131,14 @@ const getOneinchPrice = async function (baseToken, quoteToken, globalPriceStorag
     throw new Error("Invalid token input for retrieving price from aggregator.")
   }
   const quoteTokenAmount = toErc20Units("1", quoteToken.decimals)
+  // 1inch API does not treat WETH like a real token, so ETH must be used instead
+  const quoteTokenSymbol = quoteToken.symbol === "WETH" ? "ETH" : quoteToken.symbol
+  const baseTokenSymbol = baseToken.symbol === "WETH" ? "ETH" : baseToken.symbol
   const url =
     "https://api.1inch.exchange/v1.1/quote?fromTokenSymbol=" +
-    quoteToken.symbol +
+    quoteTokenSymbol +
     "&toTokenSymbol=" +
-    baseToken.symbol +
+    baseTokenSymbol +
     "&amount=" +
     quoteTokenAmount.toString()
   let price
