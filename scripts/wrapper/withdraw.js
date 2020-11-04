@@ -36,8 +36,8 @@ module.exports = function (web3, artifacts) {
       }
     }
 
-    if (argv.stopTrading && argv.onlySkipNonzero) {
-      throw new Error("Argument error: --stopTrading and --onlySkipNonzero cannot be used simultaneously")
+    if (argv.stopTrading && argv.skipZero) {
+      throw new Error("Argument error: --stopTrading and --skipZero cannot be used simultaneously")
     }
   }
 
@@ -143,14 +143,14 @@ module.exports = function (web3, artifacts) {
     } else {
       amountFunction = async function (bracketAddress, tokenData, exchange) {
         const amountPromise = exchange.getBalance(bracketAddress, tokenData.address)
-        if (!argv.stopTrading && !argv.onlySkipNonzero) {
+        if (!argv.stopTrading && !argv.skipZero) {
           const usdValue = await amountUSDValue(amountPromise, tokenData, globalPriceStorage)
           if (usdValue.lt(ONE)) {
             log(`Skipping request for ${tokenData.symbol} on bracket ${bracketAddress} since USD value < 1`)
             return ZERO
           }
         }
-        if (argv.onlySkipNonzero) {
+        if (argv.skipZero) {
           if ((await amountPromise).eq(ZERO)) {
             return ZERO
           }

@@ -11,7 +11,7 @@ const argv = defaultWithdrawYargs
     describe:
       "Request withdraw of all funds on each bracket for each traded tokens, independently of their actual balance. Selected brackets will stop any trading from the following batch",
   })
-  .option("onlySkipNonzero", {
+  .option("skipZero", {
     type: "boolean",
     default: false,
     describe: "Withdraw balance of all non-zero balances, even if the amounts have very small USD value",
