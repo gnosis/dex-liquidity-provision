@@ -505,9 +505,9 @@
     defer-to-connect "^1.0.1"
 
 "@truffle/artifactor@^4.0.72":
-  version "4.0.83"
-  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.83.tgz#69c61b6a5316beca84bd7189b539e2eb1ef48a0c"
-  integrity sha512-yrZbHdRB/EakECu87XLGl2lMB/Hrb3CydrpDbz1L2tkHv37E6nuPuOsontLdnTsMJC297819GTNCYwLO2CeEOA==
+  version "4.0.84"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.84.tgz#ef233d23f4e6231c0152ccc181a812998e715ecd"
+  integrity sha512-Y+oQTnBeB1IiyqHZfxa1R9Ug7L/eTg/kbG+9/LZahDcGxb6mnBrbxBlL+4ZOTLOQOVdrcx75W3BsTzS6KcmSOw==
   dependencies:
     "@truffle/contract-schema" "^3.3.1"
     fs-extra "^8.1.0"
