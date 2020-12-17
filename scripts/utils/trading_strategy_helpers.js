@@ -698,8 +698,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} lowestLimit lower price bound
    * @param {number} highestLimit upper price bound
    * @param {number} currentPrice current quote price
-   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
-   * @param {number} depositBaseToken Amount of base tokens to be invested (in total)
+   * @param {BN} depositQuoteToken Amount of quote tokens to be invested (in total) in wei
+   * @param {BN} depositBaseToken Amount of base tokens to be invested (in total) in wei
    * @param {boolean} [storeDepositsAsFile=false] whether to write the executed deposits to a file (defaults to false)
    * @param {boolean} [debug=false]  prints log statements when true
    * @returns {Transaction[]} all the relevant transactions to bundle for executing transfer, approve, deposits
@@ -772,8 +772,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} lowestLimit lower price bound
    * @param {number} highestLimit upper price bound
    * @param {number} currentPrice current quote price
-   * @param {number} depositQuoteToken Amount of quote tokens to be invested (in total)
-   * @param {number} depositBaseToken Amount of base tokens to be invested (in total)
+   * @param {BN} depositQuoteToken Amount of quote tokens to be invested (in total) in wei
+   * @param {BN} depositBaseToken Amount of base tokens to be invested (in total) in wei
    * @param {boolean} storeDepositsAsFile whether to write the executed deposits to a file (defaults to false)
    * @returns {Transaction} all the relevant transaction information to be used when submitting to the Gnosis Safe Multi-Sig
    */
@@ -976,8 +976,8 @@ module.exports = function (web3 = web3, artifacts = artifacts) {
    * @param {number} deploymentParameters.currentPrice Current price of one base token in quote tokens
    * @param {number} deploymentParameters.lowestLimit Lower price bound
    * @param {number} deploymentParameters.highestLimit Highest price bound
-   * @param {number} deploymentParameters.depositBaseToken Amount of base tokens to be invested (in total)
-   * @param {number} deploymentParameters.depositQuoteToken Amount of quote tokens to be invested (in total)
+   * @param {BN} deploymentParameters.depositBaseToken Amount of base tokens to be invested (in total) in wei
+   * @param {BN} deploymentParameters.depositQuoteToken Amount of quote tokens to be invested (in total) in wei
    * @param {number} [deploymentParameters.masterSafeNonce=null] Gnosis Safe nonce that is used to compute the deployment addresses. If
    * left empty, the first available nonce is retrieved from the blockchain
    * @param {number} [deploymentParameters.expiry=DEFAULT_ORDER_EXPIRY] Maximum auction batch for which these orders are valid (e.g. maxU32)
