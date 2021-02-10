@@ -42,7 +42,7 @@
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-react": "^7.20.6",
     "husky": "^5.0.9",
-    "ganache-cli": "6.12.1",
+    "ganache-cli": "6.12.2",
     "prettier": "^2.0.5",
     "sol-merger": "^3.1.0",
     "tmp-promise": "^3.0.2",
