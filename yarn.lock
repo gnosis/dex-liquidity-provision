@@ -844,9 +844,9 @@
     defer-to-connect "^1.0.1"
 
 "@truffle/artifactor@^4.0.72":
-  version "4.0.100"
-  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.100.tgz#607dc649cbeb81fa5dc187a8362c1a87378e3bf0"
-  integrity sha512-15UB7NWE8FhmtxmJaIiykPiNfhDFCeXZlNlKH84tlqnhU6G72EtKX2xOQWMSsTi4gES0FVvdshs3CtaTYPsFJA==
+  version "4.0.101"
+  resolved "https://registry.yarnpkg.com/@truffle/artifactor/-/artifactor-4.0.101.tgz#a27eb3e2ee74d257222b64f5622cc4d3c7339fd9"
+  integrity sha512-rrnO2Cm2Vqcq3gUW1zLDsBrmfqTz0nctlQYfc6gtH/v7Ba1iGW4yLxf9kfGRhoCAxvEQbv+zReWS36Llr22uXg==
   dependencies:
     "@truffle/contract-schema" "^3.3.4"
     fs-extra "^9.1.0"
@@ -875,7 +875,7 @@
     utf8 "^3.0.0"
     web3-utils "1.2.9"
 
-"@truffle/contract-schema@^3.3.3", "@truffle/contract-schema@^3.3.4":
+"@truffle/contract-schema@^3.3.4":
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.3.4.tgz#95f0265cac7de7bcaa0542f5fe671a7896011bfe"
   integrity sha512-HzscBl/GhZBvPNQeD9l6ewSHSkvNmE+bA0iTVa0Y2mNf5GD5Y3fK2NPyfbOdtckOvLqebvYGEDEPRiXc3BZ05g==
