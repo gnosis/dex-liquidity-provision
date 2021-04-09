@@ -875,7 +875,7 @@
     utf8 "^3.0.0"
     web3-utils "1.2.9"
 
-"@truffle/contract-schema@^3.3.3", "@truffle/contract-schema@^3.3.4":
+"@truffle/contract-schema@^3.3.4":
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.3.4.tgz#95f0265cac7de7bcaa0542f5fe671a7896011bfe"
   integrity sha512-HzscBl/GhZBvPNQeD9l6ewSHSkvNmE+bA0iTVa0Y2mNf5GD5Y3fK2NPyfbOdtckOvLqebvYGEDEPRiXc3BZ05g==
@@ -3466,9 +3466,9 @@ eslint-plugin-jsdoc@^32.3.0:
     spdx-expression-parse "^3.0.1"
 
 eslint-plugin-no-only-tests@^2.4.0:
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-no-only-tests/-/eslint-plugin-no-only-tests-2.4.0.tgz#7d565434aa7d16ccc7eea957c391d98f827332ca"
-  integrity sha512-azP9PwQYfGtXJjW273nIxQH9Ygr+5/UyeW2wEjYoDtVYPI+WPKwbj0+qcAKYUXFZLRumq4HKkFaoDBAwBoXImQ==
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-no-only-tests/-/eslint-plugin-no-only-tests-2.5.0.tgz#df949256f366b3111b69d65ffa590d136b5ecb17"
+  integrity sha512-kwETpAyBrWpB75UdncTCXFRLFVMNWvdIC0xCNReW5A1W3r2T/RYopxc3aA22ZPq5el1mAo6BmP3/8jiwhSSjnw==
 
 eslint-plugin-react@^7.20.6:
   version "7.22.0"
