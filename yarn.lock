@@ -875,7 +875,7 @@
     utf8 "^3.0.0"
     web3-utils "1.2.9"
 
-"@truffle/contract-schema@^3.3.3", "@truffle/contract-schema@^3.3.4":
+"@truffle/contract-schema@^3.3.4":
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/@truffle/contract-schema/-/contract-schema-3.3.4.tgz#95f0265cac7de7bcaa0542f5fe671a7896011bfe"
   integrity sha512-HzscBl/GhZBvPNQeD9l6ewSHSkvNmE+bA0iTVa0Y2mNf5GD5Y3fK2NPyfbOdtckOvLqebvYGEDEPRiXc3BZ05g==
@@ -7676,10 +7676,10 @@ sync-rpc@^1.2.1:
   dependencies:
     get-port "^3.1.0"
 
-synthetix-js@=2.41.0:
-  version "2.41.0"
-  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.41.0.tgz#d6ac72b72dadd58ab5bbc95012524b66fa2f8e9a"
-  integrity sha512-J/9AhM37Xr6DXYKniIqY9HIFU3XSX/aZ53RmRxjAbXXh/uzEhYJ+LZiN8gBeNT2CcQgxS5HwHuycAjmdApdcgA==
+synthetix-js@=2.42.1:
+  version "2.42.1"
+  resolved "https://registry.yarnpkg.com/synthetix-js/-/synthetix-js-2.42.1.tgz#57c96d2e7772d13bd00a6a2fbc90862b396b3299"
+  integrity sha512-Ra/KuV69KhoDVat8VNM6cDSP9IfLZ0e5zX7627nogmpOodKB874/hdZv9fmonUMf5oPKHdPLpcH4kNQ8L0hBXw==
   dependencies:
     "@ledgerhq/hw-app-eth" "4.74.2"
     "@ledgerhq/hw-transport" "4.74.2"
@@ -7691,14 +7691,14 @@ synthetix-js@=2.41.0:
     ethers "4.0.44"
     hdkey "1.1.1"
     lodash "4.17.15"
-    synthetix "2.41.0"
+    synthetix "2.42.1"
     trezor-connect "8.1.8"
     walletlink "2.0.2"
 
-synthetix@2.41.0:
-  version "2.41.0"
-  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.41.0.tgz#3957679c41e4e51a6c41c808cd99c2ec6a121214"
-  integrity sha512-UsPPSijN2w2C4v7V4QwtjwBpLhJ/pC0NVzec+TpRBTdAFOreJNI+bUTzG479/CFFGLm7sS4nJNM/c+7UAUzcbg==
+synthetix@2.42.1:
+  version "2.42.1"
+  resolved "https://registry.yarnpkg.com/synthetix/-/synthetix-2.42.1.tgz#4dd3eca7c12d175795e67c68046f2f32676bd188"
+  integrity sha512-ZKmMTwVXkGG7bNIVtBAbENXggz1H2AAZIV5473t6n+ntAgVaIrJ56UFLmjeTy0JcnwqlzbAa9i3EnqvWUcXUoA==
   dependencies:
     "@chainlink/contracts-0.0.10" "npm:@chainlink/contracts@0.0.10"
     "@eth-optimism/contracts" "0.0.2-alpha.7"
