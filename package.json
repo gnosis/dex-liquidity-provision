@@ -66,7 +66,7 @@
     "eth-gas-reporter": "^0.2.17",
     "ethereumjs-util": "^7.0.4",
     "node-fetch": "^2.6.1",
-    "synthetix-js": "=2.41.0",
+    "synthetix-js": "=2.43.0",
     "truffle": "^5.1.39",
     "truffle-hdwallet-provider": "^1.0.0-web3one.1",
     "typescript-logging": "^1.0.0"
