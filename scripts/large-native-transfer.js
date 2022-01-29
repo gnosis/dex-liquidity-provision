@@ -19,11 +19,6 @@ const argv = default_yargs
     describe: "file name (and path) to the list transfers",
     demandOption: true,
   })
-  .option("verify", {
-    type: "boolean",
-    default: false,
-    describe: "Do not actually send transactions, just simulate their submission",
-  })
   .option("batchSize", {
     type: "number",
     describe: "Partition width of each transfer bundle",
@@ -100,7 +95,12 @@ module.exports = async (callback) => {
         }
       })
     })
-    console.log(`Prepared ${transactionLists.length} bundles of size ${argv.batchSize}`)
+    const numBundles = transactionLists.length
+    console.log(
+      `Prepared ${numBundles} bundles of size ${argv.batchSize} (last one having ${
+        transfers.length - (numBundles - 1) * argv.batchSize
+      })`
+    )
 
     const answer = await promptUser("Are you sure you want to send these transactions to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
