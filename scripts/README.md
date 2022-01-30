@@ -180,3 +180,12 @@ This command will print the brackets comma separated and it will put them into c
 ### Confirming multisig-transactions on gnosis-safe with Metamask
 
 The gas limit for the transactions going through the gnosis-safe interface can not yet be correctly estimated. Hence, the proposed gas limits are very high. Usually, for a liquidity deployment with 20 brackets, not more than 6m gas is consumed.
+
+
+
+### Reclaim Ownership of SubSafes from CMM Deployment
+Check out these dashboards to find the safes owned by your initial funding account:
+
+Mainnet - https://dune.xyz/queries/385974
+Gnosis Chain - https://dune.xyz/queries/385986
+
