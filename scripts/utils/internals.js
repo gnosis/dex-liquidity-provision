@@ -210,7 +210,7 @@ module.exports = function (web3, artifacts) {
       ZERO_ADDRESS,
       nonce
     )
-
+    console.log("Do we get here?", transactionHash)
     const signer = (await web3.eth.getAccounts())[0]
     console.log(`Signing transaction ${transactionHash} from proposer account ${signer} with nonce ${nonce}`)
     return {
