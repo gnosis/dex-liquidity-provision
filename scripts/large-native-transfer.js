@@ -3,7 +3,8 @@ const fs = require("fs").promises
 const path = require("path")
 
 const { toErc20Units } = require("./utils/printing_tools")
-const { signAndSend } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
+// const { signAndSend } = require("./utils/gnosis_safe_server_interactions")(web3, artifacts)
+const { signAndExecute } = require("./utils/internals")(web3, artifacts)
 const { buildBundledTransaction } = require("./utils/internals")(web3, artifacts)
 const { parseCsvFile } = require("./utils/parse_csv")
 const { promptUser } = require("./utils/user_interface_helpers")
@@ -63,7 +64,7 @@ const parseTransferFile = async function (filename) {
 }
 
 const partitionedTransfers = function (payments, size) {
-  const numBatches = Math.floor(payments.length / size)
+  const numBatches = Math.ceil(payments.length / size)
   console.log(`Splitting ${payments.length} transfers into ${numBatches} batches of size ${size}`)
   const output = []
 
@@ -107,7 +108,7 @@ module.exports = async (callback) => {
       let nonce = argv.nonce
       for (const transactions of transactionLists) {
         const transaction = await buildBundledTransaction(transactions)
-        nonce = await signAndSend(masterSafe, transaction, argv.network, nonce)
+        nonce = await signAndExecute(masterSafe, transaction, nonce)
         nonce = nonce + 1
       }
     }
