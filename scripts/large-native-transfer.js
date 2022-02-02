@@ -24,12 +24,6 @@ const argv = default_yargs
     type: "number",
     describe: "Partition width of each transfer bundle",
     default: 10,
-  })
-  .option("nonce", {
-    type: "number",
-    describe:
-      "Nonce used in the transaction submitted to the web interface. If omitted, the first available nonce considering all pending transactions will be used.",
-    default: null,
   }).argv
 
 const CALL = 0
@@ -105,11 +99,9 @@ module.exports = async (callback) => {
 
     const answer = await promptUser("Are you sure you want to send these transactions to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
-      let nonce = argv.nonce
       for (const transactions of transactionLists) {
         const transaction = await buildBundledTransaction(transactions)
-        nonce = await signAndExecute(masterSafe, transaction, nonce)
-        nonce = nonce + 1
+        await signAndExecute(masterSafe, transaction)
       }
     }
     callback()
