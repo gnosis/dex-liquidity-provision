@@ -100,6 +100,10 @@ module.exports = async (callback) => {
     const answer = await promptUser("Are you sure you want to send these transactions to the EVM? [yN] ")
     if (answer == "y" || answer.toLowerCase() == "yes") {
       for (const transactions of transactionLists) {
+        const numTransfers = transactions.length
+        const firstReceiver = transactions[0].to
+        const lastReceiver = transactions[numTransfers - 1].to
+        console.log(`initiating ${numTransfers} transfers from account ${firstReceiver} to ${lastReceiver}`)
         const transaction = await buildBundledTransaction(transactions)
         await signAndExecute(masterSafe, transaction)
       }

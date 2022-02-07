@@ -4,7 +4,7 @@ const argv = require("yargs").help(false).version(false).option("network", {
   type: "string",
 }).argv
 
-const DEFAULT_GAS_LIMIT = 6e6
+const DEFAULT_GAS_LIMIT = 15e6
 const DEFAULT_GAS_PRICE_GWEI = 5
 const DEFAULT_MNEMONIC = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
 
