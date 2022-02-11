@@ -54,7 +54,7 @@
     "@gnosis.pm/safe-contracts": "v1.2.0",
     "@gnosis.pm/solidity-data-structures": "=1.2.4",
     "@gnosis.pm/util-contracts": "^2.0.7",
-    "@openzeppelin/contracts": "=2.5.1",
+    "@openzeppelin/contracts": "=4.4.2",
     "@truffle/contract": "4.3.12",
     "axios": "^0.21.0",
     "bignumber.js": "^9.0.0",
