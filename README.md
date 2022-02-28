@@ -1,5 +1,7 @@
 # Gnosis Liquidity Provision
 
+*Disclaimer: This repository has been archived and is no longer supported*
+
 We want to employ different liquidity strategies when the Gnosis Protocol is launched.
 This repo is responsible for testing and execution.
 
